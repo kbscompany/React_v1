@@ -1,0 +1,167 @@
+[
+  {
+    "name": "All Purpose Flour",
+    "unit": "kg",
+    "category_id": 11,
+    "price_per_unit": "2.50",
+    "id": 18,
+    "category": {
+      "name": "Flour & Grains",
+      "id": 11
+    }
+  },
+  {
+    "name": "Bread Flour",
+    "unit": "kg",
+    "category_id": 11,
+    "price_per_unit": "3.00",
+    "id": 19,
+    "category": {
+      "name": "Flour & Grains",
+      "id": 11
+    }
+  },
+  {
+    "name": "Whole Wheat Flour",
+    "unit": "kg",
+    "category_id": 11,
+    "price_per_unit": "3.25",
+    "id": 20,
+    "category": {
+      "name": "Flour & Grains",
+      "id": 11
+    }
+  },
+  {
+    "name": "Granulated Sugar",
+    "unit": "kg",
+    "category_id": 13,
+    "price_per_unit": "1.80",
+    "id": 21,
+    "category": {
+      "name": "Sweeteners",
+      "id": 13
+    }
+  },
+  {
+    "name": "Brown Sugar",
+    "unit": "kg",
+    "category_id": 13,
+    "price_per_unit": "2.20",
+    "id": 22,
+    "category": {
+      "name": "Sweeteners",
+      "id": 13
+    }
+  },
+  {
+    "name": "Unsalted Butter",
+    "unit": "kg",
+    "category_id": 12,
+    "price_per_unit": "8.50",
+    "id": 23,
+    "category": {
+      "name": "Dairy",
+      "id": 12
+    }
+  },
+  {
+    "name": "Whole Milk",
+    "unit": "L",
+    "category_id": 12,
+    "price_per_unit": "1.20",
+    "id": 24,
+    "category": {
+      "name": "Dairy",
+      "id": 12
+    }
+  },
+  {
+    "name": "Heavy Cream",
+    "unit": "L",
+    "category_id": 12,
+    "price_per_unit": "4.50",
+    "id": 25,
+    "category": {
+      "name": "Dairy",
+      "id": 12
+    }
+  },
+  {
+    "name": "Large Eggs",
+    "unit": "dozen",
+    "category_id": 12,
+    "price_per_unit": "3.50",
+    "id": 26,
+    "category": {
+      "name": "Dairy",
+      "id": 12
+    }
+  },
+  {
+    "name": "Vanilla Extract",
+    "unit": "ml",
+    "category_id": 15,
+    "price_per_unit": "45.00",
+    "id": 27,
+    "category": {
+      "name": "Leavening Agents",
+      "id": 15
+    }
+  },
+  {
+    "name": "Baking Powder",
+    "unit": "kg",
+    "category_id": 11,
+    "price_per_unit": "12.00",
+    "id": 28,
+    "category": {
+      "name": "Flour & Grains",
+      "id": 11
+    }
+  },
+  {
+    "name": "Active Dry Yeast",
+    "unit": "kg",
+    "category_id": 11,
+    "price_per_unit": "15.00",
+    "id": 29,
+    "category": {
+      "name": "Flour & Grains",
+      "id": 11
+    }
+  },
+  {
+    "name": "Salt",
+    "unit": "kg",
+    "category_id": 15,
+    "price_per_unit": "1.50",
+    "id": 30,
+    "category": {
+      "name": "Leavening Agents",
+      "id": 15
+    }
+  },
+  {
+    "name": "Vegetable Oil",
+    "unit": "L",
+    "category_id": 14,
+    "price_per_unit": "3.75",
+    "id": 31,
+    "category": {
+      "name": "Fats & Oils",
+      "id": 14
+    }
+  },
+  {
+    "name": "Dark Chocolate",
+    "unit": "kg",
+    "category_id": 11,
+    "price_per_unit": "12.00",
+    "id": 32,
+    "category": {
+      "name": "Flour & Grains",
+      "id": 11
+    }
+  }
+]

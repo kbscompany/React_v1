@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foodics Integration Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+        
+        .status-indicator.connected {
+            background: #2ed573;
+        }
+        
+        .login-section {
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            min-width: 120px;
+        }
+        
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .main-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .branch-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .branch-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        .branch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .branch-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .branch-id {
+            font-size: 12px;
+            color: #6c757d;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .sales-data {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .sales-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-card h4 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+        
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍔 Foodics Integration Dashboard</h1>
+            <div class="auth-status">
+                <div class="status-indicator" id="status-indicator"></div>
+                <span id="status-text">Disconnected</span>
+                <button class="btn btn-secondary" id="logout-btn" onclick="logout()" style="display: none;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div class="login-section" id="login-section">
+            <h2>🔐 Login to Access Foodics Data</h2>
+            <p style="margin: 20px 0; color: #6c757d;">Enter your system credentials to access Foodics integration</p>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" value="admin" placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" value="" placeholder="Enter password">
+                </div>
+                <button class="btn" id="login-btn" onclick="login()">Login</button>
+                <div id="login-message"></div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div class="main-content" id="main-content">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('status')">📊 Status</div>
+                <div class="tab" onclick="switchTab('branches')">🏢 Branch Sales</div>
+            </div>
+
+            <!-- Status Tab -->
+            <div class="tab-content active" id="status-content">
+                <h3>🔗 Integration Status</h3>
+                <div id="status-info">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Checking Foodics status...</p>
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" onclick="testConnection()">🧪 Test Foodics Connection</button>
+                <div id="connection-test-result"></div>
+            </div>
+
+            <!-- Branch Sales Tab -->
+            <div class="tab-content" id="branches-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>🏢 Branch Sales Data</h3>
+                    <button class="btn" onclick="loadBranches()">🔄 Refresh Branches</button>
+                </div>
+                
+                <div id="branches-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading branches...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let branches = [];
+        const baseUrl = 'http://127.0.0.1:8000';
+
+        // Authentication functions
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            const messageDiv = document.getElementById('login-message');
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+            messageDiv.innerHTML = '';
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const response = await fetch(`${baseUrl}/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.access_token;
+                    updateAuthStatus(true);
+                    showMainContent();
+                    checkFoodicsStatus();
+                    loadBranches();
+                } else {
+                    messageDiv.innerHTML = `<div class="error">❌ Login failed: ${data.detail}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">❌ Connection error: ${error.message}</div>`;
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        }
+
+        function logout() {
+            authToken = null;
+            updateAuthStatus(false);
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function updateAuthStatus(connected) {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            if (connected) {
+                indicator.classList.add('connected');
+                statusText.textContent = 'Connected';
+                logoutBtn.style.display = 'block';
+            } else {
+                indicator.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        function showMainContent() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        // API request helper
+        async function apiRequest(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(`${baseUrl}${endpoint}`, options);
+            
+            if (response.status === 401) {
+                logout();
+                throw new Error('Authentication expired. Please login again.');
+            }
+
+            return response;
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-content`).classList.add('active');
+        }
+
+        // Foodics integration functions
+        async function checkFoodicsStatus() {
+            try {
+                const response = await apiRequest('/api/foodics/status');
+                const data = await response.json();
+
+                const statusDiv = document.getElementById('status-info');
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Foodics Integration Active
+                            <br><strong>Mode:</strong> ${data.mode}
+                            <br><strong>API Configured:</strong> ${data.api_token_configured ? 'Yes' : 'No'}
+                            <br><strong>Service Available:</strong> ${data.service_available ? 'Yes' : 'No'}
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `<div class="error">❌ Status check failed: ${data.detail}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('status-info').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-test-result');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Testing connection...</p></div>';
+
+            try {
+                const response = await apiRequest('/api/foodics/test-connection', 'POST');
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Connection Test Successful
+                            <br><strong>Status:</strong> ${data.status}
+                            <br><strong>Message:</strong> ${data.message}
+                            <br><strong>Mode:</strong> ${data.mode}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Connection test failed: ${data.detail}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function loadBranches() {
+            const branchesDiv = document.getElementById('branches-list');
+            branchesDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading branches...</p></div>';
+
+            try {
+                const response = await apiRequest('/api/foodics/branches');
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    branches = data.branches || [];
+                    displayBranches(branches);
+                } else {
+                    branchesDiv.innerHTML = `<div class="error">❌ Failed to load branches: ${data.message || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                branchesDiv.innerHTML = `<div class="error">❌ Error loading branches: ${error.message}</div>`;
+            }
+        }
+
+        function displayBranches(branchList) {
+            const branchesDiv = document.getElementById('branches-list');
+            
+            if (branchList.length === 0) {
+                branchesDiv.innerHTML = '<div class="error">No branches found. Make sure Foodics API is properly configured.</div>';
+                return;
+            }
+
+            const branchesHtml = branchList.map(branch => `
+                <div class="branch-card">
+                    <div class="branch-header">
+                        <div>
+                            <div class="branch-name">${branch.name || 'Unknown Branch'}</div>
+                            <div class="branch-id">ID: ${branch.id}</div>
+                        </div>
+                        <button class="btn" onclick="loadBranchSales('${branch.id}', '${branch.name}')">
+                            📊 View Sales
+                        </button>
+                    </div>
+                    <div class="sales-data" id="sales-${branch.id}"></div>
+                </div>
+            `).join('');
+
+            branchesDiv.innerHTML = branchesHtml;
+        }
+
+        async function loadBranchSales(branchId, branchName) {
+            const salesDiv = document.getElementById(`sales-${branchId}`);
+            salesDiv.style.display = 'block';
+            salesDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading sales data...</p></div>';
+
+            try {
+                // Try multiple endpoints for sales data
+                let salesData = null;
+                
+                // Try default branch sales if this is configured as default
+                try {
+                    const defaultResponse = await apiRequest('/api/foodics/default-branch/sales?start_date=2024-01-01&end_date=2024-12-31');
+                    if (defaultResponse.ok) {
+                        salesData = await defaultResponse.json();
+                    }
+                } catch (e) {
+                    console.log('Default branch sales not available');
+                }
+
+                if (salesData) {
+                    displaySalesData(salesDiv, salesData, branchName);
+                } else {
+                    // Show alternative message with instructions
+                    salesDiv.innerHTML = `
+                        <div style="padding: 20px;">
+                            <h4>📊 Sales Data for ${branchName}</h4>
+                            <div class="error">
+                                <h5>⚠️ Sales data access requires additional setup:</h5>
+                                <ol>
+                                    <li><strong>Configure Branch as Default:</strong> Use the configure branch endpoint to set this as your default branch</li>
+                                    <li><strong>API Permissions:</strong> Ensure your Foodics API token has sales data access</li>
+                                    <li><strong>Date Range:</strong> Sales data may be limited to recent dates</li>
+                                </ol>
+                                <p><strong>Available actions:</strong></p>
+                                <button class="btn btn-secondary" onclick="configureBranch('${branchId}', '${branchName}')">
+                                    🔧 Set as Default Branch
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                salesDiv.innerHTML = `<div class="error">❌ Error loading sales: ${error.message}</div>`;
+            }
+        }
+
+        async function configureBranch(branchId, branchName) {
+            try {
+                const formData = new URLSearchParams();
+                formData.append('branch_id', branchId);
+                formData.append('branch_name', branchName);
+
+                const response = await fetch(`${baseUrl}/api/foodics/configure-branch`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ ${branchName} configured as default branch successfully!`);
+                    // Reload sales data
+                    loadBranchSales(branchId, branchName);
+                } else {
+                    alert(`❌ Failed to configure branch: ${data.detail}`);
+                }
+            } catch (error) {
+                alert(`❌ Error configuring branch: ${error.message}`);
+            }
+        }
+
+        function displaySalesData(container, salesData, branchName) {
+            const html = `
+                <h4>📊 Sales Data for ${branchName}</h4>
+                <div class="sales-summary">
+                    <div class="summary-card">
+                        <h4>Total Sales</h4>
+                        <div class="value">${salesData.total_sales || '0'}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Total Orders</h4>
+                        <div class="value">${salesData.total_orders || '0'}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Average Order</h4>
+                        <div class="value">$${salesData.average_order || '0'}</div>
+                    </div>
+                </div>
+                <div class="success">
+                    ✅ Sales data loaded successfully!
+                    <br>This is sample data structure. Actual sales data will depend on your Foodics API configuration.
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('username').focus();
+            
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && document.getElementById('login-section').style.display !== 'none') {
+                    login();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

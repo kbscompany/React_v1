@@ -1,0 +1,1471 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "submit": "Submit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "comingSoon": "Coming Soon...",
+    "active": "Active",
+    "inactive": "Inactive",
+    "items": "items"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "loginFailed": "Login failed",
+    "invalidCredentials": "Invalid credentials",
+    "welcome": "Welcome",
+    "demoCredentials": "Demo Credentials:",
+    "demoUsername": "Username: admin",
+    "demoPassword": "Password: admin123",
+    "rememberMe": "Remember me"
+  },
+  "warehouse": {
+    "title": "Warehouse Management System",
+    "description": "Manage inventory transfers, stock levels, and warehouse operations",
+    "availableWarehouses": "Available Warehouses",
+    "tabs": {
+      "warehouses": "🏢 Warehouses", 
+      "foodicsDashboard": "🍽️ Foodics Dashboard",
+      "createTransfer": "📦 Create Transfer",
+      "receiveOrders": "📥 Receive Orders",
+      "stockManagement": "📊 Stock Management",
+      "categories": "🏷️ Categories",
+      "managerAssignments": "👥 Manager Assignments"
+    },
+    "warehouses": {
+      "title": "Warehouse Settings",
+      "name": "Warehouse Name",
+      "location": "Location",
+      "warehouseId": "Warehouse ID",
+      "createNew": "Create New Warehouse",
+      "editWarehouse": "Edit Warehouse",
+      "deleteWarehouse": "Delete Warehouse",
+      "deleteConfirm": "Are you sure you want to delete this warehouse? This action cannot be undone.",
+      "nameRequired": "Warehouse name is required",
+      "createSuccess": "Warehouse created successfully",
+      "updateSuccess": "Warehouse updated successfully", 
+      "deleteSuccess": "Warehouse deleted successfully"
+    },
+    "transfer": {
+      "createTitle": "Create Transfer Order",
+      "sourceWarehouse": "Source Warehouse",
+      "targetWarehouse": "Target Warehouse",
+      "selectIngredient": "Select Ingredient",
+      "quantity": "Quantity",
+      "reason": "Reason",
+      "addItem": "Add Item",
+      "lowStockSuggestions": "Low Stock Suggestions",
+      "quickAdd": "Quick Add",
+      "packageOperations": "Package Operations",
+      "transferItems": "Transfer Items",
+      "createTransfer": "Create Transfer",
+      "transferSuccess": "Transfer order created successfully",
+      "selectWarehouses": "Please select both source and target warehouses",
+      "addItemsFirst": "Please add items to transfer"
+    },
+    "receive": {
+      "title": "Receive Transfer Orders",
+      "selectWarehouse": "Select Warehouse",
+      "pendingOrders": "Pending Transfer Orders",
+      "ordersPending": "orders pending",
+      "noPendingOrders": "No pending transfer orders",
+      "orderFrom": "Order from",
+      "createdAt": "Created at",
+      "totalItems": "Total Items",
+      "processOrder": "Process Order",
+      "accepted": "Accepted",
+      "returned": "Returned",
+      "wasted": "Wasted",
+      "wasteReason": "Waste Reason",
+      "photo": "Photo",
+      "processSuccess": "Transfer order processed successfully",
+      "selectWarehouseFirst": "Please select a warehouse first"
+    },
+    "stock": {
+      "title": "Stock Management",
+      "selectWarehouse": "Select Warehouse",
+      "stockLevel": "Stock Level",
+      "category": "Category",
+      "allCategories": "All categories",
+      "lowStock": "Low Stock",
+      "normalStock": "Normal Stock",
+      "highStock": "High Stock",
+      "ingredient": "Ingredient",
+      "currentStock": "Current Stock",
+      "updateStock": "Update Stock",
+      "operation": "Operation",
+      "newQuantity": "New Quantity",
+      "reasonRequired": "Reason is required",
+      "quantityRequired": "Quantity must be greater than 0",
+      "operations": {
+        "set": "Set to",
+        "add": "Add",
+        "subtract": "Subtract"
+      },
+      "packageSize": "Package Size",
+      "addPackage": "Add Package",
+      "removePackage": "Remove Package"
+    },
+    "categories": {
+      "title": "Category Management",
+      "categoryName": "Category Name",
+      "createCategory": "Create Category",
+      "editCategory": "Edit Category",
+      "deleteCategory": "Delete Category",
+      "deleteConfirm": "Are you sure you want to delete this category? This action cannot be undone.",
+      "ingredientCount": "Ingredients",
+      "createdAt": "Created",
+      "categoryRequired": "Category name is required",
+      "createSuccess": "Category created successfully",
+      "updateSuccess": "Category updated successfully",
+      "deleteSuccess": "Category deleted successfully"
+    },
+    "managerAssignments": {
+      "title": "Manager Assignments",
+      "assignManager": "Assign Manager",
+      "selectWarehouse": "Select Warehouse",
+      "selectManager": "Select Manager",
+      "createAssignment": "Create Assignment",
+      "updateAssignment": "Update Assignment",
+      "deleteAssignment": "Delete Assignment",
+      "assignmentSuccess": "Manager assigned successfully",
+      "updateSuccess": "Assignment updated successfully",
+      "deleteSuccess": "Assignment deleted successfully"
+    },
+    "create": {
+      "title": "Create Transfer Order",
+      "subtitle": "Transfer items between warehouses",
+      "loadTemplate": "Load Template",
+      "saveAsTemplate": "Save as Template",
+      "sourceWarehouse": "Source Warehouse",
+      "destinationWarehouse": "Destination Warehouse",
+      "selectSourceWarehouse": "Select source warehouse",
+      "selectDestinationWarehouse": "Select destination warehouse",
+      "quickAdd": "Quick Add",
+      "lowStock": "Low Stock",
+      "quickAddItems": "Quick Add Items",
+      "ingredient": "Ingredient",
+      "selectIngredient": "Select ingredient",
+      "quantity": "Quantity",
+      "enterQuantity": "Enter quantity",
+      "addItem": "Add Item",
+      "lowStockSuggestions": "Low Stock Suggestions",
+      "noItemsNeedReplenishment": "No items need replenishment",
+      "suggested": "Suggested",
+      "add": "Add",
+      "addAllLowStockItems": "Add All Low Stock Items",
+      "transferOrderItems": "Transfer Order Items",
+      "available": "Available",
+      "totalItems": "Total Items",
+      "clearAll": "Clear All",
+      "createTransferOrder": "Create Transfer Order",
+      "creating": "Creating...",
+      "loadTransferTemplate": "Load Transfer Template",
+      "selectSavedTemplate": "Select a saved template to quickly configure your transfer order",
+      "noTemplatesFound": "No templates found",
+      "createFirstTemplate": "Create your first template by configuring a transfer and saving it.",
+      "items": "items",
+      "load": "Load",
+      "saveTransferTemplate": "Save Transfer Template",
+      "saveCurrentConfiguration": "Save your current transfer configuration as a reusable template",
+      "templateName": "Template Name",
+      "templateNamePlaceholder": "e.g., Daily Bakery Supplies",
+      "description": "Description (Optional)",
+      "descriptionPlaceholder": "Describe when to use this template...",
+      "templateSummary": "Template Summary",
+      "from": "From",
+      "to": "To",
+      "ingredients": "ingredients",
+      "cancel": "Cancel",
+      "saveTemplate": "Save Template",
+      "unknown": "Unknown",
+      "unknownWarehouse": "Unknown Warehouse",
+      "unknownIngredient": "Unknown Ingredient",
+      "units": "units",
+      "dest": "Dest",
+      "source": "Source",
+      "min": "Min"
+    }
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "finance": "Finance Center",
+    "financeCenter": "Finance Center",
+    "expenses": "Expense Management", 
+    "expenseCategories": "Expense Categories",
+    "expenseManagement": "Expense Management",
+    "cheques": "Cheque Management",
+    "chequeManagement": "Cheque Management",
+    "warehouse": "Warehouse Management",
+    "inventory": "Recipe Management",
+    "itemManagement": "Item Management",
+    "ingredients": "Ingredients",
+    "stock": "Stock Management",
+    "categories": "Categories",
+    "superAdmin": "Super Admin"
+  },
+  "notifications": {
+    "stockUpdated": "Stock updated successfully",
+    "transferCreated": "Transfer order created successfully",
+    "orderReceived": "Order received successfully",
+    "categoryCreated": "Category created successfully",
+    "warehouseCreated": "Warehouse created successfully",
+    "loadingData": "Loading data...",
+    "noItemsFound": "No items found",
+    "errorLoading": "Error loading data",
+    "validationError": "Please check your input",
+    "networkError": "Network error occurred"
+  },
+  "finance": {
+    "title": "Sweet Finance Center",
+    "subtitle": "Comprehensive financial management for your bakery",
+    "location": "Fresh Financial Management",
+    "support": "24/7 Sweet Support",
+    "description": "Manage your financial operations",
+    "tabs": {
+      "cheques": "Cheque Recipe Book",
+      "bankAccounts": "Bank Accounts",
+      "bankHierarchy": "Banks & Accounts",
+      "chequeManagement": "Cheque Management",
+      "safes": "Safes",
+      "expenses": "Expenses",
+      "expenseCategories": "Expense Categories",
+      "supplierPayments": "Supplier Payments",
+      "summary": "Summary"
+    },
+    "buttons": {
+      "newCheque": "New Cheque",
+      "newSafe": "New Safe",
+      "newExpense": "New Expense",
+      "newBankAccount": "New Bank Account"
+    },
+    "search": {
+      "cheques": "Search cheques...",
+      "expenses": "Search expenses..."
+    },
+    "content": {
+      "loading": "Loading...",
+      "noCheques": "No cheques found",
+      "noBankAccounts": "No bank accounts found. Create your first bank account to get started.",
+      "noSafes": "No safes found. Create your first safe to get started.",
+      "noExpenses": "No expenses found"
+    },
+    "chequeCard": {
+      "bank": "Bank",
+      "amount": "Amount",
+      "safe": "Safe",
+      "issueDate": "Issue Date"
+    },
+    "bankCard": {
+      "accountNumber": "Account Number",
+      "branch": "Branch"
+    },
+    "safeCard": {
+      "currentBalance": "Current Balance",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "editName": "Edit name"
+    },
+    "expenseTable": {
+      "date": "Date",
+      "description": "Description", 
+      "category": "Category",
+      "cheque": "Cheque",
+      "safe": "Safe",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "assigned": "Assigned",
+      "settled": "Settled",
+      "overspent": "Overspent",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "summary": {
+      "bankAccounts": "Bank Accounts",
+      "totalCheques": "Total Cheques",
+      "activeSafes": "Active Safes"
+    },
+    "modals": {
+      "createCheque": {
+        "title": "Create Cheque",
+        "singleCheque": "Single Cheque",
+        "batchRange": "Batch (Range)",
+        "bankAccount": "Bank Account",
+        "selectBankAccount": "Select bank account",
+        "chequeNumber": "Cheque Number",
+        "enterChequeNumber": "Enter cheque number",
+        "amount": "Amount",
+        "issueDate": "Issue Date",
+        "description": "Description",
+        "optionalDescription": "Optional description",
+        "batchInfo": "Create blank cheques in a range. Details will be added when issuing to safes.",
+        "prefix": "Prefix (Optional)",
+        "prefixPlaceholder": "e.g., CHQ-",
+        "startNumber": "Start Number",
+        "endNumber": "End Number",
+        "batchCount": "This will create {count} cheques",
+        "optionalBatchDescription": "Optional batch description",
+        "cancel": "Cancel",
+        "create": "Create",
+        "createCheques": "Create Cheques"
+      },
+      "createSafe": {
+        "title": "Create New Safe",
+        "safeName": "Safe Name",
+        "enterSafeName": "Enter safe name",
+        "description": "Description",
+        "optionalDescription": "Optional description",
+        "initialBalance": "Initial Balance",
+        "cancel": "Cancel",
+        "createSafe": "Create Safe"
+      },
+      "createExpense": {
+        "title": "Create New Expense",
+        "selectCheque": "Select Cheque",
+        "selectACheque": "Select a cheque",
+        "safeBalance": "Safe Balance",
+        "category": "Category",
+        "searchCategory": "Search and select category (optional)...",
+        "amount": "Amount",
+        "description": "Description",
+        "expenseFor": "What is this expense for?",
+        "expenseDate": "Expense Date",
+        "notes": "Notes",
+        "additionalNotes": "Additional notes (optional)",
+        "cancel": "Cancel",
+        "createExpense": "Create Expense"
+      },
+      "createBankAccount": {
+        "title": "Create New Bank Account",
+        "accountName": "Account Name",
+        "accountNamePlaceholder": "e.g., Business Checking",
+        "accountNumber": "Account Number",
+        "enterAccountNumber": "Enter account number",
+        "bankName": "Bank Name",
+        "bankNamePlaceholder": "e.g., Bank of America",
+        "branch": "Branch (Optional)",
+        "branchLocation": "Branch location",
+        "availableBalance": "Available Balance",
+        "cancel": "Cancel",
+        "createAccount": "Create Account"
+      },
+      "createSafeModal": {
+        "safeName": "Safe Name",
+        "safeNamePlaceholder": "Enter safe name",
+        "description": "Description",
+        "descriptionPlaceholder": "Optional description",
+        "initialBalance": "Initial Balance",
+        "createSafe": "Create Safe"
+      },
+      "createExpenseModal": {
+        "createExpense": "Create Expense"
+      },
+      "createChequeModal": {
+        "createCheques": "Create Cheques",
+        "createCheque": "Create Cheque"
+      }
+    },
+    "safeRenamedSuccess": "Safe renamed successfully",
+    "safeRenamedError": "Failed to rename safe",
+    "renameSafePrompt": "Enter new name for the safe"
+  },
+  "bankAccountsCheques": {
+    "header": {
+      "freshFinancial": "Fresh Financial Management",
+      "sweetSupport": "24/7 Sweet Support"
+    },
+    "bankAccounts": {
+      "title": "Your Bakery Bank Accounts",
+      "subtitle": "Where the dough rises and the money flows",
+      "addNew": "Add New Account",
+      "loading": "Baking your data...",
+      "labels": {
+        "bank": "Bank:",
+        "accountNumber": "Account #:",
+        "branch": "Branch:",
+        "totalCheques": "Total Cheques",
+        "active": "Active",
+        "selectedAccount": "Selected Account",
+        "viewCheques": "View Cheques"
+      }
+    },
+    "cheques": {
+      "title": "Fresh Cheque Recipe Book",
+      "subtitle": "Track and manage your bakery's payment orders",
+      "count": "Fresh Cheques",
+      "searchPlaceholder": "Search cheque recipes...",
+      "dateRange": "to",
+      "clearFilters": "Clear Filters",
+      "loading": "Preparing fresh cheques...",
+      "emptyState": {
+        "title": "No Fresh Cheques Found",
+        "subtitle": "Your bakery's cheque oven is empty right now!"
+      },
+      "headers": {
+        "chequeNumber": "Cheque #",
+        "issueDate": "Issue Date",
+        "amount": "Amount",
+        "status": "Status",
+        "bankAccount": "Bank Account"
+      },
+      "unknownAccount": "Unknown Account",
+      "unknownBank": "Unknown Bank"
+    },
+    "footer": {
+      "title": "Sweet Finance Center",
+      "subtitle": "Serving fresh financial management solutions for your bakery business"
+    }
+  },
+  "expenseManagement": {
+    "loading": "Loading expense data...",
+    "navigation": {
+      "dashboard": "Dashboard",
+      "expenses": "Expenses", 
+      "cheques": "Cheques"
+    },
+    "summary": {
+      "totalSafes": "Total Safes",
+      "totalExpenses": "Total Expenses",
+      "totalAmount": "Total Amount",
+      "pendingAmount": "Pending Amount"
+    },
+    "safesOverview": {
+      "title": "Safes Overview",
+      "balance": "Balance:",
+      "cheques": "Cheques:",
+      "expenses": "Expenses:"
+    },
+    "expenseView": {
+      "title": "Expense Management",
+      "createExpense": "Create Expense",
+      "selectSafe": "Select Safe:",
+      "selectSafePlaceholder": "Select a safe...",
+      "recentExpenses": "Recent Expenses",
+      "tableHeaders": {
+        "date": "Date",
+        "description": "Description",
+        "paidTo": "Paid To",
+        "category": "Category",
+        "amount": "Amount",
+        "status": "Status"
+      },
+      "noExpenses": "No expenses found",
+      "categoryNA": "N/A"
+    },
+    "chequeView": {
+      "title": "Cheque Management",
+      "issueCheque": "Issue Cheque",
+      "selectSafe": "Select Safe:",
+      "selectSafePlaceholder": "Select a safe...",
+      "chequesFor": "Cheques for",
+      "amount": "Amount:",
+      "spent": "Spent:",
+      "remaining": "Remaining:",
+      "overspent": "Overspent:",
+      "settleOverspent": "Settle Overspent Amount",
+      "settledOn": "Settled on",
+      "noCheques": "No cheques found for this safe"
+    },
+    "chequeStatus": {
+      "settled": "Settled",
+      "overspent": "Overspent", 
+      "active": "Active",
+      "available": "Available"
+    },
+    "createExpenseModal": {
+      "title": "Create New Expense",
+      "safe": "Select Safe:",
+      "selectSafe": "Select a safe",
+      "safeLabel": "Safe",
+      "cheque": "Cheque:",
+      "selectCheque": "Select a cheque...",
+      "selectSafeFirst": "Please select a safe first",
+      "noAvailableCheques": "No available cheques in this safe",
+      "category": "Category:",
+      "searchCategory": "Search and select category...",
+      "amount": "Amount:",
+      "description": "Description:",
+      "paidTo": "Paid To:",
+      "paidToPlaceholder": "Name of person/entity who received payment",
+      "expenseDate": "Expense Date:",
+      "notes": "Notes (Optional):",
+      "cancel": "Cancel",
+      "create": "Create Expense",
+      "creating": "Creating...",
+      "overspendWarning": "Warning: This expense will overspend the cheque by",
+      "sufficientBalance": "The safe has sufficient balance to cover this.",
+      "insufficientBalance": "The safe only has",
+      "available": "available."
+    },
+    "settlementModal": {
+      "title": "Settle Overspent Cheque",
+      "cheque": "Cheque:",
+      "originalAmount": "Original Amount:",
+      "totalExpenses": "Total Expenses:",
+      "overspentAmount": "Overspent Amount:",
+      "settlementChequeNumber": "Settlement Cheque Number:",
+      "enterChequeNumber": "Enter new cheque number",
+      "notes": "Notes:",
+      "newChequeInfo": "A new cheque for {amount} will be created and assigned to the same safe to restore the balance.",
+      "cancel": "Cancel",
+      "settle": "Settle Cheque",
+      "settling": "Settling..."
+    },
+    "messages": {
+      "expenseCreated": "Expense created successfully!",
+      "chequeCreated": "Cheque created successfully!",
+      "chequeIssued": "Cheque issued successfully to safe!",
+      "chequeSettled": "Cheque settled successfully!",
+      "failedToLoad": "Failed to load data",
+      "failedToCreate": "Failed to create expense",
+      "failedToSettle": "Failed to settle cheque",
+      "enterSettlementNumber": "Please enter a settlement cheque number"
+    }
+  },
+  "itemManagement": {
+    "title": "📦 Item Management System",
+    "loading": "Loading...",
+    "tabs": {
+      "items": "🧪 Manage Items",
+      "subRecipes": "📋 Sub-Recipes", 
+      "midPrep": "🥘 Mid-Prep",
+      "cakes": "🍰 Cakes"
+    },
+    "filters": {
+      "searchPlaceholder": "Search items...",
+      "categoryFilter": "All Categories",
+      "perPage": "per page",
+      "reset": "🔄 Reset"
+    },
+    "statistics": {
+      "title": "📊 Statistics",
+      "totalItems": "Total Items",
+      "categoriesUsed": "Categories Used",
+      "averagePrice": "Average Price"
+    },
+    "itemCard": {
+      "uncategorized": "Uncategorized",
+      "packages": "📦 Packages",
+      "delete": "🗑️ Delete",
+      "updateItem": "💾 Update Item",
+      "name": "Name",
+      "pricePerUnit": "Price per Unit",
+      "unit": "Unit",
+      "category": "Category",
+      "noCategory": "No Category"
+    },
+    "packageManagement": {
+      "title": "📦 Package Management",
+      "existingPackages": "Existing Packages:",
+      "addNewPackage": "Add New Package:",
+      "packageName": "Package Name",
+      "quantity": "Quantity",
+      "weightPerUnit": "Weight/Unit",
+      "defaultPackage": "Default Package",
+      "addPackage": "➕ Add Package",
+      "pricingManual": "Manual",
+      "pricingAuto": "Auto",
+      "pricing": "Pricing:"
+    },
+    "subRecipes": {
+      "title": "📋 Sub-Recipes Management",
+      "ingredients": "Ingredients:",
+      "nestedSubRecipes": "Nested Sub-Recipes:",
+      "totalCost": "💰 Total Cost:",
+      "quantity": "Qty:"
+    },
+    "midPrep": {
+      "title": "🥘 Mid-Prep Recipes Management",
+      "directIngredients": "Direct Ingredients:",
+      "subRecipes": "Sub-Recipes:",
+      "totalCost": "💰 Total Cost:",
+      "quantity": "Qty:"
+    },
+    "cakes": {
+      "title": "🍰 Cakes Management",
+      "yield": "Yield:",
+      "ingredientsAndSubRecipes": "Ingredients & Sub-Recipes:",
+      "midPrepRecipes": "Mid-Prep Recipes:",
+      "type": "type",
+      "batches": "batches",
+      "cost": "Cost",
+      "totalCostBeforeYield": "💰 Total Cost (Before Yield):",
+      "costAfterYield": "💡 Cost After {yield}% Yield:"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "superAdmin": {
+    "title": "🔧 Super Admin Panel",
+    "subtitle": "⚠️ DANGEROUS OPERATIONS - Use with extreme caution!",
+    "statistics": {
+      "totalSafes": "Total Safes",
+      "unassignedCheques": "Unassigned Cheques",
+      "totalBalance": "Total Balance"
+    },
+    "safeManagement": {
+      "title": "🏦 Individual Safe Management",
+      "balance": "Balance",
+      "resetSafe": "Reset Safe"
+    },
+    "systemOperations": {
+      "title": "🌐 System-Wide Operations",
+      "resetAllSafes": {
+        "title": "⚠️ Reset All Safes",
+        "description": "This will reset ALL safes, remove all cheques from safes, and delete all expenses.",
+        "button": "Reset All Safes"
+      },
+      "deleteAllCheques": {
+        "title": "🗑️ Delete All Cheques",
+        "description": "EXTREMELY DANGEROUS: This will permanently delete ALL cheques, expenses, and settlements.",
+        "button": "Delete All Cheques"
+      },
+      "processing": "Processing..."
+    },
+    "confirmation": {
+      "title": "⚠️ Confirm Dangerous Operation",
+      "message": "Are you sure you want to",
+      "warning": "This action cannot be undone!",
+      "cancel": "Cancel",
+      "proceed": "Yes, Proceed"
+    },
+    "footer": {
+      "warning": "⚠️ WARNING: These operations are for testing and emergency use only. Always backup your database before using these features!"
+    },
+    "messages": {
+      "errorLoadingStats": "Error loading system statistics",
+      "safeResetSuccess": "Safe \"{safeName}\" has been reset successfully!",
+      "safeResetFailed": "Failed to reset safe",
+      "allSafesResetSuccess": "All safes have been reset!",
+      "allSafesResetFailed": "Failed to reset all safes",
+      "allChequesDeletedSuccess": "All cheques deleted!",
+      "allChequesDeletedFailed": "Failed to delete all cheques"
+    }
+  },
+  "inventoryManagement": {
+    "title": "🏭 Recipe Management",
+    "subtitle": "Add Items, Sub-Recipes, and Cakes",
+    "tabs": {
+      "items": "📦 Add Items",
+      "subRecipes": "🧪 Sub-Recipes",
+      "cakes": "🎂 Cakes"
+    },
+    "items": {
+      "title": "✨ Add New Item",
+      "itemName": "Item Name",
+      "itemNamePlaceholder": "Enter item name",
+      "baseUnit": "Base Unit",
+      "baseUnitPlaceholder": "e.g., gram, liter, piece",
+      "pricePerBaseUnit": "Price per Base Unit",
+      "category": "Category",
+      "noCategory": "No Category",
+      "defaultCategory": "Items (default)",
+      "packagingOptions": "📦 Packaging Options",
+      "addPackageType": "+ Add Package Type",
+      "packageName": "Package Name",
+      "packageNamePlaceholder": "e.g., Box of 12",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "unitPlaceholder": "e.g., box, carton",
+      "weightPerItem": "Weight per Item",
+      "price": "Price",
+      "defaultPackage": "Default",
+      "removePackage": "✖ Remove",
+      "createItem": "✨ Create Item",
+      "validationErrors": {
+        "nameAndUnitRequired": "Please enter item name and base unit",
+        "createSuccess": "Item created successfully!",
+        "createError": "Error creating item"
+      }
+    },
+    "subRecipes": {
+      "title": "🧪 Create Sub-Recipe",
+      "subRecipeName": "Sub-Recipe Name",
+      "subRecipeNamePlaceholder": "Enter sub-recipe name",
+      "ingredients": "📦 Ingredients",
+      "addIngredient": "+ Add Ingredient",
+      "nestedSubRecipes": "🧪 Nested Sub-Recipes",
+      "addSubRecipe": "+ Add Sub-Recipe",
+      "selectIngredient": "Select ingredient...",
+      "selectSubRecipe": "Select sub-recipe...",
+      "quantity": "Quantity",
+      "removeIngredient": "✖ Remove",
+      "removeSubRecipe": "✖ Remove",
+      "createSubRecipe": "🧪 Create Sub-Recipe",
+      "validationErrors": {
+        "nameRequired": "Please enter sub-recipe name",
+        "addItemsRequired": "Please add at least one ingredient or sub-recipe",
+        "createSuccess": "Sub-recipe created successfully!",
+        "createError": "Error creating sub-recipe"
+      }
+    },
+    "cakes": {
+      "title": "🎂 Create Cake",
+      "cakeName": "Cake Name",
+      "cakeNamePlaceholder": "Enter cake name",
+      "percentYield": "Percent Yield (%)",
+      "ingredients": "📦 Direct Ingredients",
+      "addIngredient": "+ Add Ingredient",
+      "subRecipes": "🧪 Sub-Recipes",
+      "addSubRecipe": "+ Add Sub-Recipe",
+      "midPreps": "🥘 Mid-Prep Recipes",
+      "addMidPrep": "+ Add Mid-Prep",
+      "selectIngredient": "Select ingredient...",
+      "selectSubRecipe": "Select sub-recipe...",
+      "selectMidPrep": "Select mid-prep recipe...",
+      "quantity": "Quantity",
+      "removeIngredient": "✖ Remove",
+      "removeSubRecipe": "✖ Remove",
+      "removeMidPrep": "✖ Remove",
+      "createCake": "🎂 Create Cake",
+      "validationErrors": {
+        "nameRequired": "Please enter cake name",
+        "addItemsRequired": "Please add at least one ingredient, sub-recipe, or mid-prep",
+        "createSuccess": "Cake created successfully!",
+        "createError": "Error creating cake"
+      }
+    }
+  },
+  "chequeManagement": {
+    "title": "💳 Cheque Management",
+    "selectSafe": "Select Safe",
+    "selectSafePlaceholder": "-- Select a Safe --",
+    "balance": "Balance",
+    "chequesInSafe": "Cheques in Selected Safe",
+    "loadingCheques": "Loading cheques...",
+    "noChequesFound": "No cheques found in this safe",
+    "tabs": {
+      "activeCheques": "Active Cheques",
+      "settledCheques": "Settled Cheques",
+      "createChequeBatch": "Create Cheque Batch",
+      "chequeRecipeBook": "Cheque Recipe Book"
+    },
+    "buttons": {
+      "refreshing": "Refreshing...",
+      "refreshData": "Refresh Data",
+      "earlySettlement": "Early Settlement",
+      "earlySettlementTooltip": "Settle cheque early with bank deposit",
+      "settle": "Settle",
+      "dismiss": "Dismiss",
+      "cancel": "Cancel",
+      "createEarlySettlement": "Create Early Settlement",
+      "creatingSettlement": "Creating Settlement...",
+      "print": "Print"
+    },
+    "chequesList": {
+      "headers": {
+        "bankAccount": "Bank Account",
+        "issuedTo": "Issued To",
+        "chequeNumber": "Cheque #",
+        "amount": "Amount",
+        "used": "Used",
+        "remaining": "Remaining",
+        "status": "Status",
+        "description": "Description",
+        "actions": "Actions"
+      }
+    },
+    "table": {
+      "chequeNumber": "Cheque #",
+      "amount": "Amount",
+      "used": "Used",
+      "remaining": "Remaining",
+      "status": "Status",
+      "description": "Description",
+      "settlementType": "Settlement Type",
+      "actions": "Actions"
+    },
+    "settlementTypes": {
+      "supplierPayment": "Supplier Payment",
+      "overspentSettlement": "Overspent Settlement",
+      "earlySettlement": "Early Settlement",
+      "standardSettlement": "Standard Settlement"
+    },
+    "status": {
+      "settled": "Settled",
+      "overspent": "Overspent",
+      "fullyUsed": "Fully Used",
+      "partiallyUsed": "Partially Used",
+      "available": "Available"
+    },
+    "success": {
+      "title": "Early Settlement Completed Successfully!",
+      "message": "The cheque has been marked as settled and the safe balance has been updated."
+    },
+    "settlement": {
+      "manualNotes": "Manual settlement from ChequeManagement",
+      "settledSuccessfully": "Settled Successfully",
+      "settlementChequeId": "Settlement Cheque ID",
+      "refreshToSeeDetails": "Click \"Refresh Data\" to see settlement cheque details",
+      "settleOverspentTitle": "🔴 Settle Overspent Cheque",
+      "overspentMessage": "Cheque #{chequeNumber} is overspent by ${overspentAmount}",
+      "breakdown": "Amount: ${amount} • Expenses: ${expenses} • Overspent: ${overspent}",
+      "selectUnassignedCheque": "📋 Select an unassigned cheque to settle this overspent amount:",
+      "settlementExplanation": "The selected cheque will receive the exact overspent amount (${overspentAmount}) as its value.",
+      "noUnassignedCheques": "No unassigned cheques available for settlement",
+      "chequeDetails": "Status: {status} • Current Amount: ${amount}",
+      "willReceive": "Will receive",
+      "clickToSettle": "Click to settle"
+    },
+    "earlySettlement": {
+      "title": "🏦 Early Settlement",
+      "chequeNumber": "Cheque",
+      "amount": "Amount",
+      "depositNumber": "Bank Deposit Number",
+      "depositNumberPlaceholder": "DEP123456",
+      "depositAmount": "Deposit Amount",
+      "depositDate": "Deposit Date",
+      "bankReference": "Bank Reference (Optional)",
+      "bankReferencePlaceholder": "REF789",
+      "notes": "Notes",
+      "notesPlaceholder": "Additional notes about this early settlement...",
+      "defaultNotes": "Early settlement for cheque {chequeNumber}",
+      "autoApproved": "Auto-approved - no admin approval required",
+      "successMessage": "Cheque {chequeNumber} has been settled with deposit {depositNumber} for ${amount}{fileCount, plural, =0 {} one { with # file uploaded} other { with # files uploaded}}."
+    },
+    "fileUpload": {
+      "title": "Upload Deposit Screenshot/Documents",
+      "supportedFormats": "Supported: JPG, PNG, GIF, WebP, PDF, DOC, DOCX (Max 10MB each)",
+      "selectedFiles": "Selected Files",
+      "invalidFileType": "Invalid file type: {fileName}. Allowed types: JPG, PNG, GIF, WebP, PDF, DOC, DOCX",
+      "fileTooLarge": "File too large: {fileName}. Maximum size is 10MB",
+      "uploadFailed": "Warning: Failed to upload file {fileName}. Settlement was created but file upload failed."
+    },
+    "validation": {
+      "depositNumber": "Please enter a deposit number",
+      "depositAmount": "Please enter a valid deposit amount"
+    },
+    "messages": {
+      "settlementCompleted": "Settlement Completed Successfully!",
+      "settlementSuccess": "Cheque {chequeNumber} settled using {settlingChequeNumber}",
+      "summary": "Summary",
+      "overspentCheque": "Overspent Cheque",
+      "settlementCheque": "Settlement Cheque",
+      "settlementAmount": "Settlement Amount",
+      "settlementSuccessMessage": "The overspent amount has been fully covered and both cheques have been updated in the system.",
+      "settlementFailed": "Failed to settle cheque. ",
+      "settlementFailedTitle": "Settlement Failed",
+      "pleaseTryAgain": "Please try again.",
+      "earlySettlementFailed": "Failed to create early settlement. ",
+      "earlySettlementFailedTitle": "Early Settlement Failed"
+    }
+  },
+  "warehouse": {
+    "description": "Manage your warehouse locations and inventory",
+    "warehouses": {
+      "title": "Warehouse Management",
+      "createNew": "Create New Warehouse",
+      "editWarehouse": "Edit Warehouse",
+      "deleteWarehouse": "Delete Warehouse",
+      "deleteConfirm": "Are you sure you want to delete this warehouse? This action cannot be undone and will remove all associated stock data.",
+      "name": "Warehouse Name",
+      "location": "Location",
+      "warehouseId": "Warehouse ID",
+      "nameRequired": "Warehouse name is required",
+      "createSuccess": "Warehouse created successfully",
+      "updateSuccess": "Warehouse updated successfully",
+      "deleteSuccess": "Warehouse deleted successfully"
+    },
+    "stockManagement": {
+      "title": "Stock Management",
+      "selectWarehouse": "Select Warehouse",
+      "selectWarehousePlaceholder": "Select warehouse",
+      "search": "Search",
+      "searchPlaceholder": "Search ingredients...",
+      "category": "Category",
+      "allCategories": "All categories",
+      "stockLevel": "Stock Level",
+      "allItems": "All items",
+      "empty": "Empty",
+      "low": "Low",
+      "lowStock": "Low stock",
+      "normal": "Normal",
+      "high": "High",
+      "highStock": "High stock",
+      "bulkReason": "Bulk Reason",
+      "bulkReasonPlaceholder": "Default reason for updates",
+      "export": "Export",
+      "pendingUpdates": "{count} pending updates",
+      "pendingStockUpdates": "Pending Stock Updates",
+      "itemsReadyToUpdate": "{count} items ready to be updated",
+      "clearAll": "Clear All",
+      "applyUpdates": "Apply Updates",
+      "applying": "Applying...",
+      "loadingItems": "Loading stock items...",
+      "noItemsFoundFilter": "No items found",
+      "noItemsInWarehouse": "This warehouse has no stock items",
+      "tryAdjustingFilters": "Try adjusting your filters",
+      "pendingUpdate": "Pending Update",
+      "current": "Current",
+      "pending": "Pending",
+      "reason": "Reason",
+      "cancel": "Cancel",
+      "ingredient": "Ingredient",
+      "currentStock": "Current Stock",
+      "unit": "Unit",
+      "minimum": "Minimum",
+      "maximum": "Maximum",
+      "packageSize": "Package Size",
+      "min": "Min",
+      "max": "Max",
+      "package": "Package",
+      "defaultUnit": "units",
+      "uncategorized": "Uncategorized",
+      "failedToLoad": "Failed to load stock items",
+      "noItemsFound": "No stock items found for this warehouse",
+      "loadedItems": "Loaded {count} stock items",
+      "packageSizeNotDefined": "Package size not defined for this item",
+      "addedPackage": "Added package",
+      "removedPackage": "Removed package",
+      "manualUpdate": "Manual update",
+      "noUpdatesToApply": "No stock updates to apply",
+      "provideReasons": "Please provide reasons for all stock updates",
+      "field": "Field",
+      "validationError": "Validation error",
+      "failedToUpdate": "Failed to update stock",
+      "item": "Item {id}",
+      "unknownError": "Unknown error",
+      "successfullyUpdated": "Successfully updated {count} items",
+      "partiallyUpdated": "Updated {successCount} items, {errorCount} failed. Errors: {errors}",
+      "allUpdatesFailed": "All updates failed. Errors: {errors}",
+      "exportSuccess": "Stock data exported successfully"
+    }
+  },
+  "bankAccountManagement": {
+    "wizard": {
+      "accountNumber": "Account Number",
+      "accountNumberPlaceholder": "e.g., ACC-2024-001",
+      "bankName": "Bank Name",
+      "bankNamePlaceholder": "e.g., First National Bank"
+    }
+  },
+  "roles": {
+    "selectRole": "Select User Role",
+    "selectedRoleDetails": "Selected Role Details",
+    "keyPermissions": "Key Permissions",
+    "names": {
+      "superAdmin": "Super Administrator",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "accountant": "Accountant",
+      "warehouseManager": "Warehouse Manager",
+      "inventoryStaff": "Inventory Staff",
+      "financeStaff": "Finance Staff",
+      "viewer": "Viewer"
+    },
+    "descriptions": {
+      "superAdmin": "Full system access with all permissions including system administration",
+      "admin": "Administrative access to most features with user management capabilities",
+      "manager": "Management access with limited administrative features and oversight capabilities",
+      "accountant": "Finance and accounting focused access with full expense and cheque management",
+      "warehouseManager": "Warehouse and Recipe Management with full stock control capabilities",
+      "inventoryStaff": "Recipe Management and stock operations with limited administrative access",
+      "financeStaff": "Finance operations and expense management with reporting capabilities",
+      "viewer": "Read-only access to basic features with limited data visibility"
+    },
+    "permissions": {
+      "fullAccess": "Full Access",
+      "userManagement": "User Management",
+      "fullFinance": "Full Finance",
+      "financeAccess": "Finance Access",
+      "reports": "Reports",
+      "warehouse": "Warehouse",
+      "inventory": "Inventory",
+      "readOnly": "Read Only"
+    }
+  },
+  "dashboard": {
+    "title": "🍰 Kbs Cake Studio - Management System",
+    "welcome": "Welcome,",
+    "logout": "Logout",
+    "noAccess": "No Access",
+    "noAccessDescription": "You don't have permission to access this feature.",
+    "noAccessTitle": "No System Access",
+    "noAccessMessage": "Your account doesn't have permission to access any features. Please contact an administrator."
+  },
+  "access": {
+    "denied": "Access Denied",
+    "deniedMessage": "You don't have permission to access this page or feature.",
+    "insufficientPermissions": "Insufficient Permissions",
+    "insufficientPermissionsMessage": "You don't have the required permissions for this action.",
+    "contactAdmin": "Please contact an administrator if you believe this is an error."
+  },
+  "bankHierarchy": {
+    "title": "Banks & Accounts Management",
+    "subtitle": "Comprehensive management of banks, accounts and cheque books",
+    "addBank": "Add New Bank",
+    "searchPlaceholder": "Search banks...",
+    "noBanks": "No banks found. Start by adding your first bank.",
+    "bankAccounts": "Bank Accounts",
+    "addAccount": "Add Account",
+    "noAccounts": "No bank accounts",
+    "chequeBooks": "Cheque Books",
+    "addChequeBook": "Add Cheque Book",
+    "noChequeBooks": "No cheque books",
+    "createBank": "Create Bank",
+    "editBank": "Edit Bank",
+    "createAccount": "Create Bank Account",
+    "editAccount": "Edit Bank Account",
+    "createChequeBook": "Create Cheque Book",
+    "bank": {
+      "name": "Bank Name",
+      "namePlaceholder": "e.g., National Bank of Egypt",
+      "shortName": "Short Name",
+      "shortNamePlaceholder": "e.g., NBE",
+      "swift": "SWIFT Code",
+      "country": "Country",
+      "address": "Address",
+      "addressPlaceholder": "Main branch address",
+      "phone": "Phone",
+      "email": "Email",
+      "website": "Website"
+    },
+    "account": {
+      "bank": "Bank",
+      "selectBank": "Select Bank",
+      "name": "Account Name",
+      "namePlaceholder": "e.g., Main Current Account",
+      "number": "Account Number",
+      "iban": "IBAN",
+      "branch": "Branch",
+      "branchPlaceholder": "e.g., Tahrir Branch",
+      "branchCode": "Branch Code",
+      "type": "Account Type",
+      "types": {
+        "checking": "Checking",
+        "savings": "Savings",
+        "business": "Business"
+      },
+      "currency": "Currency",
+      "balance": "Current Balance",
+      "openingBalance": "Opening Balance",
+      "overdraft": "Overdraft Limit",
+      "overdraftLimit": "Overdraft Limit"
+    },
+    "chequeBook": {
+      "bookNumber": "Book Number",
+      "startNumber": "Start Number",
+      "endNumber": "End Number",
+      "prefix": "Prefix",
+      "series": "Series",
+      "type": "Book Type",
+      "types": {
+        "standard": "Standard",
+        "business": "Business",
+        "personal": "Personal"
+      },
+      "status": {
+        "active": "Active",
+        "closed": "Closed",
+        "cancelled": "Cancelled"
+      },
+      "used": "Used"
+    },
+    "confirmDelete": {
+      "bank": "Are you sure you want to delete this bank?",
+      "account": "Are you sure you want to delete this bank account?"
+    },
+    "messages": {
+      "fetchFailed": "Failed to fetch data",
+      "fillRequired": "Please fill in all required fields",
+      "bankCreated": "Bank created successfully",
+      "bankUpdated": "Bank updated successfully",
+      "bankDeleted": "Bank deleted successfully",
+      "accountCreated": "Bank account created successfully",
+      "accountUpdated": "Bank account updated successfully",
+      "accountDeleted": "Bank account deleted successfully",
+      "chequeBookCreated": "Cheque book created successfully"
+    }
+  },
+  "purchaseOrders": {
+    "title": "Purchase Orders",
+    "subtitle": "Manage supplier orders and procurement",
+    "createOrder": "Create Purchase Order",
+    "loading": "Loading purchase orders...",
+    "searchPlaceholder": "Search by supplier or PO number...",
+    "noOrders": "No purchase orders",
+    "noOrdersDescription": "Get started by creating a new purchase order.",
+    "newOrder": "New Purchase Order",
+    
+    "stats": {
+      "totalOrders": "Total Orders",
+      "received": "Received",
+      "pending": "Pending",
+      "totalValue": "Total Value"
+    },
+    
+    "filters": {
+      "allStatus": "All Status",
+      "allSuppliers": "All Suppliers",
+      "applyFilters": "Apply Filters"
+    },
+    
+    "table": {
+      "poDetails": "PO Details",
+      "supplier": "Supplier",
+      "amount": "Amount",
+      "status": "Status",
+      "priority": "Priority",
+      "actions": "Actions",
+      "poNumber": "PO #",
+      "orderDate": "Order Date",
+      "itemCount": "Item Count"
+    },
+    
+    "status": {
+      "pending": "Pending",
+      "received": "Received",
+      "cancelled": "Cancelled",
+      "draft": "Draft"
+    },
+    
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    
+    "actions": {
+      "viewDetails": "View Details",
+      "printOrder": "Print Purchase Order",
+      "markReceived": "Mark as Received",
+      "generateCheque": "Generate Cheque",
+      "cancel": "Cancel"
+    },
+    
+    "details": {
+      "title": "Purchase Order #{id}",
+      "orderInfo": "Order Information",
+      "supplierInfo": "Supplier Information",
+      "status": "Status:",
+      "priority": "Priority:",
+      "created": "Created:",
+      "expectedDelivery": "Expected Delivery:",
+      "supplierName": "Name:",
+      "phone": "Phone:",
+      "email": "Email:",
+      "currency": "Currency:",
+      "orderItems": "Order Items ({count})",
+      "item": "Item",
+      "quantity": "Quantity",
+      "unitPrice": "Unit Price",
+      "total": "Total",
+      "totalAmount": "Total Amount:",
+      "notes": "Notes"
+    },
+    
+    "chequeGeneration": {
+      "title": "Generate Cheque",
+      "orderDetails": "Purchase Order Details",
+      "selectBankAccount": "Select Bank Account *",
+      "selectSafe": "Select Safe *",
+      "selectBankAccountOption": "Select a bank account...",
+      "selectSafeOption": "Select a safe...",
+      "info": "This will create and automatically print an Arabic cheque for this purchase order.",
+      "generating": "Generating...",
+      "generate": "Generate Cheque"
+    },
+    
+    "create": {
+      "title": "Create Purchase Order",
+      "steps": {
+        "supplier": "Supplier",
+        "items": "Items",
+        "review": "Review"
+      },
+      
+      "step1": {
+        "selectSupplier": "Select Supplier *",
+        "expectedDate": "Expected Delivery Date *",
+        "priority": "Priority",
+        "warehouse": "Warehouse *",
+        "selectWarehouse": "Select warehouse...",
+        "notes": "Notes"
+      },
+      
+      "step2": {
+        "searchItems": "Search for items...",
+        "addItem": "Add Item",
+        "removeItem": "Remove Item",
+        "quantity": "Quantity",
+        "unitPrice": "Unit Price",
+        "total": "Total",
+        "package": "Package",
+        "templates": {
+          "load": "Load Template",
+          "save": "Save as Template",
+          "loading": "Loading...",
+          "noTemplate": "No template saved yet for this supplier",
+          "loaded": "Template loaded",
+          "saved": "Template saved",
+          "addItemsFirst": "Add items before saving template"
+        }
+      },
+      
+      "step3": {
+        "orderSummary": "Order Summary",
+        "totalItems": "Total Items:",
+        "totalQuantity": "Total Quantity:",
+        "totalAmount": "Total Amount:",
+        "itemsList": "Items List"
+      },
+      
+      "validation": {
+        "selectSupplier": "Please select a supplier",
+        "addItems": "Please add at least one item",
+        "expectedDate": "Please select an expected delivery date",
+        "warehouse": "Warehouse is required"
+      },
+      
+      "buttons": {
+        "next": "Next",
+        "previous": "Previous",
+        "submit": "Create Purchase Order",
+        "submitting": "Creating..."
+      },
+      
+      "messages": {
+        "created": "Purchase order created successfully",
+        "failed": "Failed to create purchase order",
+        "networkError": "Network error occurred"
+      }
+    }
+  },
+  "recipeManagement": {
+    "title": "Recipe & Ingredient Management",
+    "subtitle": "Manage ingredients, sub-recipes, mid-prep recipes, and cakes",
+    "loading": "Loading data...",
+    "searchPlaceholder": "Search ingredients...",
+    "noResults": "No results found",
+    "createSuccess": "Created successfully!",
+    "updateSuccess": "Updated successfully!",
+    "deleteSuccess": "Deleted successfully!",
+    "deleteConfirm": "Are you sure you want to delete",
+    "tabs": {
+      "items": "Ingredients",
+      "subRecipes": "Sub-Recipes",
+      "midPrepRecipes": "Mid-Prep Recipes",
+      "cakes": "Cakes"
+    },
+    "items": {
+      "title": "Ingredient Management",
+      "createNew": "Add New Ingredient",
+      "searchTitle": "Search Items",
+      "searchPlaceholder": "Search items...",
+      "filterByCategory": "Filter by category",
+      "allCategories": "All Categories",
+      "perPage": "per page",
+      "reset": "Reset",
+      "clear": "Clear",
+      "showPackages": "Show Packages",
+      "hidePackages": "Hide Packages",
+      "noItems": "No Items Found",
+      "noItemsSearch": "No items match your current search criteria. Try adjusting your filters or search terms.",
+      "noItemsSystem": "No items are available in the system. This could mean:",
+      "noItemsReasons": [
+        "The backend server is not running",
+        "The database is empty",
+        "There's a connection issue",
+        "The API endpoint might be incorrect"
+      ],
+      "reloadData": "Reload Data",
+      "clearFilters": "Clear Filters",
+      "uncategorized": "Uncategorized",
+      "delete": "Delete",
+      "updateItem": "Update Item",
+      "fields": {
+        "name": "Name",
+        "category": "Category",
+        "unit": "Unit",
+        "pricePerUnit": "Price per Unit",
+        "stockQuantity": "Stock Quantity",
+        "totalValue": "Total Value",
+        "actions": "Actions",
+        "noCategory": "No Category"
+      },
+      "packages": {
+        "title": "Packages",
+        "addNew": "Add New Package",
+        "name": "Package Name",
+        "quantity": "Quantity",
+        "price": "Price",
+        "isDefault": "Default Package",
+        "noPackages": "No packages defined for this ingredient",
+        "delete": "Delete Package",
+        "packageManagement": "Package Management",
+        "existingPackages": "Existing Packages",
+        "addNewPackage": "Add New Package",
+        "packageName": "Package Name",
+        "weightPerUnit": "Weight per Unit",
+        "defaultPackage": "Default Package",
+        "addPackage": "Add Package",
+        "pricingManual": "Manual",
+        "pricingAuto": "Auto",
+        "pricing": "Pricing"
+      },
+      "statistics": {
+        "title": "Statistics",
+        "totalItems": "Total Items",
+        "totalValue": "Total Value",
+        "lowStock": "Low Stock",
+        "categories": "Categories Used",
+        "averagePrice": "Average Price"
+      }
+    },
+    "subRecipes": {
+      "title": "Sub-Recipes",
+      "createNew": "Create New Sub-Recipe",
+      "searchPlaceholder": "Search sub-recipes...",
+      "noRecipes": "No sub-recipes found. Create your first sub-recipe to get started!",
+      "noRecipesSearch": "No sub-recipes match your search.",
+      "editRecipe": "Edit Recipe",
+      "deleteRecipe": "Delete Recipe",
+      "totalCost": "Total Cost",
+      "ingredients": "Ingredients",
+      "nestedSubRecipes": "Nested Sub-Recipes",
+      "fields": {
+        "name": "Sub-Recipe Name",
+        "ingredients": "Ingredients",
+        "subRecipes": "Sub-Recipes",
+        "selectIngredient": "Select ingredient...",
+        "selectSubRecipe": "Select sub-recipe...",
+        "quantity": "Quantity",
+        "addIngredient": "Add Ingredient",
+        "addSubRecipe": "Add Sub-Recipe"
+      },
+      "create": {
+        "title": "Create New Sub-Recipe",
+        "nameRequired": "Recipe name is required",
+        "ingredientRequired": "At least one ingredient is required",
+        "liveCost": "Live Cost"
+      }
+    },
+    "midPrepRecipes": {
+      "title": "Mid-Prep Recipes",
+      "createNew": "Create Mid-Prep Recipe",
+      "searchPlaceholder": "Search mid-prep recipes...",
+      "noRecipes": "No mid-prep recipes found. Create your first recipe to get started!",
+      "noRecipesSearch": "No mid-prep recipes match your search.",
+      "editRecipe": "Edit Recipe",
+      "deleteRecipe": "Delete Recipe",
+      "totalCost": "Total Cost",
+      "directIngredients": "Direct Ingredients",
+      "subRecipes": "Sub-Recipes",
+      "fields": {
+        "name": "Mid-Prep Recipe Name",
+        "ingredients": "Ingredients",
+        "subRecipes": "Sub-Recipes",
+        "selectIngredient": "Select ingredient...",
+        "selectSubRecipe": "Select sub-recipe...",
+        "quantity": "Quantity",
+        "addIngredient": "Add Ingredient",
+        "addSubRecipe": "Add Sub-Recipe"
+      },
+      "create": {
+        "title": "Create New Mid-Prep Recipe",
+        "nameRequired": "Recipe name is required",
+        "componentRequired": "At least one ingredient or sub-recipe is required",
+        "liveCost": "Live Cost"
+      }
+    },
+    "cakes": {
+      "title": "Cakes",
+      "createNew": "Create New Cake",
+      "searchPlaceholder": "Search cakes...",
+      "noCakes": "No cakes found. Create your first cake to get started!",
+      "noCakesSearch": "No cakes match your search.",
+      "editCake": "Edit Cake",
+      "deleteCake": "Delete Cake",
+      "totalCost": "Total Cost",
+      "totalCostBeforeYield": "Total Cost (Before Yield)",
+      "costAfterYield": "Cost After Yield",
+      "pricePerUnit": "Price per Unit",
+      "yield": "Yield",
+      "ingredients": "Ingredients",
+      "subRecipes": "Sub-Recipes",
+      "midPreps": "Mid-Prep Recipes",
+      "fields": {
+        "name": "Cake Name",
+        "percentYield": "Yield Percentage (%)",
+        "ingredients": "Ingredients",
+        "subRecipes": "Sub-Recipes",
+        "midPreps": "Mid-Prep Recipes",
+        "selectIngredient": "Select ingredient...",
+        "selectSubRecipe": "Select sub-recipe...",
+        "selectMidPrep": "Select mid-prep recipe...",
+        "quantity": "Quantity",
+        "addIngredient": "Add Ingredient",
+        "addSubRecipe": "Add Sub-Recipe",
+        "addMidPrep": "Add Mid-Prep Recipe"
+      },
+      "create": {
+        "title": "Create New Cake",
+        "nameRequired": "Cake name is required",
+        "componentRequired": "At least one ingredient, sub-recipe, or mid-prep recipe is required",
+        "liveCost": "Live Cost"
+      }
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "create": "Create",
+      "add": "Add",
+      "remove": "Remove",
+      "clear": "Clear",
+      "search": "Search",
+      "loading": "Loading...",
+      "loadingEdit": "Loading edit data...",
+      "quantity": "Qty",
+      "creating": "Creating...",
+      "cancel": "Cancel",
+      "updating": "Updating..."
+    },
+    "modals": {
+      "editSubRecipe": "Edit Sub-Recipe",
+      "editMidPrep": "Edit Mid-Prep Recipe",
+      "editCake": "Edit Cake",
+      "createSubRecipe": "Create New Sub-Recipe",
+      "createMidPrep": "Create New Mid-Prep Recipe",
+      "createCake": "Create New Cake"
+    },
+    "search": {
+      "ingredients": "Search ingredients...",
+      "subRecipes": "Search sub-recipes...",
+      "midPreps": "Search mid-prep recipes..."
+    },
+    "pagination": {
+      "page": "Page",
+      "of": "of",
+      "itemsPerPage": "items per page",
+      "showing": "Showing",
+      "to": "to",
+      "total": "total"
+    }
+  }
+} 
