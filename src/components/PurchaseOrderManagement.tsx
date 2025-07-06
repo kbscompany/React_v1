@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Eye, Edit, Trash2, FileText, CreditCard, Package, Calendar, DollarSign, User, AlertCircle, CheckCircle, Printer } from 'lucide-react';
 import CreatePurchaseOrderForm from './CreatePurchaseOrderForm';
 import { useTranslation } from 'react-i18next';
+import { getAuthToken, getAuthHeaders } from '../utils/auth';
 
 interface Supplier {
   id: number;
@@ -92,15 +93,12 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchPurchaseOrders = async () => {
     try {
-      const token = localStorage.getItem('token');
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
       if (supplierFilter) params.append('supplier_id', supplierFilter);
       
-      const response = await fetch(`/api/purchase-orders/?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`http://localhost:8000/api/purchase-orders/?${params.toString()}`, {
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -113,11 +111,8 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/purchase-orders/suppliers', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch('http://localhost:8000/api/purchase-orders/suppliers', {
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -131,7 +126,7 @@ const PurchaseOrderManagement: React.FC = () => {
   const fetchBankAccounts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/bank-accounts-simple', {
+      const response = await fetch('http://localhost:8000/bank-accounts-simple', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -153,11 +148,8 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSafes = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/safes/', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch('http://localhost:8000/safes-simple', {
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();

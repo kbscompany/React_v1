@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, Plus, Trash2, Package, Calculator, AlertCircle, CheckCircle } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
+import { getAuthToken, getAuthHeaders } from '../utils/auth';
 import 'react-toastify/dist/ReactToastify.css';
 
 interface Supplier {
@@ -102,10 +103,14 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
-        const res = await fetch('/api/warehouse/warehouses');
+        const res = await fetch('http://localhost:8000/api/warehouse/warehouses', {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           setWarehouses(data);
+        } else {
+          console.error('Failed to fetch warehouses:', res.status);
         }
       } catch (err) {
         console.error('Error fetching warehouses', err);
@@ -125,15 +130,14 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
 
   const fetchSuppliers = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/purchase-orders/suppliers', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
         setSuppliers(data);
+      } else {
+        console.error('Failed to fetch suppliers:', response.status);
       }
     } catch (error) {
       console.error('Error fetching suppliers:', error);
@@ -145,11 +149,8 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
     
     setSearchLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/purchase-orders/items/search?q=${encodeURIComponent(searchTerm)}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -166,11 +167,8 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
   const fetchSupplierPackages = async () => {
     if (!selectedSupplier) return;
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/purchase-orders/suppliers/${selectedSupplier.id}/packages`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -270,13 +268,9 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
         }))
       };
 
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/purchase-orders/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(orderData)
       });
 
@@ -322,10 +316,9 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
     if (!selectedSupplier) return;
     setTemplateLoading(true);
     try {
-      const token = localStorage.getItem('token');
       // 1. get template
       const tplRes = await fetch(`/api/purchase-orders/suppliers/${selectedSupplier.id}/po-template`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: getAuthHeaders()
       });
       if (!tplRes.ok) {
         toast.error(t('purchaseOrders.create.step2.templates.failed'));
@@ -339,7 +332,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
       // 2. fetch item details
       const ids = tplData.items.map((i: any) => i.item_id).join(',');
       const itemsRes = await fetch(`/api/purchase-orders/items/by-ids?ids=${ids}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: getAuthHeaders()
       });
       if (!itemsRes.ok) {
         toast.error(t('purchaseOrders.create.step2.templates.failed'));
@@ -383,16 +376,12 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
     }
     setTemplateLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const payload = {
         items: items.map(i => ({ item_id: i.supplier_item_id, default_quantity: i.quantity }))
       };
       const res = await fetch(`/api/purchase-orders/suppliers/${selectedSupplier.id}/po-template`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
       if (res.ok) {

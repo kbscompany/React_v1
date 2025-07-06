@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { getAuthToken } from '../utils/auth';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -8,11 +9,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Helper to read token (tries localStorage first then sessionStorage)
-const getAuthToken = () => {
-  return localStorage.getItem('token') || sessionStorage.getItem('token');
-};
 
 // Add auth token to requests
 api.interceptors.request.use(

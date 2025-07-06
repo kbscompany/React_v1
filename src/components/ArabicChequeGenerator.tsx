@@ -18,11 +18,7 @@ const FIELD_DEFS: ChequeField[] = [
   { key: 'beneficiary_name', label: 'اسم المستفيد' },
   { key: 'issue_date', label: 'تاريخ الإصدار' },
   { key: 'company_table', label: 'جدول معلومات الشركة' },
-  { key: 'note_1', label: 'محرر الشيك' },
-  { key: 'note_2', label: 'المستلم' },
-  { key: 'note_3', label: 'التاريخ' },
-  { key: 'expense_id', label: 'رقم المرايا' },
-
+  { key: 'note_1', label: 'محرر الشيك' }
 ];
 
 const ArabicChequeGenerator = () => {
@@ -59,6 +55,20 @@ const ArabicChequeGenerator = () => {
   // Track system status
   const [systemStatus, setSystemStatus] = useState(null);
 
+  // Handle manual coordinate changes
+  const handleManualCoordinateChange = (fieldKey: string, coordinate: 'x' | 'y', value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      setPositions(prev => ({
+        ...prev,
+        [fieldKey]: {
+          ...prev[fieldKey],
+          [coordinate]: numValue
+        }
+      }));
+    }
+  };
+
   // Handle global mouse move while dragging (this was missing!)
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -67,9 +77,8 @@ const ArabicChequeGenerator = () => {
       let newX = e.clientX - rect.left - dragging.offsetX;
       let newY = e.clientY - rect.top - dragging.offsetY;
       
-      // Clamp to boundaries (prevent dragging outside)
-      newX = Math.max(0, Math.min(pageWidth - 100, newX)); // 100px min space from right
-      newY = Math.max(0, Math.min(pageHeight - 30, newY)); // 30px min space from bottom
+      // Allow positioning beyond margins - remove clamping restrictions
+      // Users can now position text anywhere, including outside normal page boundaries
       
       setPositions(prev => ({
         ...prev,
@@ -85,9 +94,7 @@ const ArabicChequeGenerator = () => {
       let newX = touch.clientX - rect.left - dragging.offsetX;
       let newY = touch.clientY - rect.top - dragging.offsetY;
       
-      // Clamp to boundaries (prevent dragging outside)
-      newX = Math.max(0, Math.min(pageWidth - 100, newX));
-      newY = Math.max(0, Math.min(pageHeight - 30, newY));
+      // Allow positioning beyond margins - remove clamping restrictions
       
       setPositions(prev => ({
         ...prev,
@@ -293,22 +300,60 @@ const ArabicChequeGenerator = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {FIELD_DEFS.map(field => (
-          <div key={field.key} className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={visibility[field.key] || false}
-              onChange={(e) => setVisibility(prev => ({ ...prev, [field.key]: e.target.checked }))}
-            />
-            <label>{field.label}</label>
-            {field.key === 'company_table' ? (
-              <span className="text-gray-500 text-sm">(جدول ثابت - أعلى الصفحة)</span>
-            ) : (
-              <span>({positions[field.key]?.x ?? 0}, {positions[field.key]?.y ?? 0})</span>
-            )}
-          </div>
-        ))}
+      {/* Field Position Controls with Manual Input */}
+      <div className="mb-6 p-4 bg-white border border-gray-200 rounded-lg">
+        <h3 className="text-lg font-semibold mb-4">⚙️ تحكم في مواضع الحقول</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {FIELD_DEFS.map(field => (
+            <div key={field.key} className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={visibility[field.key] || false}
+                  onChange={(e) => setVisibility(prev => ({ ...prev, [field.key]: e.target.checked }))}
+                  className="w-4 h-4"
+                />
+                <label className="font-medium text-gray-700">{field.label}</label>
+              </div>
+              
+              {field.key === 'company_table' ? (
+                <span className="text-gray-500 text-sm">(جدول ثابت - أعلى الصفحة)</span>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">X (أفقي)</label>
+                    <input
+                      type="number"
+                      value={Math.round(positions[field.key]?.x ?? 0)}
+                      onChange={(e) => handleManualCoordinateChange(field.key, 'x', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      step="1"
+                      placeholder="X"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Y (عمودي)</label>
+                    <input
+                      type="number"
+                      value={Math.round(positions[field.key]?.y ?? 0)}
+                      onChange={(e) => handleManualCoordinateChange(field.key, 'y', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      step="1"
+                      placeholder="Y"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-700">
+            💡 <strong>نصائح للاستخدام:</strong> يمكنك الآن إدخال إحداثيات دقيقة يدوياً أو سحب الحقول في المعاينة أدناه. 
+            يمكن استخدام قيم سالبة أو قيم أكبر من حدود الصفحة لوضع النص خارج الهوامش العادية.
+          </p>
+        </div>
       </div>
 
       {/* PDF preview with overlay */}

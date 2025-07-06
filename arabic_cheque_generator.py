@@ -90,9 +90,8 @@ class ChequePrintPayload(BaseModel):
         for field_name, pos in v.items():
             if not isinstance(pos, dict) or 'x' not in pos or 'y' not in pos:
                 raise ValueError(f"Invalid position format for field {field_name}")
-            # Clamp to page boundaries
-            pos['x'] = max(0, min(595, pos['x']))
-            pos['y'] = max(0, min(842, pos['y']))
+            # Allow coordinates beyond page boundaries - no clamping
+            # This allows text positioning outside normal margins
         return v
 
 
@@ -328,8 +327,9 @@ class ArabicChequeGenerator:
                 page_height = page.rect.height
                 pymupdf_y = page_height - y
                 
-                # Create a wider text box for Arabic text
-                text_rect = fitz.Rect(x - 300, pymupdf_y - 20, x, pymupdf_y + 5)
+                # Create a flexible text box for Arabic text - allow positioning beyond margins
+                # Extend text box further left and right to accommodate text outside normal margins
+                text_rect = fitz.Rect(x - 500, pymupdf_y - 30, x + 100, pymupdf_y + 10)
                 
                 try:
                     # Try to insert with custom font

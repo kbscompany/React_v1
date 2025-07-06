@@ -485,12 +485,46 @@
       "settleOverspent": "Settle Overspent Amount",
       "settledOn": "Settled on",
       "noCheques": "No cheques found for this safe"
-    },
+        },
     "chequeStatus": {
       "settled": "Settled",
-      "overspent": "Overspent", 
+      "overspent": "Overspent",
       "active": "Active",
       "available": "Available"
+    },
+    "issueChequeModal": {
+      "title": "Issue Department Safe Cheque",
+      "availableCheques": "Available cheques",
+      "accessibleSafes": "Accessible safes",
+      "selectChequeNumber": "Select Cheque Number",
+      "searchSelectCheque": "Search and select a cheque...",
+      "chooseChequePlaceholder": "Choose cheque...",
+      "searchChequesPlaceholder": "Search cheques...",
+      "noChequesFound": "No cheques found matching",
+      "bankAccountDetails": "Bank Account Details",
+      "bankAccount": "Bank Account",
+      "chequeAmount": "Cheque Amount",
+      "status": "Status",
+      "safeAssignment": "Safe Assignment (Optional)",
+      "noSafe": "No Safe",
+      "chequeNotAssigned": "Cheque will not be assigned to any safe",
+      "allocationDetails": "Allocation Details",
+      "department": "Department",
+      "departmentPlaceholder": "e.g., Accounting",
+      "issuedTo": "Issued To (Person or Entity)",
+      "issuedToPlaceholder": "e.g., Ahmed Mohammed",
+      "dueDate": "Due Date",
+      "issuing": "Issuing...",
+      "issueCheque": "Issue Cheque",
+      "chequeIssuedSuccess": "Cheque issued successfully!",
+      "validationErrors": {
+        "selectCheque": "Please select a cheque",
+        "selectSafe": "Please select a safe",
+        "enterAmount": "Please enter amount",
+        "enterIssuedTo": "Please enter who the cheque is issued to"
+      },
+      "loadingDataFailed": "Failed to load data",
+      "issueChequeFailed": "Failed to issue cheque"
     },
     "createExpenseModal": {
       "title": "Create New Expense",

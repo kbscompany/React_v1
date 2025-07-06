@@ -1,54 +1,56 @@
 // API Configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export const API_ENDPOINTS = {
   // Main API (authenticated endpoints)
-  MAIN_API: 'http://localhost:8000',
+  MAIN_API: API_BASE_URL,
   
   // Simple API (no authentication required)
-  SIMPLE_API: 'http://localhost:8000',
+  SIMPLE_API: API_BASE_URL,
   
   // Specific endpoints
   safes: {
-    list: 'http://localhost:8000/safes',
-    simple: 'http://localhost:8000/safes-simple'
+    list: `${API_BASE_URL}/safes`,
+    simple: `${API_BASE_URL}/safes-simple`
   },
   cheques: {
-    unassignedSimple: 'http://localhost:8000/cheques-unassigned-simple',
-    createSimple: 'http://localhost:8000/cheques-simple',
-    createRangeSimple: 'http://localhost:8000/cheques/create-range-simple'
+    unassignedSimple: `${API_BASE_URL}/cheques-unassigned-simple`,
+    createSimple: `${API_BASE_URL}/cheques-simple`,
+    createRangeSimple: `${API_BASE_URL}/cheques/create-range-simple`
   },
   bankAccounts: {
-    list: 'http://localhost:8000/bank-accounts',
-    simple: 'http://localhost:8000/bank-accounts-simple',
-    createSimple: 'http://localhost:8000/bank-accounts-simple'
+    list: `${API_BASE_URL}/bank-accounts`,
+    simple: `${API_BASE_URL}/bank-accounts-simple`,
+    createSimple: `${API_BASE_URL}/bank-accounts-simple`
   },
   expenses: {
-    list: 'http://localhost:8000/expenses',
-    create: 'http://localhost:8000/expenses',
-    categories: 'http://localhost:8000/expense-categories'
+    list: `${API_BASE_URL}/expenses`,
+    create: `${API_BASE_URL}/expenses`,
+    categories: `${API_BASE_URL}/expense-categories`
   },
   // New hierarchical expense category endpoints
   expenseCategories: {
     // Simple endpoints (no authentication)
-    simple: 'http://localhost:8000/expense-categories-simple',
-    treeSimple: 'http://localhost:8000/expense-categories-tree-simple',
-    createSimple: 'http://localhost:8000/expense-categories-simple',
-    updateSimple: (id: number) => `http://localhost:8000/expense-categories-simple/${id}`,
-    deleteSimple: (id: number) => `http://localhost:8000/expense-categories-simple/${id}`,
+    simple: `${API_BASE_URL}/expense-categories-simple`,
+    treeSimple: `${API_BASE_URL}/expense-categories-tree-simple`,
+    createSimple: `${API_BASE_URL}/expense-categories-simple`,
+    updateSimple: (id: number) => `${API_BASE_URL}/expense-categories-simple/${id}`,
+    deleteSimple: (id: number) => `${API_BASE_URL}/expense-categories-simple/${id}`,
     
     // Authenticated endpoints (full features)
-    tree: 'http://localhost:8000/categories/tree',
-    list: 'http://localhost:8000/categories',
-    create: 'http://localhost:8000/categories',
-    update: (id: number) => `http://localhost:8000/categories/${id}`,
-    delete: (id: number) => `http://localhost:8000/categories/${id}`,
-    move: 'http://localhost:8000/categories/move',
-    bulkDelete: 'http://localhost:8000/categories/bulk-delete',
-    expenses: (id: number) => `http://localhost:8000/categories/${id}/expenses`,
-    reassignExpenses: 'http://localhost:8000/expenses/reassign',
-    export: 'http://localhost:8000/categories/export',
-    import: 'http://localhost:8000/categories/import'
+    tree: `${API_BASE_URL}/categories/tree`,
+    list: `${API_BASE_URL}/categories`,
+    create: `${API_BASE_URL}/categories`,
+    update: (id: number) => `${API_BASE_URL}/categories/${id}`,
+    delete: (id: number) => `${API_BASE_URL}/categories/${id}`,
+    move: `${API_BASE_URL}/categories/move`,
+    bulkDelete: `${API_BASE_URL}/categories/bulk-delete`,
+    expenses: (id: number) => `${API_BASE_URL}/categories/${id}/expenses`,
+    reassignExpenses: `${API_BASE_URL}/expenses/reassign`,
+    export: `${API_BASE_URL}/categories/export`,
+    import: `${API_BASE_URL}/categories/import`
   }
 }
 
-export const API_BASE_URL = 'http://localhost:8000';
-export const SIMPLE_API_URL = 'http://localhost:8000';
+export { API_BASE_URL };
+export const SIMPLE_API_URL = API_BASE_URL;

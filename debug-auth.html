@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Authentication Debug</h1>
+    <button onclick="checkAuth()">Check Auth Status</button>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+    
+    <script>
+        function checkAuth() {
+            const local = localStorage.getItem('token');
+            const session = sessionStorage.getItem('token');
+            const result = document.getElementById('result');
+            
+            if (local || session) {
+                result.innerHTML = `<div class="status success">Token found in ${local ? 'localStorage' : 'sessionStorage'}</div>`;
+            } else {
+                result.innerHTML = '<div class="status error">No token found</div>';
+            }
+        }
+        
+        async function testAPI() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            try {
+                const response = await fetch('http://localhost:8000/safes/', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                document.getElementById('result').innerHTML = 
+                    `<div class="status ${response.ok ? 'success' : 'error'}">API Status: ${response.status}</div>`;
+            } catch (err) {
+                document.getElementById('result').innerHTML = 
+                    `<div class="status error">Error: ${err.message}</div>`;
+            }
+        }
+        
+        checkAuth();
+    </script>
+</body>
+</html> 

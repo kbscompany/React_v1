@@ -6,6 +6,7 @@ import TailwindTest from './components/TailwindTest'
 import LanguageSwitcher from './components/LanguageSwitcher'
 import roleManager from './lib/roleManager'
 import axios from 'axios'
+import { getAuthToken, setAuthToken, removeAuthToken } from './utils/auth'
 import './i18n' // Initialize i18n
 import './styles/rtl.css' // RTL support
 
@@ -19,7 +20,7 @@ function App() {
 
   useEffect(() => {
     // Check if user is already logged in
-    const token = localStorage.getItem('token')
+    const token = getAuthToken()
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       fetchUserInfo()
@@ -60,12 +61,12 @@ function App() {
       })
 
       const { access_token } = response.data
+      setAuthToken(access_token, rememberMe)
+      
       if (rememberMe) {
-        localStorage.setItem('token', access_token)
         localStorage.setItem('username', username)
         localStorage.setItem('password', password)
       } else {
-        sessionStorage.setItem('token', access_token)
         sessionStorage.setItem('username', username)
         sessionStorage.setItem('password', password)
       }
@@ -83,8 +84,7 @@ function App() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    sessionStorage.removeItem('token')
+    removeAuthToken()
     localStorage.removeItem('username')
     localStorage.removeItem('password')
     sessionStorage.removeItem('username')
