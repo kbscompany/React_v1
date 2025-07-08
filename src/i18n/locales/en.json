@@ -387,7 +387,43 @@
     },
     "safeRenamedSuccess": "Safe renamed successfully",
     "safeRenamedError": "Failed to rename safe",
-    "renameSafePrompt": "Enter new name for the safe"
+    "renameSafePrompt": "Enter new name for the safe",
+    "issueChequeModal": {
+      "title": "Issue Department Safe Cheque",
+      "availableCheques": "Available cheques",
+      "accessibleSafes": "Accessible safes",
+      "selectChequeNumber": "Select Cheque Number",
+      "searchSelectCheque": "Search and select a cheque...",
+      "bankAccountDetails": "Bank Account Details",
+      "bankAccount": "Bank Account",
+      "chequeAmount": "Cheque Amount",
+      "status": "Status",
+      "safeAssignment": "Safe Assignment",
+      "noSafe": "-- No Safe (Cheque will remain unassigned) --",
+      "chequeNotAssigned": "Note: This cheque will not be assigned to any safe",
+      "allocationDetails": "Allocation Details",
+      "description": "Description for Cheque",
+      "descriptionPlaceholder": "e.g., Equipment purchase, Monthly supplies, Office expenses",
+      "issuedTo": "Issued To",
+      "issuedToPlaceholder": "Person or entity receiving the cheque",
+      "dueDate": "Due Date",
+      "issuing": "Issuing...",
+      "issueCheque": "Issue Cheque",
+      "loadingDataFailed": "Failed to load data",
+      "chequeIssuedSuccess": "Cheque issued successfully",
+      "issueChequeFailed": "Failed to issue cheque",
+      "searchChequesPlaceholder": "Search cheques...",
+      "noChequesFound": "No cheques found matching",
+      "validationErrors": {
+        "selectCheque": "Please select a cheque",
+        "selectSafe": "Please select a safe",
+        "enterAmount": "Please enter an amount",
+        "enterIssuedTo": "Please enter who the cheque is issued to",
+        "enterDueDate": "Please enter a due date",
+        "dueDateMustBeFuture": "Due date must be today or in the future"
+      },
+      "dueDateHelp": "The due date must be today or a future date"
+    }
   },
   "bankAccountsCheques": {
     "header": {
@@ -436,12 +472,14 @@
       "subtitle": "Serving fresh financial management solutions for your bakery business"
     }
   },
-  "expenseManagement": {
+  
+    "expenseManagement": {
     "loading": "Loading expense data...",
     "navigation": {
       "dashboard": "Dashboard",
       "expenses": "Expenses", 
-      "cheques": "Cheques"
+      "cheques": "Cheques",
+      "search": "Search"
     },
     "summary": {
       "totalSafes": "Total Safes",
@@ -790,13 +828,17 @@
     "selectSafePlaceholder": "-- Select a Safe --",
     "balance": "Balance",
     "chequesInSafe": "Cheques in Selected Safe",
+    "chequesToIssue": "Issue Chequebook",
+    "chequeTemplates": "Cheque Templates",
+    "issueToSafeTitle": "Issue Cheque to Safe",
     "loadingCheques": "Loading cheques...",
     "noChequesFound": "No cheques found in this safe",
     "tabs": {
-      "activeCheques": "Active Cheques",
-      "settledCheques": "Settled Cheques",
-      "createChequeBatch": "Create Cheque Batch",
-      "chequeRecipeBook": "Cheque Recipe Book"
+      "cheques": "Active Cheques",
+      "issueCheque": "Issue Chequebook",
+      "issueToSafe": "Issue to Safe",
+      "recipeBook": "Templates",
+      "settledCheques": "History"
     },
     "buttons": {
       "refreshing": "Refreshing...",
@@ -906,6 +948,21 @@
       "pleaseTryAgain": "Please try again.",
       "earlySettlementFailed": "Failed to create early settlement. ",
       "earlySettlementFailedTitle": "Early Settlement Failed"
+    },
+    "helpSection": {
+      "title": "💡 How to Issue Cheques to Safe",
+      "introduction": "Quick guide for issuing cheques to a safe:",
+      "step1": "• Select an unassigned blank cheque from the list",
+      "step2": "• Choose which safe to assign the cheque to",
+      "step3": "• Set the cheque amount and recipient details",
+      "step4": "• The cheque will be tracked for expenses within that safe"
+    },
+    "noSafesAvailable": {
+      "title": "⚠️ No Safes Available",
+      "message": "No safes are available in the system. Please:",
+      "createSafes": "Create safes in the Finance Center",
+      "contactAdmin": "Or contact an administrator",
+      "refreshData": "🔄 Refresh Data"
     }
   },
   "warehouse": {

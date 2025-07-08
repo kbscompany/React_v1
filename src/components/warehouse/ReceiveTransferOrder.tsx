@@ -64,7 +64,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
     
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/warehouse/transfer-orders/pending/${selectedWarehouse}`);
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/transfer-orders/pending/${selectedWarehouse}`);
       if (!response.ok) throw new Error('Failed to load pending orders');
       const result = await response.json();
       
@@ -184,7 +184,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
 
     setLoading(true);
     try {
-              const response = await fetch('http://localhost:8000/api/warehouse/transfer-orders/receive', {
+              const response = await fetch('http://100.29.4.72:8000/api/warehouse/transfer-orders/receive', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

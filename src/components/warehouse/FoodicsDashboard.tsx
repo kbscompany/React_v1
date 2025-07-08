@@ -47,7 +47,7 @@ const FoodicsDashboard: React.FC<FoodicsDashboardProps> = ({
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/warehouse/shops/${shopId}/sync-foodics`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/shops/${shopId}/sync-foodics`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -7,7 +7,7 @@ import ExpenseSearchAndSummary from './ExpenseSearchAndSummary'
 import { extractResponseData, extractErrorMessage } from '../lib/apiUtils'
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000'
+const API_BASE_URL = 'http://100.29.4.72:8000'
 
 function ExpenseManagement({ user }) {
   const { t } = useTranslation()
@@ -41,8 +41,8 @@ function ExpenseManagement({ user }) {
     amount: '',
     description: '',
     paid_to: '',
-    expense_date: new Date().toISOString().split('T')[0],
     notes: ''
+    // expense_date removed - server will set automatically
   })
   const [chequeForm, setChequeForm] = useState({
     cheque_number: '',
@@ -210,10 +210,13 @@ function ExpenseManagement({ user }) {
     try {
       const headers = getAuthHeaders()
       await axios.post(`${API_BASE_URL}/api/expenses`, {
-        ...expenseForm,
-        amount: parseFloat(expenseForm.amount),
         cheque_id: parseInt(expenseForm.cheque_id),
-        category_id: expenseForm.category_id ? parseInt(expenseForm.category_id) : null
+        category_id: expenseForm.category_id ? parseInt(expenseForm.category_id) : null,
+        amount: parseFloat(expenseForm.amount),
+        description: expenseForm.description,
+        paid_to: expenseForm.paid_to,
+        notes: expenseForm.notes
+        // expense_date will be auto-set by server
       }, { headers })
 
       setSuccess(t('expenseManagement.messages.expenseCreated'))
@@ -225,8 +228,8 @@ function ExpenseManagement({ user }) {
         amount: '',
         description: '',
         paid_to: '',
-        expense_date: new Date().toISOString().split('T')[0],
         notes: ''
+        // expense_date removed - server will set automatically
       })
 
       // Reload data
@@ -685,19 +688,9 @@ function ExpenseManagement({ user }) {
             marginBottom: '1rem'
           }}>
             <h3 style={{ margin: 0 }}>{t('expenseManagement.chequeView.title')}</h3>
-            <button
-              onClick={() => setShowIssueModal(true)}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              {t('expenseManagement.chequeView.issueCheque')}
-            </button>
+            <div style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+              💡 To issue cheques to safes, use Cheque Management → Issue to Safe
+            </div>
           </div>
 
           {/* Safe Selection */}
@@ -988,21 +981,7 @@ function ExpenseManagement({ user }) {
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.95rem' }}>{t('expenseManagement.createExpenseModal.expenseDate')}</label>
-                <input
-                  type="date"
-                  value={expenseForm.expense_date}
-                  onChange={(e) => setExpenseForm({...expenseForm, expense_date: e.target.value})}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #ced4da',
-                    borderRadius: '4px'
-                  }}
-                />
-              </div>
+              {/* Expense Date - Auto-set by server, no user input needed */}
 
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.95rem' }}>{t('expenseManagement.createExpenseModal.notes')}</label>

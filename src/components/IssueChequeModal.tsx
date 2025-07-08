@@ -175,19 +175,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }
 
 const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
-  const { t, i18n } = useTranslation()
-  
-  // Force Arabic language for testing - remove this after testing
-  React.useEffect(() => {
-    if (isOpen && i18n.language !== 'ar') {
-      console.log('🔧 Forcing Arabic language for testing...')
-      i18n.changeLanguage('ar')
-      document.documentElement.dir = 'rtl'
-      document.documentElement.lang = 'ar'
-      document.body.classList.remove('ltr', 'rtl')
-      document.body.classList.add('rtl')
-    }
-  }, [isOpen, i18n])
+  const { t } = useTranslation()
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -201,7 +189,7 @@ const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
     cheque_id: '',
     safe_id: '',
     amount: '',
-    department: '',
+    description: '',
     issued_to: '',
     due_date: new Date().toISOString().split('T')[0]
   })
@@ -222,9 +210,9 @@ const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
     try {
       console.log('🔄 Loading initial data...')
       const [cq, sf, ba] = await Promise.all([
-        axios.get('http://localhost:8000/cheques-unassigned-simple'),
-        axios.get('http://localhost:8000/safes-simple'),
-        axios.get('http://localhost:8000/bank-accounts-simple')
+        axios.get('/cheques-unassigned-simple'),
+        axios.get('/safes-simple'),
+        axios.get('/bank-accounts-simple')
       ])
       console.log('📄 Cheques raw response:', cq.data)
       console.log('🏦 Safes raw response:', sf.data)
@@ -257,27 +245,35 @@ const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
     if (!form.safe_id) return setError(t('finance.issueChequeModal.validationErrors.selectSafe'))
     if (!form.amount) return setError(t('finance.issueChequeModal.validationErrors.enterAmount'))
     if (!form.issued_to) return setError(t('finance.issueChequeModal.validationErrors.enterIssuedTo'))
+    if (!form.due_date) return setError(t('finance.issueChequeModal.validationErrors.enterDueDate'))
+
+    // Validate due date is today or future
+    const today = new Date().toISOString().split('T')[0]
+    if (form.due_date < today) {
+      return setError(t('finance.issueChequeModal.validationErrors.dueDateMustBeFuture'))
+    }
 
     try {
       setLoading(true)
       setError('')
       console.log('🚀 Starting cheque issue process...', { form })
       
-      // 1) update cheque with all details (amount, status, issued_to, department, issue_date)
+      // 1) update cheque with all details (amount, status, issued_to, department, due_date)
+      // Note: issue_date will be set automatically by the backend to current server time
       console.log('📝 Updating cheque with all details...')
-      const updateResponse = await axios.put(`http://localhost:8000/cheques-simple/${form.cheque_id}`, {
+      const updateResponse = await axios.put(`/cheques-simple/${form.cheque_id}`, {
         amount: parseFloat(form.amount),
         status: 'assigned',
         issued_to: form.issued_to,
-        issue_date: form.due_date,  // Using due_date as issue_date
-        department: form.department
+        due_date: form.due_date,  // User-selected due date
+        description: form.description
       })
       console.log('✅ Cheque updated with all details:', updateResponse.data)
       
       // 2) assign to safe (only if a safe is selected)
       if (form.safe_id) {
         console.log('🏦 Assigning cheque to safe...')
-        const assignResponse = await axios.post('http://localhost:8000/cheques/assign-to-safe-simple', {
+        const assignResponse = await axios.post('/cheques/assign-to-safe-simple', {
           safe_id: Number(form.safe_id),
           cheque_ids: [Number(form.cheque_id)]
         })
@@ -293,7 +289,7 @@ const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
         cheque_id: '',
         safe_id: '',
         amount: '',
-        department: '',
+        description: '',
         issued_to: '',
         due_date: new Date().toISOString().split('T')[0]
       })
@@ -405,12 +401,12 @@ const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('finance.issueChequeModal.department')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('finance.issueChequeModal.description')}</label>
                 <input
                   type="text"
-                  placeholder={t('finance.issueChequeModal.departmentPlaceholder')}
-                  value={form.department}
-                  onChange={e => setForm({ ...form, department: e.target.value })}
+                  placeholder={t('finance.issueChequeModal.descriptionPlaceholder')}
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 />
               </div>
@@ -437,13 +433,18 @@ const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('finance.issueChequeModal.dueDate')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('finance.issueChequeModal.dueDate')} *</label>
                 <input
                   type="date"
                   value={form.due_date}
                   onChange={e => setForm({ ...form, due_date: e.target.value })}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 />
+                <div className="mt-1 text-xs text-gray-500">
+                  {t('finance.issueChequeModal.dueDateHelp')}
+                </div>
               </div>
             </div>
           </section>

@@ -34,7 +34,7 @@ const ChequePrintManager: React.FC = () => {
   const [selectedSafe, setSelectedSafe] = useState<string>('');
 
   // API base URL
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = 'http://100.29.4.72:8000';
 
   useEffect(() => {
     checkTemplateStatus();

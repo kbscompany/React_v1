@@ -94,7 +94,7 @@ const ExpenseSearchAndSummary: React.FC = () => {
 
   const loadCheques = async () => {
     try {
-      const response = await fetch('/api/expenses/cheques', {
+      const response = await fetch('http://100.29.4.72:8000/api/expenses/cheques', {
         headers: getAuthHeaders()
       });
       const data = await response.json();
@@ -108,7 +108,7 @@ const ExpenseSearchAndSummary: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/expense-categories-simple', {
+      const response = await fetch('http://100.29.4.72:8000/api/expense-categories-simple', {
         headers: getAuthHeaders()
       });
       const data = await response.json();
@@ -122,7 +122,7 @@ const ExpenseSearchAndSummary: React.FC = () => {
 
   const loadSafes = async () => {
     try {
-      const response = await fetch('/api/safes', {
+      const response = await fetch('http://100.29.4.72:8000/api/safes', {
         headers: getAuthHeaders()
       });
       const data = await response.json();
@@ -149,7 +149,7 @@ const ExpenseSearchAndSummary: React.FC = () => {
         }
       });
       
-      const response = await fetch(`/api/expenses/search?${queryParams.toString()}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/expenses/search?${queryParams.toString()}`, {
         headers: getAuthHeaders()
       });
       
@@ -177,7 +177,7 @@ const ExpenseSearchAndSummary: React.FC = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/expenses/search?cheque_id=${chequeId}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/expenses/search?cheque_id=${chequeId}`, {
         headers: getAuthHeaders()
       });
       
@@ -290,7 +290,7 @@ const ExpenseSearchAndSummary: React.FC = () => {
         summary_info: summaryInfo
       };
 
-      const endpoint = download ? '/api/expenses/summary/download' : '/api/expenses/summary/html';
+      const endpoint = download ? 'http://100.29.4.72:8000/api/expenses/summary/download' : 'http://100.29.4.72:8000/api/expenses/summary/html';
       const response = await fetch(`${endpoint}?language=ar`, {
         method: 'POST',
         headers: {

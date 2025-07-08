@@ -92,7 +92,7 @@ const WarehouseManagement: React.FC = () => {
 
   const loadWarehouses = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/warehouse/warehouses');
+      const response = await fetch('http://100.29.4.72:8000/api/warehouse/warehouses');
       
       if (!response.ok) {
         const errorText = await response.text();

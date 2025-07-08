@@ -3,7 +3,8 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { API_BASE_URL, SIMPLE_API_URL } from '../config/api';
 import { roleManager, PERMISSIONS } from '../lib/roleManager';
-import { Search, Eye, Clock, CheckCircle, AlertCircle, X, Plus, Receipt, BookOpen, Settings, FileText, Printer, Upload } from 'lucide-react';
+import { Search, Eye, Clock, CheckCircle, AlertCircle, X, Plus, Receipt, BookOpen, Settings, FileText, Printer, Upload, Send } from 'lucide-react';
+import IssueChequeModal from './IssueChequeModal';
 
 interface BankAccount {
   id: number;
@@ -26,6 +27,7 @@ interface Cheque {
   bank_account?: string; // Bank account info from API (e.g., "Account Name (Bank Name)")
   amount: string | number;
   issue_date: string;
+  due_date?: string;
   description: string;
   issued_to?: string;
   status: string;
@@ -47,6 +49,9 @@ interface Cheque {
     cheque_id?: number;
   }>;
   has_attachments?: boolean;
+  is_printed?: boolean;
+  printed_at?: string;
+  print_count?: number;
 }
 
 interface EarlySettlementForm {
@@ -74,7 +79,7 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
   const { t } = useTranslation();
   
   // Internal tab state
-  const [activeTab, setActiveTab] = useState('active-cheques');
+  const [activeTab, setActiveTab] = useState('cheques');
   
   // Existing state
   const [cheques, setCheques] = useState<Cheque[]>([]);
@@ -154,6 +159,9 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
   const [selectedChequeForInvoice, setSelectedChequeForInvoice] = useState<Cheque | null>(null);
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [isUploadingInvoice, setIsUploadingInvoice] = useState(false);
+
+  // Add state for Issue to Safe modal
+  const [showIssueChequeModal, setShowIssueChequeModal] = useState(false);
 
   // Helper function to safely convert to number
   const toNumber = (value: string | number): number => {
@@ -717,8 +725,34 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
         console.log('🧹 Cleaned up blob URL');
       }, 60000);
 
+      // Update the cheque's print status in the backend
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        await axios.patch(`${API_BASE_URL}/cheques/${cheque.id}/mark-printed`, {}, { headers });
+        console.log('✅ Marked cheque as printed in backend');
+        
+        // Update local state to reflect the print status
+        setCheques(prevCheques => 
+          prevCheques.map(c => 
+            c.id === cheque.id 
+              ? { 
+                  ...c, 
+                  is_printed: true, 
+                  printed_at: new Date().toISOString(),
+                  print_count: (c.print_count || 0) + 1
+                }
+              : c
+          )
+        );
+      } catch (printUpdateError) {
+        console.warn('⚠️ Failed to update print status in backend:', printUpdateError);
+        // Continue even if backend update fails, as the print operation was successful
+      }
+
       // Show success message
-      setSuccessMessage(`Cheque #${cheque.cheque_number} is ready for printing`);
+      const printStatus = cheque.is_printed ? 'reprinted' : 'printed';
+      setSuccessMessage(`Cheque #${cheque.cheque_number} has been ${printStatus} successfully`);
       setTimeout(() => setSuccessMessage(null), 3000);
 
     } catch (error: any) {
@@ -904,16 +938,39 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
       {/* Internal Tab Navigation */}
       <div className="flex border-b mb-6">
         <button
-          onClick={() => setActiveTab('active-cheques')}
+          onClick={() => setActiveTab('cheques')}
           className={`px-4 py-2 font-medium text-sm ${
-            activeTab === 'active-cheques'
+            activeTab === 'cheques'
               ? 'border-b-2 border-blue-500 text-blue-600'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <Receipt className="w-4 h-4 inline mr-2" />
-          {t('chequeManagement.tabs.activeCheques')}
+          Cheques
         </button>
+        <button
+          onClick={() => setActiveTab('issue-cheque')}
+          className={`px-4 py-2 font-medium text-sm ${
+            activeTab === 'issue-cheque'
+              ? 'border-b-2 border-blue-500 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Plus className="w-4 h-4 inline mr-2" />
+          {t('chequeManagement.tabs.issueCheque')}
+        </button>
+        <button
+          onClick={() => setActiveTab('issue-to-safe')}
+          className={`px-4 py-2 font-medium text-sm ${
+            activeTab === 'issue-to-safe'
+              ? 'border-b-2 border-blue-500 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Send className="w-4 h-4 inline mr-2" />
+          {t('chequeManagement.tabs.issueToSafe')}
+        </button>
+
         <button
           onClick={() => setActiveTab('settled-cheques')}
           className={`px-4 py-2 font-medium text-sm ${
@@ -925,32 +982,10 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
           <CheckCircle className="w-4 h-4 inline mr-2" />
           {t('chequeManagement.tabs.settledCheques')}
         </button>
-        <button
-          onClick={() => setActiveTab('issue-cheque')}
-          className={`px-4 py-2 font-medium text-sm ${
-            activeTab === 'issue-cheque'
-              ? 'border-b-2 border-blue-500 text-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Plus className="w-4 h-4 inline mr-2" />
-          {t('chequeManagement.tabs.createChequeBatch')}
-        </button>
-        <button
-          onClick={() => setActiveTab('recipe-book')}
-          className={`px-4 py-2 font-medium text-sm ${
-            activeTab === 'recipe-book'
-              ? 'border-b-2 border-blue-500 text-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <BookOpen className="w-4 h-4 inline mr-2" />
-          {t('chequeManagement.tabs.chequeRecipeBook')}
-        </button>
       </div>
       
       {/* Tab Content */}
-      {activeTab === 'active-cheques' && (
+      {activeTab === 'cheques' && (
         <div>
           {/* Existing Active Cheques Content */}
       
@@ -1029,18 +1064,33 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
             <nav className="-mb-px flex space-x-8 px-4">
               <button
                 onClick={() => {
-                  setActiveTab('active-cheques');
+                  setActiveTab('cheques');
                   setSettledChequesPage(0);
                   fetchData();
                 }}
                 className={`${
-                  activeTab === 'active-cheques'
+                  activeTab === 'cheques'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
               >
-                {t('chequeManagement.tabs.activeCheques')}
+                {t('chequeManagement.tabs.cheques')}
               </button>
+              <button
+                onClick={() => {
+                  setActiveTab('issue-cheque');
+                  setSettledChequesPage(0);
+                  fetchData();
+                }}
+                className={`${
+                  activeTab === 'issue-cheque'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                {t('chequeManagement.tabs.issueCheque')}
+              </button>
+
               <button
                 onClick={() => {
                   setActiveTab('settled-cheques');
@@ -1125,9 +1175,13 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
 
           <div className="p-4 border-b">
             <h3 className="text-lg font-semibold">
-              {activeTab === 'active-cheques' 
+              {activeTab === 'cheques' 
                 ? t('chequeManagement.chequesInSafe') 
-                : 'Settled Cheques (Latest 10)'}
+                : activeTab === 'issue-cheque'
+                  ? t('chequeManagement.chequesToIssue')
+                  : activeTab === 'issue-to-safe'
+                    ? t('chequeManagement.issueToSafeTitle')
+                  : 'Settled Cheques (Latest 10)'}
             </h3>
           </div>
           
@@ -1178,7 +1232,7 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                         {getSortIcon('amount')}
                       </div>
                     </th>
-                    {activeTab === 'active-cheques' && (
+                    {activeTab === 'cheques' && (
                       <>
                         <th 
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
@@ -1222,6 +1276,24 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                     </th>
                     <th 
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('issue_date')}
+                    >
+                      <div className="flex items-center">
+                        Issue Date
+                        {getSortIcon('issue_date')}
+                      </div>
+                    </th>
+                    <th 
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('due_date')}
+                    >
+                      <div className="flex items-center">
+                        Due Date
+                        {getSortIcon('due_date')}
+                      </div>
+                    </th>
+                    <th 
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
                       onClick={() => handleSort('description')}
                     >
                       <div className="flex items-center">
@@ -1230,12 +1302,15 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                       </div>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Print Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       {t('chequeManagement.table.actions')}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {activeTab === 'active-cheques' 
+                  {activeTab === 'cheques' 
                     ? sortedCheques
                         .filter(cheque => cheque.status !== 'settled' && !cheque.is_settled && cheque.status !== 'cancelled')
                         .map((cheque) => (
@@ -1255,6 +1330,12 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                             ${toNumber(cheque.remaining_amount).toFixed(2)}
                           </td>
                           <td className="px-4 py-3">{getStatusBadge(cheque)}</td>
+                          <td className="px-4 py-3 text-sm">
+                            {cheque.issue_date ? new Date(cheque.issue_date).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {cheque.due_date ? new Date(cheque.due_date).toLocaleDateString() : '-'}
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-500">
                             {cheque.description}
                             {cheque.is_settled && cheque.settled_by_cheque_id && (
@@ -1263,6 +1344,29 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                                 {t('chequeManagement.settlement.settlementChequeId')}: {cheque.settled_by_cheque_id}<br/>
                                 <span className="text-gray-600">{t('chequeManagement.settlement.refreshToSeeDetails')}</span>
                               </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {cheque.is_printed ? (
+                              <div className="flex flex-col">
+                                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                  ✅ Printed
+                                </span>
+                                {cheque.print_count && cheque.print_count > 1 && (
+                                  <span className="text-xs text-gray-500 mt-1">
+                                    {cheque.print_count} times
+                                  </span>
+                                )}
+                                {cheque.printed_at && (
+                                  <span className="text-xs text-gray-500 mt-1">
+                                    {new Date(cheque.printed_at).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+                                Not Printed
+                              </span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -1279,8 +1383,8 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                                 </button>
                               )}
                               
-                              {/* Early Settlement Button - available for assigned, non-settled cheques */}
-                              {selectedSafe && !cheque.is_settled && cheque.status !== 'settled_pending_invoice' && (
+                              {/* Early Settlement Button - available for assigned, non-settled, non-overspent cheques */}
+                              {selectedSafe && !cheque.is_settled && cheque.status !== 'settled_pending_invoice' && !cheque.is_overspent && toNumber(cheque.overspent_amount) <= 0 && (
                                 <button
                                   onClick={() => openEarlySettlementModal(cheque)}
                                   className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
@@ -1319,18 +1423,22 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                               <button
                                 onClick={() => handlePrintCheque(cheque)}
                                 disabled={printingChequeId === cheque.id}
-                                className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1"
-                                title="Print cheque in Arabic format"
+                                className={`px-3 py-1 text-white text-sm rounded disabled:opacity-50 flex items-center gap-1 ${
+                                  cheque.is_printed 
+                                    ? 'bg-orange-600 hover:bg-orange-700' 
+                                    : 'bg-purple-600 hover:bg-purple-700'
+                                }`}
+                                title={cheque.is_printed ? "Reprint cheque in Arabic format" : "Print cheque in Arabic format"}
                               >
                                 {printingChequeId === cheque.id ? (
                                   <>
                                     <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full"></span>
-                                    {t('chequeManagement.buttons.printing')}
+                                    {cheque.is_printed ? 'Reprinting...' : t('chequeManagement.buttons.printing')}
                                   </>
                                 ) : (
                                   <>
                                     <Printer className="w-3 h-3" />
-                                    {t('chequeManagement.buttons.print')}
+                                    {cheque.is_printed ? 'Reprint' : t('chequeManagement.buttons.print')}
                                   </>
                                 )}
                               </button>
@@ -1350,62 +1458,128 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                           </td>
                         </tr>
                       ))
-                    : sortedCheques.map((cheque) => (
-                        <tr key={cheque.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-medium">{cheque.cheque_number}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{cheque.bank_account || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{cheque.issued_to || '-'}</td>
-                          <td className="px-4 py-3 text-sm">${toNumber(cheque.amount).toFixed(2)}</td>
-                          <td className="px-4 py-3 text-sm">
-                            {cheque.settlement_date ? new Date(cheque.settlement_date).toLocaleDateString() : '-'}
-                          </td>
-                          <td className="px-4 py-3">{getStatusBadge(cheque)}</td>
-                          <td className="px-4 py-3 text-sm text-gray-500">{cheque.description}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              {cheque.has_attachments && (
-                                <button
-                                  onClick={() => {
-                                    const attachmentsWithChequeId = (cheque.attachments || []).map(att => ({
-                                      ...att,
-                                      cheque_id: cheque.id
-                                    }));
-                                    setSelectedAttachments(attachmentsWithChequeId);
-                                    setAttachmentModalOpen(true);
-                                  }}
-                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-1"
-                                  title="View settlement attachments"
-                                >
-                                  📎 View Attachments ({cheque.attachments?.length || 0})
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handlePrintCheque(cheque)}
-                                disabled={printingChequeId === cheque.id}
-                                className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1"
-                                title="Print cheque in Arabic format"
-                              >
-                                {printingChequeId === cheque.id ? (
-                                  <>
-                                    <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full"></span>
-                                    {t('chequeManagement.buttons.printing')}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Printer className="w-3 h-3" />
-                                    {t('chequeManagement.buttons.print')}
-                                  </>
+                    : activeTab === 'issue-cheque'
+                      ? sortedCheques.map((cheque) => (
+                          <tr key={cheque.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-medium">{cheque.cheque_number}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{cheque.bank_account || 'N/A'}</td>
+                            <td className="px-4 py-3 text-sm">${toNumber(cheque.amount).toFixed(2)}</td>
+                            <td className="px-4 py-3">{getStatusBadge(cheque)}</td>
+                            <td className="px-4 py-3 text-sm">
+                              {cheque.issue_date ? new Date(cheque.issue_date).toLocaleDateString() : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {cheque.due_date ? new Date(cheque.due_date).toLocaleDateString() : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{cheque.description}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2">
+                                {cheque.has_attachments && (
+                                  <button
+                                    onClick={() => {
+                                      const attachmentsWithChequeId = (cheque.attachments || []).map(att => ({
+                                        ...att,
+                                        cheque_id: cheque.id
+                                      }));
+                                      setSelectedAttachments(attachmentsWithChequeId);
+                                      setAttachmentModalOpen(true);
+                                    }}
+                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-1"
+                                    title="View settlement attachments"
+                                  >
+                                    📎 View Attachments ({cheque.attachments?.length || 0})
+                                  </button>
                                 )}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                <button
+                                  onClick={() => handlePrintCheque(cheque)}
+                                  disabled={printingChequeId === cheque.id}
+                                  className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1"
+                                  title="Print cheque in Arabic format"
+                                >
+                                  {printingChequeId === cheque.id ? (
+                                    <>
+                                      <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full"></span>
+                                      {t('chequeManagement.buttons.printing')}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Printer className="w-3 h-3" />
+                                      {t('chequeManagement.buttons.print')}
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+
+                        : sortedCheques.map((cheque) => (
+                            <tr key={cheque.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm font-medium">{cheque.cheque_number}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{cheque.bank_account || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{cheque.issued_to || '-'}</td>
+                              <td className="px-4 py-3 text-sm">${toNumber(cheque.amount).toFixed(2)}</td>
+                              <td className="px-4 py-3 text-sm">
+                                {cheque.settlement_date ? new Date(cheque.settlement_date).toLocaleDateString() : '-'}
+                              </td>
+                              <td className="px-4 py-3">{getStatusBadge(cheque)}</td>
+                              <td className="px-4 py-3 text-sm">
+                                {cheque.issue_date ? new Date(cheque.issue_date).toLocaleDateString() : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                {cheque.due_date ? new Date(cheque.due_date).toLocaleDateString() : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-500">{cheque.description}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2">
+                                  {cheque.has_attachments && (
+                                    <button
+                                      onClick={() => {
+                                        const attachmentsWithChequeId = (cheque.attachments || []).map(att => ({
+                                          ...att,
+                                          cheque_id: cheque.id
+                                        }));
+                                        setSelectedAttachments(attachmentsWithChequeId);
+                                        setAttachmentModalOpen(true);
+                                      }}
+                                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-1"
+                                      title="View settlement attachments"
+                                    >
+                                      📎 View Attachments ({cheque.attachments?.length || 0})
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handlePrintCheque(cheque)}
+                                    disabled={printingChequeId === cheque.id}
+                                    className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1"
+                                    title="Print cheque in Arabic format"
+                                  >
+                                    {printingChequeId === cheque.id ? (
+                                      <>
+                                        <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full"></span>
+                                        {t('chequeManagement.buttons.printing')}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Printer className="w-3 h-3" />
+                                        {t('chequeManagement.buttons.print')}
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
                 </tbody>
               </table>
-              {activeTab === 'active-cheques' && sortedCheques.filter(cheque => cheque.status !== 'settled' && !cheque.is_settled && cheque.status !== 'cancelled').length === 0 && sortedCheques.length > 0 && (
+              {activeTab === 'cheques' && sortedCheques.filter(cheque => cheque.status !== 'settled' && !cheque.is_settled && cheque.status !== 'cancelled').length === 0 && sortedCheques.length > 0 && (
                 <div className="p-8 text-center text-gray-500">
                   All cheques in this safe are either settled or cancelled. Check the "Settled Cheques" tab to view settled cheques.
+                </div>
+              )}
+              {activeTab === 'issue-cheque' && sortedCheques.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  No cheques to issue. Please create a new cheque.
                 </div>
               )}
             </div>
@@ -2358,45 +2532,49 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
         </div>
       )}
 
-      {/* Cheque Recipe Book Tab */}
-      {activeTab === 'recipe-book' && (
+      {/* Issue to Safe Tab */}
+      {activeTab === 'issue-to-safe' && (
         <div>
-          <h3 className="text-lg font-bold mb-4">Cheque Recipe Book</h3>
-          <p className="text-gray-600 mb-6">Quick templates for common cheque types. Click on a template to use it for creating a new cheque.</p>
+          <h3 className="text-lg font-bold mb-4">Issue Cheque to Safe</h3>
+          <p className="text-gray-600 mb-6">Issue a specific cheque with an amount to a safe for tracking expenses.</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {chequeTemplates.map((template) => (
-              <div key={template.id} className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <h4 className="font-semibold text-gray-900">{template.name}</h4>
-                  <FileText className="w-5 h-5 text-blue-500" />
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <Send className="w-5 h-5 text-green-600" />
+                <div>
+                  <h4 className="font-semibold text-green-800">Issue Cheque to Safe</h4>
+                  <p className="text-sm text-green-700">
+                    Select a blank cheque and assign it to a safe with a specific amount and recipient details.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{template.description}</p>
-                <div className="text-xs text-gray-500 mb-4">
-                  <p>Bank Account ID: {template.bank_account_id}</p>
-                  <p>Default Amount: ${template.default_amount}</p>
-                </div>
-                <button
-                  onClick={() => handleUseTemplate(template)}
-                  className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                >
-                  Use Template
-                </button>
               </div>
-            ))}
-          </div>
-          
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">💡 How to Use Templates</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Click "Use Template" to auto-fill the cheque creation form</li>
-              <li>• You can modify the pre-filled values before creating the cheque</li>
-              <li>• Templates help ensure consistency for recurring cheque types</li>
-              <li>• New templates can be added by your system administrator</li>
-            </ul>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={() => setShowIssueChequeModal(true)}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto"
+              >
+                <Send className="w-5 h-5" />
+                Issue Cheque to Safe
+              </button>
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-semibold text-gray-900 mb-2">💡 How to Issue Cheques to Safe</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Select an unassigned blank cheque from the list</li>
+                <li>• Choose which safe to assign the cheque to</li>
+                <li>• Set the cheque amount and recipient details</li>
+                <li>• The cheque will be tracked for expenses within that safe</li>
+              </ul>
+            </div>
           </div>
         </div>
       )}
+
+
 
       {/* Cheque Creation Modal (when triggered from templates) */}
       {showChequeModal && (
@@ -2536,6 +2714,26 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Issue Cheque Modal */}
+      {showIssueChequeModal && (
+        <IssueChequeModal
+          isOpen={showIssueChequeModal}
+          onClose={() => setShowIssueChequeModal(false)}
+          onIssued={async () => {
+            setShowIssueChequeModal(false);
+            // Refresh data to show the newly issued cheque in the list immediately
+            console.log('🔄 Refreshing data after cheque issued to safe...');
+            await fetchData();
+            // Switch to the cheques tab if we're not already there to show the issued cheque
+            if (activeTab !== 'cheques') {
+              setActiveTab('cheques');
+            }
+            setSuccessMessage('Cheque issued successfully to safe! It now appears in the cheques list.');
+            setTimeout(() => setSuccessMessage(null), 4000);
+          }}
+        />
       )}
     </div>
   );

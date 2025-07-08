@@ -60,7 +60,7 @@ const CreateTransferOrder = ({ warehouses, onNotification }: any) => {
 
   const loadIngredients = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/warehouse/ingredients');
+      const response = await fetch('http://100.29.4.72:8000/api/warehouse/ingredients');
       if (!response.ok) throw new Error('Failed to load ingredients');
       const data = await response.json();
       setIngredients(data);
@@ -72,7 +72,7 @@ const CreateTransferOrder = ({ warehouses, onNotification }: any) => {
 
   const loadSourceStock = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/warehouse/warehouses/${sourceWarehouse}/stock`);
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/warehouses/${sourceWarehouse}/stock`);
       if (!response.ok) throw new Error('Failed to load stock');
       const data = await response.json();
       setSourceStock(data.filter((item: any) => item.quantity > 0));
@@ -84,7 +84,7 @@ const CreateTransferOrder = ({ warehouses, onNotification }: any) => {
 
   const loadLowStockItems = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/warehouse/ingredients/low-stock/${sourceWarehouse}/${targetWarehouse}`);
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/ingredients/low-stock/${sourceWarehouse}/${targetWarehouse}`);
       if (!response.ok) throw new Error('Failed to load low stock items');
       const data = await response.json();
       setLowStockItems(data);
@@ -196,7 +196,7 @@ const CreateTransferOrder = ({ warehouses, onNotification }: any) => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/warehouse/transfer-orders', {
+      const response = await fetch('http://100.29.4.72:8000/api/warehouse/transfer-orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

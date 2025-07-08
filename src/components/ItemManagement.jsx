@@ -75,7 +75,7 @@ const ItemManagement = () => {
   const [availableSubRecipes, setAvailableSubRecipes] = useState([]);
   const [availableMidPreps, setAvailableMidPreps] = useState([]);
 
-  const API_BASE = 'http://localhost:8000';
+  const API_BASE = 'http://100.29.4.72:8000';
 
   useEffect(() => {
     loadCategories();

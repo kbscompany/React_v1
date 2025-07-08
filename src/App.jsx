@@ -11,7 +11,7 @@ import './i18n' // Initialize i18n
 import './styles/rtl.css' // RTL support
 
 // Set up axios defaults
-axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.baseURL = 'http://100.29.4.72:8000'
 
 function App() {
   const { t } = useTranslation()

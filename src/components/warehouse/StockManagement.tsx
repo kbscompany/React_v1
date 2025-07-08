@@ -65,7 +65,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
     setLoading(true);
     try {
       console.log('Loading stock for warehouse:', selectedWarehouse);
-      const response = await fetch(`http://localhost:8000/api/warehouse/warehouses/${selectedWarehouse}/stock`);
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/warehouses/${selectedWarehouse}/stock`);
       if (!response.ok) throw new Error('Failed to load stock items');
       const data = await response.json();
       console.log('Raw stock data:', data);
@@ -229,7 +229,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
           
           console.log('Stock update request:', requestBody);
           
-          const response = await fetch('http://localhost:8000/api/warehouse/stock/update', {
+          const response = await fetch('http://100.29.4.72:8000/api/warehouse/stock/update', {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

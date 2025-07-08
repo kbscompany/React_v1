@@ -13,7 +13,7 @@ import { extractResponseData, extractErrorMessage } from '../lib/apiUtils'
 import { safesAPI, authAPI } from '../services/api'
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000'
+const API_BASE_URL = 'http://100.29.4.72:8000'
 
 interface BankAccount {
   id: number
@@ -22,6 +22,20 @@ interface BankAccount {
   bank_name: string
   branch?: string
   available_balance?: number
+}
+
+interface Bank {
+  id: number
+  name: string
+  short_name: string
+  swift_code?: string
+  country: string
+  address?: string
+  contact_phone?: string
+  contact_email?: string
+  website?: string
+  is_active: boolean
+  created_at: string
 }
 
 interface Safe {
@@ -93,9 +107,10 @@ interface User {
 const FinanceCenter = () => {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.dir() === 'rtl'
-  const [activeTab, setActiveTab] = useState('cheques')
+  const [activeTab, setActiveTab] = useState('cheque-management')
   const [cheques, setCheques] = useState<Cheque[]>([])
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+  const [banks, setBanks] = useState<Bank[]>([])
   const [safes, setSafes] = useState<Safe[]>([])
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([])
   const [user, setUser] = useState<User | null>(null)
@@ -134,7 +149,9 @@ const FinanceCenter = () => {
     account_number: '',
     bank_name: '',
     branch: '',
-    available_balance: ''
+    available_balance: '',
+    selected_bank_id: '', // For existing bank selection
+    is_new_bank: false // Toggle between existing/new bank
   })
 
   const token = localStorage.getItem('token')
@@ -143,11 +160,9 @@ const FinanceCenter = () => {
   useEffect(() => {
     fetchUser()
     fetchBankAccounts()
+    fetchBanks()
     fetchSafes()
     fetchExpenseCategories()
-    if (activeTab === 'cheques') {
-      fetchCheques()
-    }
   }, [activeTab])
 
   const fetchUser = async () => {
@@ -233,6 +248,19 @@ const FinanceCenter = () => {
       console.error('Error fetching bank accounts:', error)
       const errorMessage = extractErrorMessage(error)
       console.error('Bank accounts error:', errorMessage)
+    }
+  }
+
+  const fetchBanks = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/banks`, { headers })
+      const banksData = extractResponseData(response.data)
+      console.log('🏦 Banks extracted:', banksData)
+      setBanks(banksData)
+    } catch (error: any) {
+      console.error('Error fetching banks:', error)
+      const errorMessage = extractErrorMessage(error)
+      console.error('Banks error:', errorMessage)
     }
   }
 
@@ -370,16 +398,37 @@ const FinanceCenter = () => {
   }
 
   const handleCreateBankAccount = async () => {
-    if (!bankAccountForm.account_name || !bankAccountForm.account_number || !bankAccountForm.bank_name) {
+    if (!bankAccountForm.account_name || !bankAccountForm.account_number) {
       showNotification('error', 'Please fill in all required fields')
       return
     }
 
+    // Validate bank selection
+    if (!bankAccountForm.is_new_bank && !bankAccountForm.selected_bank_id) {
+      showNotification('error', 'Please select a bank')
+      return
+    }
+
+    if (bankAccountForm.is_new_bank && !bankAccountForm.bank_name) {
+      showNotification('error', 'Please enter a bank name')
+      return
+    }
+
     try {
+      let bank_name = bankAccountForm.bank_name
+      
+      // If using existing bank, get the bank name from the selected bank
+      if (!bankAccountForm.is_new_bank && bankAccountForm.selected_bank_id) {
+        const selectedBank = banks.find(bank => bank.id === parseInt(bankAccountForm.selected_bank_id))
+        if (selectedBank) {
+          bank_name = selectedBank.name
+        }
+      }
+
       const payload = {
         account_name: bankAccountForm.account_name,
         account_number: bankAccountForm.account_number,
-        bank_name: bankAccountForm.bank_name,
+        bank_name: bank_name,
         branch: bankAccountForm.branch || null,
         available_balance: bankAccountForm.available_balance ? parseFloat(bankAccountForm.available_balance) : 0
       }
@@ -391,7 +440,9 @@ const FinanceCenter = () => {
         account_number: '',
         bank_name: '',
         branch: '',
-        available_balance: ''
+        available_balance: '',
+        selected_bank_id: '',
+        is_new_bank: false
       })
       fetchBankAccounts()
       showNotification('success', 'Bank account created successfully!')
@@ -472,7 +523,6 @@ const FinanceCenter = () => {
 
             <nav className={`flex items-center gap-0.5 sm:gap-1 md:gap-2 lg:gap-4 mt-4 sm:mt-6 overflow-x-auto scrollbar-hide ${isRTL ? 'flex-row-reverse' : ''} pb-3 -mb-3`}>
               {[
-                { id: 'cheques', labelKey: 'finance.tabs.cheques', icon: <Receipt className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Cheques' },
                 { id: 'cheque-management', labelKey: 'finance.tabs.chequeManagement', icon: <Settings className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Cheque Mgmt' },
                 { id: 'bank-hierarchy', labelKey: 'finance.tabs.bankHierarchy', icon: <Building2 className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Banks' },
                 { id: 'safes', labelKey: 'finance.tabs.safes', icon: <Shield className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Safes' },
@@ -509,7 +559,6 @@ const FinanceCenter = () => {
                 <input
                   type="text"
                   placeholder={
-                    activeTab === 'cheques' ? t('finance.search.cheques') : 
                     activeTab === 'expenses' ? t('finance.search.expenses') :
                     activeTab === 'expense-categories' ? 'Search categories...' :
                     'Search...'
@@ -520,7 +569,7 @@ const FinanceCenter = () => {
                 />
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                {activeTab === 'cheques' && (
+                {activeTab === 'cheque-management' && (
                   <button
                     onClick={() => setShowChequeModal(true)}
                     className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm whitespace-nowrap"
@@ -562,53 +611,6 @@ const FinanceCenter = () => {
               </div>
             ) : (
               <>
-                {/* Cheques */}
-                {activeTab === 'cheques' && (
-                  <div className="w-full">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                      {filteredCheques.length === 0 ? (
-                        <div className="col-span-full text-center py-8 text-gray-500">
-                          {t('finance.content.noCheques')}
-                        </div>
-                      ) : (
-                        filteredCheques.map(cheque => (
-                          <div key={cheque.id} className="bg-white rounded-lg shadow-sm border p-6">
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <h3 className="font-semibold text-gray-900">#{cheque.cheque_number}</h3>
-                                <p className="text-sm text-gray-500">{cheque.description}</p>
-                              </div>
-                              <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(cheque.status)}`}>
-                                {cheque.status}
-                              </span>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex justify-between">
-                                <span className="text-gray-500">{t('finance.chequeCard.bank')}:</span>
-                                <span className="text-gray-900">{cheque.bank_account?.bank_name}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-500">{t('finance.chequeCard.amount')}:</span>
-                                <span className="font-medium text-gray-900">{formatCurrency(cheque.amount)}</span>
-                              </div>
-                              {cheque.safe && (
-                                <div className="flex justify-between">
-                                  <span className="text-gray-500">{t('finance.chequeCard.safe')}:</span>
-                                  <span className="text-gray-900">{cheque.safe.name}</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between">
-                                <span className="text-gray-500">{t('finance.chequeCard.issueDate')}:</span>
-                                <span className="text-gray-900">{new Date(cheque.issue_date).toLocaleDateString()}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {/* Cheque Management */}
                 {activeTab === 'cheque-management' && user && (
                   <div className="w-full">
@@ -1102,15 +1104,69 @@ const FinanceCenter = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bank Name *
+                  Bank Selection *
                 </label>
-                <input
-                  type="text"
-                  value={bankAccountForm.bank_name}
-                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, bank_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Bank of America"
-                />
+                
+                {/* Toggle between existing and new bank */}
+                <div className="flex gap-4 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setBankAccountForm({ 
+                      ...bankAccountForm, 
+                      is_new_bank: false, 
+                      bank_name: '',
+                      selected_bank_id: '' 
+                    })}
+                    className={`flex-1 py-2 px-3 rounded-lg font-medium transition-colors ${
+                      !bankAccountForm.is_new_bank
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Existing Bank
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBankAccountForm({ 
+                      ...bankAccountForm, 
+                      is_new_bank: true, 
+                      selected_bank_id: '',
+                      bank_name: '' 
+                    })}
+                    className={`flex-1 py-2 px-3 rounded-lg font-medium transition-colors ${
+                      bankAccountForm.is_new_bank
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    New Bank
+                  </button>
+                </div>
+
+                {!bankAccountForm.is_new_bank ? (
+                  /* Existing Bank Dropdown */
+                  <select
+                    value={bankAccountForm.selected_bank_id}
+                    onChange={(e) => setBankAccountForm({ ...bankAccountForm, selected_bank_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select an existing bank...</option>
+                    {banks.map((bank) => (
+                      <option key={bank.id} value={bank.id}>
+                        {bank.name} ({bank.short_name})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  /* New Bank Input */
+                  <input
+                    type="text"
+                    value={bankAccountForm.bank_name}
+                    onChange={(e) => setBankAccountForm({ ...bankAccountForm, bank_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Bank of America"
+                  />
+                )}
               </div>
 
               <div>

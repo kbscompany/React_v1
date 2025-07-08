@@ -103,7 +103,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/warehouse/warehouses', {
+        const res = await fetch('http://100.29.4.72:8000/api/warehouse/warehouses', {
           headers: getAuthHeaders()
         });
         if (res.ok) {

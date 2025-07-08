@@ -46,11 +46,11 @@ const InventoryManagement = () => {
   const loadData = async () => {
     try {
       const [categoriesRes, itemsRes, subRecipesRes, midPrepRes, cakesRes] = await Promise.all([
-        axios.get('http://localhost:8000/categories-simple'),
-        axios.get('http://localhost:8000/items-simple'),
-        axios.get('http://localhost:8000/sub-recipes-simple'),
-        axios.get('http://localhost:8000/mid-prep-recipes-simple'),
-        axios.get('http://localhost:8000/cakes-simple')
+        axios.get('http://100.29.4.72:8000/categories-simple'),
+        axios.get('http://100.29.4.72:8000/items-simple'),
+        axios.get('http://100.29.4.72:8000/sub-recipes-simple'),
+        axios.get('http://100.29.4.72:8000/mid-prep-recipes-simple'),
+        axios.get('http://100.29.4.72:8000/cakes-simple')
       ]);
 
       setCategories(categoriesRes.data);
@@ -116,7 +116,7 @@ const InventoryManagement = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/items-simple', itemForm);
+      const response = await axios.post('http://100.29.4.72:8000/items-simple', itemForm);
       showMessage(response.data.message, 'success');
       setItemForm({
         name: '',
@@ -173,7 +173,7 @@ const InventoryManagement = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/sub-recipes-simple', subRecipeForm);
+      const response = await axios.post('http://100.29.4.72:8000/sub-recipes-simple', subRecipeForm);
       showMessage(response.data.message, 'success');
       setSubRecipeForm({
         name: '',
@@ -241,7 +241,7 @@ const InventoryManagement = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/cakes-simple', cakeForm);
+      const response = await axios.post('http://100.29.4.72:8000/cakes-simple', cakeForm);
       showMessage(response.data.message, 'success');
       setCakeForm({
         name: '',

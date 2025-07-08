@@ -18,11 +18,12 @@ const FIELD_DEFS: ChequeField[] = [
   { key: 'beneficiary_name', label: 'اسم المستفيد' },
   { key: 'issue_date', label: 'تاريخ الإصدار' },
   { key: 'company_table', label: 'جدول معلومات الشركة' },
-  { key: 'note_1', label: 'محرر الشيك' }
+  { key: 'note_1', label: 'محرر الشيك' },
+  { key: 'note_4', label: 'رقم المرايا' },
 ];
 
 const ArabicChequeGenerator = () => {
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = 'http://100.29.4.72:8000';
 
   // Template status returned by backend {template_exists, template_path, file_info?}
   const [templateStatus, setTemplateStatus] = useState(null);

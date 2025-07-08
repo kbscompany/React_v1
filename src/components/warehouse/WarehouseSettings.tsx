@@ -78,7 +78,7 @@ const WarehouseSettings: React.FC<WarehouseSettingsProps> = ({
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('http://localhost:8000/api/warehouse/warehouses', {
+      const response = await fetch('http://100.29.4.72:8000/api/warehouse/warehouses', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -130,7 +130,7 @@ const WarehouseSettings: React.FC<WarehouseSettingsProps> = ({
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:8000/api/warehouse/warehouses/${editingWarehouse.id}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/warehouses/${editingWarehouse.id}`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({
@@ -181,7 +181,7 @@ const WarehouseSettings: React.FC<WarehouseSettingsProps> = ({
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:8000/api/warehouse/warehouses/${editingShop.id}/shop-settings`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/warehouses/${editingShop.id}/shop-settings`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(shopForm),
@@ -230,7 +230,7 @@ const WarehouseSettings: React.FC<WarehouseSettingsProps> = ({
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:8000/api/warehouse/shops/${warehouse.id}/sync-foodics`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/shops/${warehouse.id}/sync-foodics`, {
         method: 'POST',
         headers,
       });
@@ -272,7 +272,7 @@ const WarehouseSettings: React.FC<WarehouseSettingsProps> = ({
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:8000/api/warehouse/warehouses/${warehouse.id}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/warehouses/${warehouse.id}`, {
         method: 'DELETE',
         headers,
       });

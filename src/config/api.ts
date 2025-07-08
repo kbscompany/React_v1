@@ -1,5 +1,5 @@
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// API Configuration - Fixed for EC2 deployment
+const API_BASE_URL = 'http://100.29.4.72:8000';
 
 export const API_ENDPOINTS = {
   // Main API (authenticated endpoints)

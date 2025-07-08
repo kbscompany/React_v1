@@ -16,7 +16,7 @@ import { extractResponseData, extractErrorMessage } from '../lib/apiUtils'
 import axios from 'axios'
 import { Loader2 } from 'lucide-react'
 
-const API_BASE_URL = 'http://localhost:8000'
+const API_BASE_URL = 'http://100.29.4.72:8000'
 
 interface Bank {
   id: number

@@ -97,7 +97,7 @@ const PurchaseOrderManagement: React.FC = () => {
       if (statusFilter) params.append('status', statusFilter);
       if (supplierFilter) params.append('supplier_id', supplierFilter);
       
-      const response = await fetch(`http://localhost:8000/api/purchase-orders/?${params.toString()}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/?${params.toString()}`, {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -111,7 +111,7 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/purchase-orders/suppliers', {
+      const response = await fetch('http://100.29.4.72:8000/api/purchase-orders/suppliers', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -126,7 +126,7 @@ const PurchaseOrderManagement: React.FC = () => {
   const fetchBankAccounts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/bank-accounts-simple', {
+      const response = await fetch('http://100.29.4.72:8000/bank-accounts-simple', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -148,7 +148,7 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSafes = async () => {
     try {
-      const response = await fetch('http://localhost:8000/safes-simple', {
+      const response = await fetch('http://100.29.4.72:8000/safes-simple', {
         headers: getAuthHeaders()
       });
       if (response.ok) {

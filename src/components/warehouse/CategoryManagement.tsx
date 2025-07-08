@@ -43,7 +43,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
   const loadCategories = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/warehouse/categories');
+      const response = await fetch('http://100.29.4.72:8000/api/warehouse/categories');
       if (!response.ok) throw new Error('Failed to load categories');
       const data = await response.json();
       setCategories(data);
@@ -92,8 +92,8 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
     setLoading(true);
     try {
       const url = editingCategory 
-        ? `http://localhost:8000/api/warehouse/categories/${editingCategory.id}`
-        : 'http://localhost:8000/api/warehouse/categories';
+        ? `http://100.29.4.72:8000/api/warehouse/categories/${editingCategory.id}`
+        : 'http://100.29.4.72:8000/api/warehouse/categories';
       
       const method = editingCategory ? 'PUT' : 'POST';
       
@@ -136,7 +136,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/warehouse/categories/${category.id}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/warehouse/categories/${category.id}`, {
         method: 'DELETE'
       });
 

@@ -105,7 +105,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadSubRecipes = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/kitchen/sub-recipes');
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/sub-recipes');
       if (response.ok) {
         const data = await response.json();
         setSubRecipes(data);
@@ -117,7 +117,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadMidPreps = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/kitchen/mid-preps');
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/mid-preps');
       if (response.ok) {
         const data = await response.json();
         setMidPreps(data);
@@ -129,7 +129,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadCakes = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/kitchen/cakes');
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/cakes');
       if (response.ok) {
         const data = await response.json();
         setCakes(data);
@@ -141,7 +141,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadProductionHistory = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/kitchen/production-history');
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/production-history');
       if (response.ok) {
         const data = await response.json();
         setProductionHistory(data);
@@ -153,7 +153,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadSubRecipeStock = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/kitchen/sub-recipe-stock');
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/sub-recipe-stock');
       if (response.ok) {
         const data = await response.json();
         setSubRecipeStock(data);
@@ -165,7 +165,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadMidPrepStock = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/kitchen/mid-prep-stock');
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/mid-prep-stock');
       if (response.ok) {
         const data = await response.json();
         setMidPrepStock(data);
@@ -177,7 +177,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadSubRecipeIngredients = async (subRecipeId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/kitchen/sub-recipe/${subRecipeId}/ingredients`);
+      const response = await fetch(`http://100.29.4.72:8000/api/kitchen/sub-recipe/${subRecipeId}/ingredients`);
       if (response.ok) {
         const data = await response.json();
         setPreviewIngredients(prev => ({
@@ -192,7 +192,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadMidPrepIngredients = async (midPrepId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/kitchen/mid-prep/${midPrepId}/ingredients`);
+      const response = await fetch(`http://100.29.4.72:8000/api/kitchen/mid-prep/${midPrepId}/ingredients`);
       if (response.ok) {
         const data = await response.json();
         setPreviewMidPrepIngredients(prev => ({
@@ -207,7 +207,7 @@ const KitchenProduction: React.FC = () => {
 
   const loadCakeIngredients = async (cakeId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/kitchen/cake/${cakeId}/ingredients`);
+      const response = await fetch(`http://100.29.4.72:8000/api/kitchen/cake/${cakeId}/ingredients`);
       if (response.ok) {
         const data = await response.json();
         setPreviewCakeIngredients(prev => ({
@@ -278,7 +278,7 @@ const KitchenProduction: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/kitchen/execute-pre-production', {
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/execute-pre-production', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -348,7 +348,7 @@ const KitchenProduction: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/kitchen/execute-mid-production', {
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/execute-mid-production', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -418,7 +418,7 @@ const KitchenProduction: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/kitchen/execute-final-production', {
+      const response = await fetch('http://100.29.4.72:8000/api/kitchen/execute-final-production', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
