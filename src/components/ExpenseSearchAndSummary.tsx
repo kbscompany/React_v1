@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getAuthHeaders } from '../utils/auth';
 
 interface Expense {
   id: number;
@@ -68,11 +69,7 @@ const ExpenseSearchAndSummary: React.FC = () => {
   // Local text filter for results
   const [localTextFilter, setLocalTextFilter] = useState('');
 
-  // Get auth token
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : { Authorization: '' };
-  };
+  // Note: Using getAuthHeaders from utils/auth instead of local implementation
 
   // Load initial data
   useEffect(() => {
