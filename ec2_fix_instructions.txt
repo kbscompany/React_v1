@@ -1,0 +1,57 @@
+﻿#!/bin/bash
+# Fix script for EC2 FastAPI service startup issue
+
+echo "=== EC2 FastAPI Service Fix Script ==="
+echo "This script will help fix the configuration error on your EC2 server"
+echo ""
+
+# SSH into EC2 and check the config
+echo "1. SSH into your EC2 server:"
+echo "   ssh ec2-user@100.29.4.72"
+echo ""
+
+echo "2. Navigate to the application directory:"
+echo "   cd /home/ec2-user/React_v1"
+echo ""
+
+echo "3. Check if .env file exists and has the correct values:"
+echo "   cat .env"
+echo ""
+
+echo "4. If .env is missing or incomplete, create it:"
+echo "   nano .env"
+echo ""
+
+echo "5. Add these required environment variables:"
+cat << 'EOF'
+# Required settings
+SECRET_KEY=your-secret-key-here
+DB_PASSWORD=your-database-password
+
+# Database settings
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_NAME=bakery_react
+
+# Optional settings
+ENVIRONMENT=production
+DEBUG=False
+LOG_LEVEL=INFO
+EOF
+
+echo ""
+echo "6. Check if there's a mismatch in config.py:"
+echo "   cat config.py | grep -A 20 'class Settings'"
+echo ""
+
+echo "7. If the Settings class is different, you may need to update it"
+echo ""
+
+echo "8. After fixing, restart the service:"
+echo "   sudo systemctl restart fastapi.service"
+echo "   sudo systemctl status fastapi.service"
+echo ""
+
+echo "9. Check logs if it still fails:"
+echo "   sudo journalctl -u fastapi.service -n 100 --no-pager"

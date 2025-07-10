@@ -134,7 +134,7 @@ class ArabicChequeGenerator:
         return text.translate(str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩"))
     
     def convert_date_to_arabic(self, date) -> str:
-        """Convert date to Arabic format"""
+        """Convert date to Arabic digits while keeping the same format"""
         from datetime import datetime
         if isinstance(date, str):
             try:
@@ -144,7 +144,7 @@ class ArabicChequeGenerator:
         elif not isinstance(date, datetime):
             date = datetime.now()
         
-        # Format: YYYY-MM-DD in Arabic numbers
+        # Keep the same format: YYYY-MM-DD but with Arabic digits
         date_str = date.strftime("%Y-%m-%d")
         return self.to_arabic_digits(date_str)
     
@@ -203,8 +203,11 @@ class ArabicChequeGenerator:
             value = cheque_data.get(field_key, "")
             
             # Convert numbers to Arabic digits for amount and date fields
-            if "amount" in field_key or "date" in field_key or field_key == "cheque_number":
+            if "amount" in field_key or field_key == "cheque_number":
                 value = self.to_arabic_digits(str(value))
+            elif "date" in field_key:
+                # Use proper Arabic date formatting for date fields
+                value = self.convert_date_to_arabic(value)
             
             # Add Egyptian pounds suffix to amount_words
             if field_key == "amount_words" and value:
@@ -316,8 +319,11 @@ class ArabicChequeGenerator:
                 value = cheque_data.get(field_key, "")
                 
                 # Convert numbers to Arabic digits
-                if "amount" in field_key or "date" in field_key or field_key == "cheque_number":
+                if "amount" in field_key or field_key == "cheque_number":
                     value = self.to_arabic_digits(str(value))
+                elif "date" in field_key:
+                    # Use proper Arabic date formatting for date fields
+                    value = self.convert_date_to_arabic(value)
                 
                 # Add Egyptian pounds suffix to amount_words
                 if field_key == "amount_words" and value:
