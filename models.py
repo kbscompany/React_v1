@@ -556,7 +556,8 @@ class Cheque(Base):
     bank_account_id = Column(Integer, ForeignKey("bank_accounts.id", ondelete="CASCADE"), nullable=False)
     safe_id = Column(Integer, ForeignKey("safes.id", ondelete="SET NULL"), nullable=True)  # Assigned later
     amount = Column(DECIMAL(12, 2), nullable=False)
-    issue_date = Column(DateTime(timezone=True), nullable=False)
+    issue_date = Column(DateTime(timezone=True), nullable=False)  # Auto-set to server time when issued to safe/supplier
+    due_date = Column(Date, nullable=True)  # User-selectable date (today or future only)
     description = Column(Text, nullable=True)
     issued_to = Column(String(255), nullable=True)  # Name of the recipient (person or supplier)
     

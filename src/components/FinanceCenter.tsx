@@ -4,7 +4,8 @@ import axios from 'axios'
 import CategorySelector from './CategorySelector'
 import ChequeManagement from './ChequeManagement'
 import BankHierarchyManagement from './BankHierarchyManagement'
-import { Building2, Receipt, TrendingUp, Plus, Search, Eye, CheckCircle, Clock, AlertCircle, X, Shield, DollarSign, FileText, Settings, FolderTree, CreditCard, PenSquare } from 'lucide-react'
+import ChequePrintManager from './ChequePrintManager'
+import { Building2, Receipt, TrendingUp, Plus, Search, Eye, CheckCircle, Clock, AlertCircle, X, Shield, DollarSign, FileText, Settings, FolderTree, CreditCard, PenSquare, Printer } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 import ExpenseCategoryManagement from './ExpenseCategoryManagement.tsx'
 import ExpenseManagement from './ExpenseManagement'
@@ -521,7 +522,14 @@ const FinanceCenter = () => {
               </div>
             </div>
 
-            <nav className={`flex items-center gap-0.5 sm:gap-1 md:gap-2 lg:gap-4 mt-4 sm:mt-6 overflow-x-auto scrollbar-hide ${isRTL ? 'flex-row-reverse' : ''} pb-3 -mb-3`}>
+            <nav 
+              className={`flex items-center gap-0.5 sm:gap-1 md:gap-2 lg:gap-4 mt-4 sm:mt-6 overflow-x-auto ${isRTL ? 'flex-row-reverse' : ''} pb-4 -mb-4 px-1`}
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#f59e0b #fef3c7',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
               {[
                 { id: 'cheque-management', labelKey: 'finance.tabs.chequeManagement', icon: <Settings className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Cheque Mgmt' },
                 { id: 'bank-hierarchy', labelKey: 'finance.tabs.bankHierarchy', icon: <Building2 className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Banks' },
@@ -529,7 +537,8 @@ const FinanceCenter = () => {
                 { id: 'expenses', labelKey: 'finance.tabs.expenses', icon: <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Expense' },
                 { id: 'expense-categories', labelKey: 'finance.tabs.expenseCategories', icon: <FolderTree className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Categories' },
                 { id: 'supplier-payments', labelKey: 'finance.tabs.supplierPayments', icon: <CreditCard className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Suppliers' },
-                { id: 'summary', labelKey: 'finance.tabs.summary', icon: <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Stats' }
+                { id: 'summary', labelKey: 'finance.tabs.summary', icon: <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Stats' },
+                { id: 'cheque-print', labelKey: 'finance.tabs.chequePrint', icon: <Printer className="w-3 h-3 sm:w-4 sm:h-4" />, shortLabel: 'Print' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -690,6 +699,13 @@ const FinanceCenter = () => {
                 {activeTab === 'supplier-payments' && user && (
                   <div className="w-full">
                     <SupplierPayments user={user} />
+                  </div>
+                )}
+
+                {/* Cheque Print Management Tab */}
+                {activeTab === 'cheque-print' && (
+                  <div className="w-full">
+                    <ChequePrintManager />
                   </div>
                 )}
 

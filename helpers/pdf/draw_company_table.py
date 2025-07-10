@@ -28,7 +28,7 @@ def draw_company_table(c, x_start: int, y_start: int, cheque_data: Dict[str, Any
         [cheque_data.get('expense_number', cheque_data.get('cheque_number', 'N/A')),
          processor.process_arabic_text(root_category),
          processor.process_arabic_text(final_category),
-         processor.process_arabic_text(cheque_data.get('expense_description', 'بدون وصف'))],
+         processor.process_arabic_text(cheque_data.get('description', cheque_data.get('expense_description', 'بدون وصف')))],
         ["" if not field_visibility.get("amount_numbers", True) else f"المبلغ: {processor.format_amount_numbers(cheque_data.get('amount_number', 0))}",
          "" if not field_visibility.get("issued_to", True) else f"المستفيد: {cheque_data.get('issued_to', 'غير محدد')}",
          "" if not field_visibility.get("date", True) else f"التاريخ: {processor.convert_date_to_arabic(cheque_data.get('date', current_date))}",

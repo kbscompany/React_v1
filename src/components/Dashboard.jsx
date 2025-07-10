@@ -10,6 +10,7 @@ import WarehouseManagement from './WarehouseManagement.tsx'
 import KitchenProduction from './warehouse/KitchenProduction.tsx'
 // import BatchProductionCalculator from './BatchProductionCalculator.jsx' // Hidden as requested
 import ArabicChequeGenerator from './ArabicChequeGenerator.tsx'
+import ChequePrintManager from './ChequePrintManager.tsx'
 import PurchaseOrderManagement from './PurchaseOrderManagement.tsx'
 import FoodicsIntegration from './FoodicsIntegration.jsx'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -27,6 +28,7 @@ function Dashboard({ user, onLogout }) {
     { id: 'finance', label: t('navigation.finance') },
     { id: 'purchase-orders', label: '📋 Purchase Orders' },
     { id: 'arabic-cheques', label: '🖨️ Arabic Cheques' },
+    { id: 'cheque-print', label: `🖨️ ${t('navigation.chequePrint')}` },
     { id: 'foodics', label: '🍔 Foodics Integration' },
     { id: 'inventory', label: t('navigation.inventory') },
     { id: 'warehouse', label: t('navigation.warehouse') },
@@ -143,6 +145,7 @@ function Dashboard({ user, onLogout }) {
             {activeTab === 'finance' && <FinanceCenter />}
             {activeTab === 'purchase-orders' && <PurchaseOrderManagement />}
             {activeTab === 'arabic-cheques' && <ArabicChequeGenerator />}
+            {activeTab === 'cheque-print' && <ChequePrintManager />}
             {activeTab === 'foodics' && <FoodicsIntegration />}
             {activeTab === 'inventory' && <ItemManagement />}
             {activeTab === 'warehouse' && <WarehouseManagement />}

@@ -6,21 +6,30 @@ import os
 from urllib.parse import quote_plus
 from config import settings
 
-# --- Secure MySQL configuration (no hardcoded passwords) ---
+# --- MySQL Database Configuration ---
 DB_HOST = settings.db_host
 DB_PORT = settings.db_port
 DB_USER = settings.db_user
 DB_PASSWORD = settings.db_password
 DB_NAME = settings.db_name
 
-# Validate critical settings
-if not DB_PASSWORD and settings.environment == "production":
-    raise ValueError("❌ Database password not configured. Set DB_PASSWORD environment variable.")
+# Check if we have database password
+if not DB_PASSWORD:
+    print("⚠️  No MySQL password provided in .env file")
+    print("💡 Please set DB_PASSWORD in your .env file")
+    print("🔧 Example: DB_PASSWORD=your_mysql_password_here")
+    # Don't raise error, let it try to connect anyway (might work without password)
 
 # URL-encode the password to handle special characters
 DB_PASSWORD_ENCODED = quote_plus(DB_PASSWORD) if DB_PASSWORD else ""
 
-SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Create MySQL connection URL
+if DB_PASSWORD:
+    SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+else:
+    SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+print(f"🔗 Connecting to MySQL: {DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
 # --- SQLAlchemy Engine & Session ---
 engine = create_engine(
@@ -43,15 +52,18 @@ def get_db():
     finally:
         db.close()
 
-# Connection validation
+# Test database connection
 try:
-    # Test database connection
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
-    print(f"✅ Database connected: {DB_NAME} on {DB_HOST}:{DB_PORT}")
+    print(f"✅ MySQL connected successfully: {DB_NAME} on {DB_HOST}:{DB_PORT}")
     if settings.debug:
-        print(f"🔍 Database URL: mysql+mysqlconnector://{DB_USER}:***@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+        print(f"🔍 Connection URL: mysql+mysqlconnector://{DB_USER}:***@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 except Exception as e:
-    print(f"❌ Database connection failed: {e}")
-    print("💡 Check your database configuration and credentials")
+    print(f"❌ MySQL connection failed: {e}")
+    print("💡 Please check:")
+    print("   - MySQL is running on your EC2 server")
+    print("   - Database credentials in .env file are correct")
+    print("   - Database 'bakery_react' exists")
+    print("   - Python MySQL connector is installed: pip install mysql-connector-python")
     raise

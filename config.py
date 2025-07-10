@@ -8,38 +8,31 @@ import secrets
 
 class Settings(BaseSettings):
     # === CRITICAL: No weak defaults for production ===
-    secret_key: str = os.getenv("SECRET_KEY")
+    secret_key: str
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-    
-    # Security validation
-    def __post_init__(self):
-        if not self.secret_key:
-            raise ValueError("SECRET_KEY environment variable must be set for production")
-        if len(self.secret_key) < 32:
-            raise ValueError("SECRET_KEY must be at least 32 characters long")
+    access_token_expire_minutes: int = 30
     
     # Database settings (no defaults for security)
-    db_host: str = os.getenv("DB_HOST", "localhost")
-    db_port: str = os.getenv("DB_PORT", "3306")
-    db_user: str = os.getenv("DB_USER", "root")
-    db_password: str = os.getenv("DB_PASSWORD")
-    db_name: str = os.getenv("DB_NAME", "bakery_react")
+    db_host: str = "localhost"
+    db_port: str = "3306"
+    db_user: str = "root"
+    db_password: str
+    db_name: str = "bakery_react"
     
     # Optional admin user bootstrap password (used by initial migration scripts)
-    admin_password: str | None = os.getenv("ADMIN_PASSWORD")
+    admin_password: str | None = None
     
     # Application settings
-    debug: bool = os.getenv("DEBUG", "False").lower() == "true"
-    environment: str = os.getenv("ENVIRONMENT", "development")
-    log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    debug: bool = False
+    environment: str = "development"
+    log_level: str = "INFO"
     
     # File upload settings
-    max_upload_size_mb: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
-    allowed_file_extensions: str = os.getenv("ALLOWED_FILE_EXTENSIONS", "pdf,jpg,jpeg,png,doc,docx,xls,xlsx")
+    max_upload_size_mb: int = 10
+    allowed_file_extensions: str = "pdf,jpg,jpeg,png,doc,docx,xls,xlsx"
     
     # CORS settings
-    allowed_origins: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
+    allowed_origins: str = "http://localhost:3000,http://localhost:5173"
     
     # Encryption key for sensitive data (derived from SECRET_KEY)
     @property
@@ -56,9 +49,9 @@ class Settings(BaseSettings):
         return Fernet(self.encryption_key)
     
     # Foodics security settings
-    foodics_token_expiry_hours: int = int(os.getenv("FOODICS_TOKEN_EXPIRY_HOURS", "24"))
-    max_failed_sync_attempts: int = int(os.getenv("MAX_FAILED_SYNC_ATTEMPTS", "3"))
-    sync_rate_limit_per_hour: int = int(os.getenv("SYNC_RATE_LIMIT_PER_HOUR", "10"))
+    foodics_token_expiry_hours: int = 24
+    max_failed_sync_attempts: int = 3
+    sync_rate_limit_per_hour: int = 10
     
     @property
     def cors_origins(self) -> list:

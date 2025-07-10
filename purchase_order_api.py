@@ -793,6 +793,7 @@ async def generate_purchase_order_cheque(
                 "beneficiary_name": cheque.issued_to or "Unknown",  # This is what the UI expects
                 "issued_to": cheque.issued_to or "Unknown",  # This is what the company table expects
                 "issue_date": (cheque.issue_date or datetime.now()).strftime("%Y-%m-%d"),
+                "due_date": (cheque.due_date or datetime.now()).strftime("%Y-%m-%d") if cheque.due_date else None,  # Added due_date field
                 "expense_description": cheque.description or expense.description,
                 "date": (cheque.issue_date or datetime.now()).strftime("%Y-%m-%d"),
                 "safe_name": cheque.safe.name if cheque.safe else "No Safe",
@@ -907,6 +908,7 @@ async def get_purchase_order_cheque_pdf(
         "beneficiary_name": cheque.issued_to or "Unknown",  # This is what the UI expects
         "issued_to": cheque.issued_to or "Unknown",  # This is what the company table expects
         "issue_date": (cheque.issue_date or datetime.now()).strftime("%Y-%m-%d"),
+        "due_date": (cheque.due_date or datetime.now()).strftime("%Y-%m-%d") if cheque.due_date else None,  # Added due_date field
         "expense_description": cheque.description or expense.description,
         "date": (cheque.issue_date or datetime.now()).strftime("%Y-%m-%d"),
         "safe_name": cheque.safe.name if cheque.safe else "No Safe",

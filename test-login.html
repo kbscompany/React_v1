@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test EC2 Login</title>
+</head>
+<body>
+    <h1>Test EC2 Backend Login</h1>
+    <div id="result"></div>
+    
+    <script>
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Test login with form data
+                const formData = new URLSearchParams();
+                formData.append('username', 'admin');
+                formData.append('password', 'admin123');
+                
+                const response = await fetch('http://100.29.4.72:8000/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<h2 style="color: green;">✅ Login Successful!</h2>
+                        <p>Access Token: ${data.access_token ? 'Received' : 'Not received'}</p>
+                        <p>Token Type: ${data.token_type}</p>`;
+                } else {
+                    resultDiv.innerHTML = `<h2 style="color: red;">❌ Login Failed</h2>
+                        <p>Status: ${response.status}</p>
+                        <p>Error: ${JSON.stringify(data)}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<h2 style="color: red;">❌ Connection Error</h2>
+                    <p>${error.message}</p>`;
+            }
+        }
+        
+        // Test on page load
+        testLogin();
+    </script>
+</body>
+</html> 

@@ -102,6 +102,11 @@ class ArabicChequeGenerator:
         "amount_words": (100, 150),
         "beneficiary_name": (100, 200),
         "issue_date": (400, 100),
+        "due_date": (400, 150),
+        "description": (200, 200),
+        "payee_notice": (300, 250),
+        "recipient": (100, 300),
+        "receipt_date": (300, 300),
         "note_1": (200, 150),
         "note_2": (200, 150),
         "note_3": (200, 150),
@@ -321,11 +326,9 @@ class ArabicChequeGenerator:
                 # Reshape Arabic text
                 value = self.reshape_arabic(str(value))
                 
-                # Convert ReportLab coordinates to PyMuPDF coordinates
-                # ReportLab: origin at bottom-left, y increases upward
-                # PyMuPDF: origin at top-left, y increases downward
-                page_height = page.rect.height
-                pymupdf_y = page_height - y
+                # The Y coordinate is already in the correct PDF coordinate space
+                # No additional transformation needed since frontend handles the conversion
+                pymupdf_y = y
                 
                 # Create a flexible text box for Arabic text - allow positioning beyond margins
                 # Extend text box further left and right to accommodate text outside normal margins
@@ -395,6 +398,7 @@ def print_arabic_cheque(id: int, payload: ChequePrintPayload):
         "amount_words": num2words(25000, lang='ar'),
         "beneficiary_name": "شركة التجربة",
         "issue_date": "2025-06-17",
+        "due_date": "2025-07-17",  # Added due_date field
         # Additional fields for company table
         "expense_number": "EXP-2025-001",
         "category_path": "مصروفات عامة > مواد خام",
@@ -403,7 +407,7 @@ def print_arabic_cheque(id: int, payload: ChequePrintPayload):
         "date": "2025-06-17",
         "safe_name": "الخزنة الرئيسية",
         "bank_name": "البنك الأهلي",
-        "reference_number": "REF-2025-001",
+        "expense_id": "مرايا رقم",
         "account_code": "ACC-4010",
         "server_date": "2025-06-17"
     }
@@ -415,17 +419,16 @@ def print_arabic_cheque(id: int, payload: ChequePrintPayload):
     
     for field_key, position in payload.field_positions.items():
         if isinstance(position, dict) and 'x' in position and 'y' in position:
-            # The frontend sends coordinates with origin at top-left
-            # ReportLab expects origin at bottom-left
+            # Convert from unified UI coordinates (origin top-left) to PDF coordinates (origin bottom-left)
             x = position['x']
-            y = position['y']  # Already transformed in frontend
+            y = position['y']
+            pdf_x = x
+            pdf_y = page_height - y  # Invert Y coordinate for PDF space
             
-            # Convert UI coords (origin top-left) to PDF coords (origin bottom-left)
-            pdf_y = page_height - y
-            field_positions_tuples[field_key] = (x, pdf_y)
+            field_positions_tuples[field_key] = (pdf_x, pdf_y)
             
             if payload.debug_mode:
-                print(f"Field {field_key} UI({x},{y}) -> PDF({x},{pdf_y})")
+                print(f"Field {field_key} converted from UI ({x},{y}) to PDF ({pdf_x},{pdf_y})")
     
     generator = ArabicChequeGenerator()
     # Use create_overlay_pdf to generate text-only overlay
@@ -649,6 +652,7 @@ def preview_cheque_with_template(id: int, payload: ChequePrintPayload):
         "amount_words": num2words(25000, lang='ar'),
         "beneficiary_name": "شركة التجربة",
         "issue_date": "2025-06-17",
+        "due_date": "2025-07-17",  # Added due_date field
         # Additional fields for company table
         "expense_number": "EXP-2025-001",
         "category_path": "مصروفات عامة > مواد خام",
@@ -664,11 +668,15 @@ def preview_cheque_with_template(id: int, payload: ChequePrintPayload):
     
     # Convert position format from {field: {x, y}} to {field: (x, y)}
     field_positions_tuples = {}
+    page_height = 842  # A4 height in points
     for field_key, position in payload.field_positions.items():
         if isinstance(position, dict) and 'x' in position and 'y' in position:
             x = position['x']
             y = position['y']
-            field_positions_tuples[field_key] = (x, y)
+            # Convert from unified UI coordinates (origin top-left) to PDF coordinates (origin bottom-left)
+            pdf_x = x
+            pdf_y = page_height - y  # Invert Y coordinate for PDF space
+            field_positions_tuples[field_key] = (pdf_x, pdf_y)
     
     generator = ArabicChequeGenerator()
     
@@ -748,17 +756,18 @@ def generate_arabic_cheque(cheque_data: Dict) -> bytes:
         if os.path.exists("storage/cheque_field_positions.json"):
             with open("storage/cheque_field_positions.json") as f:
                 saved_positions = json.load(f)
-                # Saved positions are already in PDF coordinate space (origin bottom-left)
+                # Saved positions are now in unified pixel coordinates that need conversion to PDF coordinates
+                page_height = 842  # A4 height in points
                 for field_key, position in saved_positions.items():
                     if isinstance(position, list) and len(position) >= 2:
                         x = position[0]
                         y = position[1]
-                        # Convert UI coords (origin top-left) to PDF coords (origin bottom-left)
-                        page_height = 842
-                        pdf_y = page_height - y
-                        field_positions[field_key] = (x, pdf_y)
+                        # Convert from UI coordinate space (origin top-left) to PDF coordinate space (origin bottom-left)
+                        pdf_x = x
+                        pdf_y = page_height - y  # Invert Y coordinate for PDF space
+                        field_positions[field_key] = (pdf_x, pdf_y)
                         if debug_mode:
-                            print(f"Field {field_key} UI({x},{y}) -> PDF({x},{pdf_y})")
+                            print(f"Field {field_key} converted from UI ({x},{y}) to PDF ({pdf_x},{pdf_y})")
     except Exception as e:
         print(f"Warning: Could not load saved positions: {e}")
 
@@ -774,7 +783,7 @@ def generate_arabic_cheque(cheque_data: Dict) -> bytes:
         field_visibility["note_1"] = True
         field_visibility["note_2"] = True
         field_visibility["note_3"] = True
-        field_visibility["expense.id"] = True
+        field_visibility["expense.id"] = False
 
     
     # Get font size from cheque_data if provided

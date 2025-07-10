@@ -79,10 +79,11 @@ async def assign_cheques_to_safe(
             if cheque[2]:  # is_assigned_to_safe
                 continue
             
-            # Assign cheque to safe
+            # Assign cheque to safe and set issue_date to current server time
             db.execute(text("""
                 UPDATE cheques 
-                SET safe_id = :safe_id, is_assigned_to_safe = 1, status = 'assigned'
+                SET safe_id = :safe_id, is_assigned_to_safe = 1, status = 'assigned',
+                    issue_date = CURRENT_TIMESTAMP
                 WHERE id = :cheque_id
             """), {"safe_id": safe_id, "cheque_id": cheque_id})
             
@@ -192,7 +193,7 @@ async def settle_overspent_cheque(
         
         settlement_book_id = active_book[0] if active_book else cheque_book_id
         
-        # Create settlement cheque
+        # Create settlement cheque with issue_date set to current server time
         db.execute(text("""
             INSERT INTO cheques (
                 cheque_number, bank_account_id, cheque_book_id, amount, safe_id,

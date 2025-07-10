@@ -195,6 +195,7 @@
     "expenseManagement": "إدارة المصروفات",
     "cheques": "إدارة الشيكات",
     "chequeManagement": "إدارة الشيكات",
+    "chequePrint": "طباعة الشيكات",
     "warehouse": "إدارة المخازن",
     "inventory": "إدارة المخزون",
     "itemManagement": "إدارة العناصر",
@@ -230,7 +231,8 @@
       "expenses": "المصروفات",
       "expenseCategories": "فئات المصروفات",
       "supplierPayments": "مدفوعات الموردين",
-      "summary": "الملخص"
+      "summary": "الملخص",
+      "chequePrint": "طباعة الشيكات"
     },
     "buttons": {
       "newCheque": "شيك جديد",
@@ -913,8 +915,8 @@
     },
     "settlement": {
       "successNotification": {
-        "title": "تمت التسوية المبكرة بنجاح!",
-        "description": "تم تمييز الشيك كمسوى وتم تحديث رصيد الخزنة.",
+        "title": "تمت العملية بنجاح!",
+        "description": "تم إتمام العملية وتحديث البيانات.",
         "dismiss": "إغلاق"
       },
       "settledInfo": "✅ تم التسوية بنجاح\nمعرف شيك التسوية: {settledByChequeId}\nانقر على \"تحديث البيانات\" لرؤية تفاصيل شيك التسوية"

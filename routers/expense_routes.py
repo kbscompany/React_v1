@@ -359,7 +359,6 @@ async def create_expense(
         amount = float(expense_data.get("amount", 0))
         description = expense_data.get("description", "")
         paid_to = expense_data.get("paid_to", "")
-        expense_date = expense_data.get("expense_date")
         notes = expense_data.get("notes", "")
         
         # Validate required fields
@@ -368,23 +367,59 @@ async def create_expense(
         if not amount or amount <= 0:
             raise HTTPException(status_code=400, detail="Valid amount is required")
         
-        # Parse date
-        if expense_date:
-            try:
-                expense_date = datetime.fromisoformat(expense_date.replace('Z', '+00:00')).date()
-            except:
-                expense_date = datetime.now().date()
-        else:
-            expense_date = datetime.now().date()
+        # Always set expense_date to current server date (cannot be changed by user)
+        expense_date = datetime.now().date()
         
-        # Get safe_id from cheque
-        cheque_result = db.execute(text("SELECT safe_id FROM cheques WHERE id = :cheque_id"), 
-                                 {"cheque_id": cheque_id})
+        # Get cheque details including safe_id, amount, and current expenses
+        cheque_result = db.execute(text("""
+            SELECT c.safe_id, c.amount, c.cheque_number,
+                   COALESCE(
+                       (SELECT SUM(e.amount) FROM expenses e WHERE e.cheque_id = c.id AND e.status != 'rejected'),
+                       0
+                   ) as current_expenses
+            FROM cheques c
+            WHERE c.id = :cheque_id
+        """), {"cheque_id": cheque_id})
         cheque_row = cheque_result.fetchone()
         if not cheque_row:
             raise HTTPException(status_code=404, detail="Cheque not found")
         
         safe_id = cheque_row[0]
+        cheque_amount = float(cheque_row[1]) if cheque_row[1] else 0.0
+        cheque_number = cheque_row[2]
+        current_expenses = float(cheque_row[3]) if cheque_row[3] else 0.0
+        
+        # Get safe details
+        if safe_id:
+            safe_result = db.execute(text("SELECT name, current_balance FROM safes WHERE id = :safe_id"), 
+                                   {"safe_id": safe_id})
+            safe_row = safe_result.fetchone()
+            if not safe_row:
+                raise HTTPException(status_code=404, detail="Safe not found")
+            
+            safe_name = safe_row[0]
+            safe_balance = float(safe_row[1]) if safe_row[1] else 0.0
+        else:
+            raise HTTPException(status_code=400, detail="Cheque is not assigned to any safe")
+        
+        # Calculate overspend amount if any
+        new_total_expenses = current_expenses + amount
+        overspend_amount = max(0, new_total_expenses - cheque_amount)
+        
+        # Validate safe balance constraints
+        if overspend_amount > 0:
+            if overspend_amount > safe_balance:
+                # Calculate maximum allowed expense
+                max_allowed_expense = amount - (overspend_amount - safe_balance)
+                
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Cannot create expense: This would overspend cheque #{cheque_number} by ${overspend_amount:.2f}, "
+                           f"but safe '{safe_name}' only has ${safe_balance:.2f} available. "
+                           f"Maximum allowed expense amount: ${max_allowed_expense:.2f}. "
+                           f"Current cheque details: Amount=${cheque_amount:.2f}, "
+                           f"Already spent=${current_expenses:.2f}, Remaining=${cheque_amount - current_expenses:.2f}"
+                )
         
         # Insert expense
         insert_result = db.execute(text("""
@@ -400,6 +435,17 @@ async def create_expense(
             "expense_date": expense_date,
             "notes": notes
         })
+        
+        # Update safe balance - deduct the expense amount
+        if safe_id:
+            db.execute(text("""
+                UPDATE safes 
+                SET current_balance = current_balance - :amount
+                WHERE id = :safe_id
+            """), {
+                "amount": amount,
+                "safe_id": safe_id
+            })
         
         db.commit()
         

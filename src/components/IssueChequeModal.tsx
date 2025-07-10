@@ -261,13 +261,17 @@ const IssueChequeModal: React.FC<Props> = ({ isOpen, onClose, onIssued }) => {
       // 1) update cheque with all details (amount, status, issued_to, department, due_date)
       // Note: issue_date will be set automatically by the backend to current server time
       console.log('📝 Updating cheque with all details...')
-      const updateResponse = await axios.put(`/cheques-simple/${form.cheque_id}`, {
+      const updatePayload = {
         amount: parseFloat(form.amount),
         status: 'assigned',
         issued_to: form.issued_to,
         due_date: form.due_date,  // User-selected due date
         description: form.description
-      })
+      }
+      console.log('📤 Update payload:', updatePayload)
+      console.log('📅 Due date being sent:', form.due_date, 'Type:', typeof form.due_date)
+      
+      const updateResponse = await axios.put(`/cheques-simple/${form.cheque_id}`, updatePayload)
       console.log('✅ Cheque updated with all details:', updateResponse.data)
       
       // 2) assign to safe (only if a safe is selected)

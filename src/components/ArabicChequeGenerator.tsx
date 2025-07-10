@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios from 'axios';
+import { PX_TO_CM } from '../utils/px-to-cm';
 
 interface FieldPosition {
   x: number;
@@ -17,6 +18,11 @@ const FIELD_DEFS: ChequeField[] = [
   { key: 'amount_words', label: 'المبلغ كتابة' },
   { key: 'beneficiary_name', label: 'اسم المستفيد' },
   { key: 'issue_date', label: 'تاريخ الإصدار' },
+  { key: 'due_date', label: 'تاريخ الاستحقاق' },
+  { key: 'description', label: 'وصف الشيك' },
+  { key: 'payee_notice', label: 'يصرف للمستفيد الأول' },
+  { key: 'recipient', label: 'المستلم' },
+  { key: 'receipt_date', label: 'تاريخ الاستلام' },
   { key: 'company_table', label: 'جدول معلومات الشركة' },
   { key: 'note_1', label: 'محرر الشيك' },
   { key: 'note_4', label: 'رقم المرايا' },
@@ -52,6 +58,11 @@ const ArabicChequeGenerator = () => {
   // Print preview state
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [printPreviewUrl, setPrintPreviewUrl] = useState('');
+
+  // HTML printing state
+  const [showPrintMethodModal, setShowPrintMethodModal] = useState(false);
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+  const [pendingPrintPreview, setPendingPrintPreview] = useState(false);
 
   // Track system status
   const [systemStatus, setSystemStatus] = useState(null);
@@ -165,7 +176,182 @@ const ArabicChequeGenerator = () => {
     }).catch(() => {});
   }, []);
 
-  const handlePrint = (preview = false) => {
+  // Generate sample cheque data for display
+  const generateSampleChequeData = () => {
+    const sampleData = {
+      cheque_number: '123456',
+      amount_number: '1,500.00',
+      amount_words: 'ألف وخمسمائة ريال فقط لا غير',
+      beneficiary_name: 'شركة الأعمال التجارية المحدودة',
+      issue_date: new Date().toLocaleDateString('ar-SA'),
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('ar-SA'),
+      description: 'دفعة مقابل خدمات استشارية',
+      payee_notice: 'يصرف للمستفيد الأول فقط',
+      recipient: 'مدير الشؤون المالية',
+      receipt_date: new Date().toLocaleDateString('ar-SA'),
+      note_1: 'محرر الشيك: إدارة الشؤون المالية',
+      note_4: 'رقم المرايا: MR-2024-001'
+    };
+    return sampleData;
+  };
+
+  // HTML printing function
+  const handleHtmlPrint = (preview = false) => {
+    const chequeData = generateSampleChequeData();
+    
+    // Use unified pixel-to-cm conversion
+    const scaleX = PX_TO_CM;
+    const scaleY = PX_TO_CM;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طباعة الشيك - HTML</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', 'Tahoma', sans-serif;
+            direction: rtl;
+            background: white;
+        }
+
+        .cheque-container {
+            position: relative;
+            width: 21cm;
+            height: 29.7cm;
+            background: white;
+            ${hasTemplatePreview ? `
+                background-image: url('${API_BASE_URL}/arabic-cheque/cheque-template-preview');
+                background-size: 21cm 29.7cm;
+                background-repeat: no-repeat;
+                background-position: center;
+            ` : ''}
+        }
+
+        .cheque-field {
+            position: absolute;
+            font-size: ${fontSize}pt;
+            color: #000;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+
+        .company-table {
+            position: absolute;
+            top: 0.5cm;
+            right: 0.5cm;
+            left: 0.5cm;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #333;
+            padding: 10px;
+        }
+
+        .company-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12pt;
+        }
+
+        .company-table th,
+        .company-table td {
+            border: 1px solid #333;
+            padding: 5px;
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cheque-container">
+        ${visibility.company_table ? `
+        <div class="company-table">
+            <table>
+                <tr>
+                    <th colspan="3">استوديو كيكات كى بى اس - معلومات الشركة</th>
+                </tr>
+                <tr>
+                    <td>اسم الشركة</td>
+                    <td>رقم الهاتف</td>
+                    <td>العنوان</td>
+                </tr>
+                <tr>
+                    <td>استوديو كيكات كى بى اس</td>
+                    <td>+966 XX XXX XXXX</td>
+                    <td>الرياض، المملكة العربية السعودية</td>
+                </tr>
+            </table>
+        </div>
+        ` : ''}
+
+        ${FIELD_DEFS.filter(field => field.key !== 'company_table' && visibility[field.key]).map(field => {
+          const pos = positions[field.key];
+          if (!pos) return '';
+          
+          const leftCm = (pos.x * scaleX).toFixed(2);
+          const topCm = (pos.y * scaleY).toFixed(2);
+          
+          return `
+            <div class="cheque-field" style="left: ${leftCm}cm; top: ${topCm}cm;">
+                ${chequeData[field.key] || field.label}
+            </div>
+          `;
+        }).join('')}
+    </div>
+
+    <div class="no-print" style="position: fixed; top: 10px; left: 10px; background: #333; color: white; padding: 10px; border-radius: 5px; z-index: 1000;">
+        <button onclick="window.print()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer;">
+            طباعة
+        </button>
+        <button onclick="window.close()" style="background: #f44336; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer;">
+            إغلاق
+        </button>
+    </div>
+</body>
+</html>`;
+
+    if (preview) {
+      // Show HTML preview in modal
+      setShowHtmlPreview(true);
+      // Create a blob URL for the HTML content
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      setPrintPreviewUrl(url);
+    } else {
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+    }
+  };
+
+  // Updated handlePrint function to show method selection
+  const handlePrintWithOptions = (preview = false) => {
+    setPendingPrintPreview(preview);
+    setShowPrintMethodModal(true);
+  };
+
+  // Original PDF print function (renamed for clarity)
+  const handlePdfPrint = (preview = false) => {
     // Transform coordinates from UI to PDF
     const transformedPositions = {};
     for (const [key, pos] of Object.entries(positions)) {
@@ -433,13 +619,13 @@ const ArabicChequeGenerator = () => {
       <div className="flex gap-4">
         <button
           className="bg-purple-600 text-white px-4 py-2 rounded"
-          onClick={() => handlePrint(true)}
+          onClick={() => handlePrintWithOptions(true)}
         >
           معاينة الطباعة
         </button>
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={() => handlePrint(false)}
+          onClick={() => handlePrintWithOptions(false)}
         >
           طباعة الشيك بالعربية
         </button>
@@ -465,13 +651,123 @@ const ArabicChequeGenerator = () => {
         </label>
       </div>
 
-      {/* Print Preview Modal */}
+      {/* Print Method Selection Modal */}
+      {showPrintMethodModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-[90%]">
+            <h3 className="text-xl font-semibold mb-4 text-center">اختر طريقة الطباعة</h3>
+            <p className="text-gray-600 mb-6 text-center">يمكنك الآن الاختيار بين طباعة PDF أو طباعة HTML مباشرة</p>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <button
+                onClick={() => {
+                  setShowPrintMethodModal(false);
+                  handlePdfPrint(pendingPrintPreview);
+                }}
+                className="flex items-center justify-between p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                <div className="text-right">
+                  <div className="font-semibold text-blue-700">طباعة PDF</div>
+                  <div className="text-sm text-gray-600">النسخة التقليدية - جودة عالية</div>
+                </div>
+                <div className="text-3xl text-blue-600">📄</div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowPrintMethodModal(false);
+                  handleHtmlPrint(pendingPrintPreview);
+                }}
+                className="flex items-center justify-between p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition-colors"
+              >
+                <div className="text-right">
+                  <div className="font-semibold text-green-700">طباعة HTML</div>
+                  <div className="text-sm text-gray-600">مباشرة من المتصفح - سريعة وسهلة</div>
+                </div>
+                <div className="text-3xl text-green-600">🌐</div>
+              </button>
+            </div>
+            
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => setShowPrintMethodModal(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HTML Preview Modal */}
+      {showHtmlPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 w-[90%] h-[90%] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">معاينة طباعة HTML</h3>
+                <p className="text-sm text-gray-600">معاينة الشيك بتنسيق HTML للطباعة المباشرة</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowHtmlPreview(false);
+                  if (printPreviewUrl) {
+                    URL.revokeObjectURL(printPreviewUrl);
+                  }
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 relative">
+              <iframe
+                src={printPreviewUrl}
+                className="w-full h-full border-2 border-gray-300"
+                title="معاينة طباعة HTML"
+                style={{ backgroundColor: '#f5f5f5' }}
+              />
+            </div>
+            <div className="mt-4 flex gap-4 justify-center">
+              <button
+                className="bg-green-600 text-white px-6 py-2 rounded"
+                onClick={() => {
+                  // Open for printing
+                  const printWindow = window.open(printPreviewUrl);
+                  if (printWindow) {
+                    printWindow.onload = () => {
+                      printWindow.print();
+                    };
+                  }
+                  setShowHtmlPreview(false);
+                }}
+              >
+                طباعة HTML
+              </button>
+              <button
+                className="bg-gray-600 text-white px-6 py-2 rounded"
+                onClick={() => {
+                  setShowHtmlPreview(false);
+                  if (printPreviewUrl) {
+                    URL.revokeObjectURL(printPreviewUrl);
+                  }
+                }}
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PDF Print Preview Modal (existing) */}
       {showPrintPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 w-[90%] h-[90%] flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="text-lg font-semibold">معاينة الطباعة</h3>
+                <h3 className="text-lg font-semibold">معاينة طباعة PDF</h3>
                 <p className="text-sm text-gray-600">معاينة النص المدمج مع قالب الشيك</p>
               </div>
               <button
@@ -487,11 +783,10 @@ const ArabicChequeGenerator = () => {
               </button>
             </div>
             <div className="flex-1 relative">
-              {/* Show merged preview */}
               <iframe
                 src={printPreviewUrl}
                 className="w-full h-full border-2 border-gray-300"
-                title="معاينة الطباعة"
+                title="معاينة طباعة PDF"
                 style={{ backgroundColor: '#f5f5f5' }}
               />
             </div>
@@ -503,7 +798,7 @@ const ArabicChequeGenerator = () => {
                   setShowPrintPreview(false);
                 }}
               >
-                طباعة
+                طباعة PDF
               </button>
               <button
                 className="bg-gray-600 text-white px-6 py-2 rounded"

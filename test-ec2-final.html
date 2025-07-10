@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EC2 Deployment Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>EC2 Deployment Test - 100.29.4.72</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        async function runTests() {
+            // Test 1: Backend Health
+            try {
+                const health = await fetch('http://100.29.4.72:8000/');
+                const data = await health.json();
+                results.innerHTML += `<div class="test success">✅ Backend Running: ${data.message}</div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="test error">❌ Backend Error: ${e.message}</div>`;
+            }
+            
+            // Test 2: Frontend Access
+            try {
+                const frontend = await fetch('http://100.29.4.72:3000/', { mode: 'no-cors' });
+                results.innerHTML += `<div class="test success">✅ Frontend Accessible</div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="test error">❌ Frontend Error: ${e.message}</div>`;
+            }
+            
+            // Test 3: Login Test
+            try {
+                const formData = new URLSearchParams();
+                formData.append('username', 'admin');
+                formData.append('password', 'admin123');
+                
+                const login = await fetch('http://100.29.4.72:8000/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+                
+                if (login.ok) {
+                    const token = await login.json();
+                    results.innerHTML += `<div class="test success">✅ Login Successful! Token received</div>`;
+                    results.innerHTML += `<div class="test info">🎉 Your EC2 deployment is working perfectly!</div>`;
+                    results.innerHTML += `<div class="test info">👉 Go to <a href="http://100.29.4.72:3000">http://100.29.4.72:3000</a> to use your app</div>`;
+                } else {
+                    const error = await login.text();
+                    results.innerHTML += `<div class="test error">❌ Login Failed: ${login.status} - ${error}</div>`;
+                }
+            } catch (e) {
+                results.innerHTML += `<div class="test error">❌ Login Error: ${e.message}</div>`;
+            }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html> 

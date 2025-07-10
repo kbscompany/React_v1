@@ -429,7 +429,8 @@ async def get_unassigned_cheques(db: Session = Depends(get_db)):
                 "description": row[3] or "",
                 "issued_to": row[4] or "",  # Add issued_to field
                 "bank_account": f"{row[5]} ({row[6]})" if row[5] else "Unknown",  # Update indices
-                "bank_account_id": row[7]  # Update index
+                "bank_account_id": row[7],
+                "expense_id": row[8]  
             })
         
         return cheques
@@ -499,7 +500,7 @@ async def get_safe_cheques(
         # Get cheques assigned to this safe
         result = db.execute(text(f"""
             SELECT c.id, c.cheque_number, c.amount, c.status, 
-                   c.issue_date, c.description, c.issued_to,
+                   c.issue_date, c.due_date, c.description, c.issued_to,
                    ba.account_name, ba.bank_name,
                    COALESCE(
                        (SELECT SUM(e.amount) FROM expenses e WHERE e.cheque_id = c.id AND e.status != 'rejected'),
@@ -513,7 +514,11 @@ async def get_safe_cheques(
                    c.overspent_amount,
                    c.settlement_date,
                    c.safe_id,
-                   c.settled_by_cheque_id
+                   c.settled_by_cheque_id,
+                   c.is_printed,
+                   c.printed_at,
+                   c.print_count,
+                   (SELECT GROUP_CONCAT(e.id ORDER BY e.id) FROM expenses e WHERE e.cheque_id = c.id AND e.status != 'rejected') as expense_ids
             FROM cheques c
             LEFT JOIN bank_accounts ba ON c.bank_account_id = ba.id
             WHERE {where_clause}
@@ -523,19 +528,19 @@ async def get_safe_cheques(
         
         cheques = []
         for row in result:
-            total_expenses = float(row[9]) if row[9] else 0.0  # Updated index
+            total_expenses = float(row[10]) if row[10] else 0.0  # Updated index (due_date added)
             cheque_amount = float(row[2]) if row[2] else 0.0
-            remaining_amount = float(row[10]) if row[10] else cheque_amount  # Updated index
+            remaining_amount = float(row[11]) if row[11] else cheque_amount  # Updated index
             is_overspent = total_expenses > cheque_amount
             
             # Calculate overspent amount
-            overspent_amount = float(row[12]) if row[12] else 0.0  # Updated index
+            overspent_amount = float(row[13]) if row[13] else 0.0  # Updated index
             if is_overspent and overspent_amount == 0.0:
                 overspent_amount = total_expenses - cheque_amount
             
             # Check for settlement attachments if cheque is settled
             attachments = []
-            if bool(row[11]):  # is_settled
+            if bool(row[12]):  # is_settled (updated index)
                 try:
                     import glob
                     attachment_pattern = os.path.join(EARLY_SETTLEMENT_UPLOAD_DIR, f"settlement_{row[0]}_*")
@@ -556,24 +561,33 @@ async def get_safe_cheques(
                 except Exception as e:
                     print(f"Error checking attachments for cheque {row[0]}: {e}")
             
+            # Parse expense IDs from comma-separated string
+            expense_ids_str = row[20] if len(row) > 20 and row[20] else ""  # Updated index
+            expense_ids = [int(id.strip()) for id in expense_ids_str.split(",") if id.strip().isdigit()] if expense_ids_str else []
+            
             cheques.append({
                 "id": row[0],
                 "cheque_number": row[1],
                 "amount": cheque_amount,
                 "status": row[3] or "assigned",
                 "issue_date": row[4].isoformat() if row[4] else None,
-                "description": row[5] or "",
-                "issued_to": row[6] or "",  # Add issued_to field
-                "bank_account": f"{row[7]} ({row[8]})" if row[7] else "Unknown",  # Correct indices
+                "due_date": row[5].isoformat() if row[5] else None,  # Add due_date field
+                "description": row[6] or "",  # Updated index
+                "issued_to": row[7] or "",  # Updated index
+                "bank_account": f"{row[8]} ({row[9]})" if row[8] else "Unknown",  # Updated indices
                 "total_expenses": total_expenses,
                 "remaining_amount": remaining_amount,
-                "is_settled": bool(row[11]),  # Updated index
+                "is_settled": bool(row[12]),  # Updated index
                 "is_overspent": is_overspent,
                 "overspent_amount": overspent_amount,
-                "settlement_date": row[13].isoformat() if row[13] else None,  # Updated index
+                "settlement_date": row[14].isoformat() if row[14] else None,  # Updated index
                 "safe_id": safe_id,  # Use the safe_id parameter directly
-                "settled_by_cheque_id": row[15] if len(row) > 15 else None,  # Updated index
-                "expense_count": 0,
+                "settled_by_cheque_id": row[16] if len(row) > 16 else None,  # Updated index
+                "is_printed": bool(row[17]) if len(row) > 17 else False,  # Print status (updated index)
+                "printed_at": row[18].isoformat() if len(row) > 18 and row[18] else None,  # Print timestamp (updated index)
+                "print_count": row[19] if len(row) > 19 else 0,  # Print count (updated index)
+                "expense_ids": expense_ids,  # Related expense IDs
+                "expense_count": len(expense_ids),  # Count of expenses
                 "attachments": attachments,
                 "has_attachments": len(attachments) > 0
             })
@@ -1113,7 +1127,7 @@ async def print_existing_cheque_arabic(
         
         # Get cheque data from database
         cheque_query = db.execute(text("""
-            SELECT c.id, c.cheque_number, c.amount, c.issue_date, c.description,
+            SELECT c.id, c.cheque_number, c.amount, c.issue_date, c.due_date, c.description,
                    c.issued_to, s.name as safe_name, ba.account_name as bank_name
             FROM cheques c
             LEFT JOIN safes s ON c.safe_id = s.id  
@@ -1128,6 +1142,7 @@ async def print_existing_cheque_arabic(
         # Extract cheque data and map to expected field names
         amount = float(cheque_row[2]) if cheque_row[2] else 0
         issue_date = cheque_row[3]
+        due_date = cheque_row[4]
         
         # Format date properly
         if issue_date:
@@ -1138,6 +1153,14 @@ async def print_existing_cheque_arabic(
         else:
             date_str = datetime.now().strftime("%Y-%m-%d")
         
+        if due_date:
+            if hasattr(due_date, 'strftime'):
+                due_date_str = due_date.strftime("%Y-%m-%d")
+            else:
+                due_date_str = str(due_date)
+        else:
+            due_date_str = datetime.now().strftime("%Y-%m-%d")
+        
         cheque_data = {
             # Primary cheque fields - these are the fields the Arabic generator expects
             "beneficiary_name": cheque_row[5] or "غير محدد",  # Maps to issued_to
@@ -1147,19 +1170,25 @@ async def print_existing_cheque_arabic(
             "cheque_number": cheque_row[1] or "",
             "date": date_str,
             "issue_date": date_str,
+            "due_date": due_date_str,
             "note_1": "محرر الشيك",
             "note_2": "التاريخ",
             "note_3": "المستلم",
-            "note_4": "expense_id",
+            "expense_id": "expense_id",
              # Include both date formats
             
             # Description and expense info
-            "expense_description": cheque_row[4] or f"شيك رقم {cheque_row[1]}",
-            "description": cheque_row[4] or "",
+            "expense_description": cheque_row[6] or f"شيك رقم {cheque_row[1]}",
+            "description": cheque_row[6] or "",
+            
+            # New positioning fields
+            "payee_notice": "يصرف للمستفيد الأول",
+            "recipient": "المستلم",
+            "receipt_date": "تاريخ الاستلام",
             
             # Bank and safe info
-            "safe_name": cheque_row[6] or "",
-            "bank_name": cheque_row[7] or "",
+            "safe_name": cheque_row[7] or "",
+            "bank_name": cheque_row[8] or "",
             
             # Additional fields that might be used by company table
             "expense_number": f"CHQ-{cheque_row[1]}",
@@ -1203,6 +1232,37 @@ async def print_existing_cheque_arabic(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to print cheque: {str(e)}")
 
+@app.patch("/cheques/{cheque_id}/mark-printed")
+async def mark_cheque_as_printed(
+    cheque_id: int,
+    db: Session = Depends(get_db)
+):
+    """Mark a cheque as printed and track print count"""
+    try:
+        # Check if cheque exists
+        cheque = db.execute(text("SELECT id FROM cheques WHERE id = :id"), 
+                           {"id": cheque_id}).fetchone()
+        if not cheque:
+            raise HTTPException(status_code=404, detail="Cheque not found")
+        
+        # Update print status in database
+        db.execute(text("""
+            UPDATE cheques 
+            SET is_printed = 1, 
+                printed_at = NOW(),
+                print_count = COALESCE(print_count, 0) + 1
+            WHERE id = :cheque_id
+        """), {"cheque_id": cheque_id})
+        
+        db.commit()
+        
+        return {"success": True, "message": "Cheque marked as printed"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update print status: {str(e)}")
+
 @app.get("/cheques/printable")
 async def get_printable_cheques(
     safe_id: Optional[int] = None,
@@ -1223,7 +1283,7 @@ async def get_printable_cheques(
         
         # Get printable cheques
         result = db.execute(text(f"""
-            SELECT c.id, c.cheque_number, c.amount, c.issue_date, c.description,
+            SELECT c.id, c.cheque_number, c.amount, c.issue_date, c.due_date, c.description,
                    c.issued_to, s.name as safe_name, ba.account_name as bank_name,
                    c.status
             FROM cheques c
@@ -1240,11 +1300,12 @@ async def get_printable_cheques(
                 "cheque_number": row[1],
                 "amount": float(row[2]) if row[2] else 0,
                 "issue_date": row[3].isoformat() if row[3] else None,
-                "description": row[4] or "",
-                "issued_to": row[5] or "",
-                "safe_name": row[6] or "",
-                "bank_name": row[7] or "",
-                "status": row[8] or "issued"
+                "due_date": row[4].isoformat() if row[4] else None,  # Added due_date field
+                "description": row[5] or "",
+                "issued_to": row[6] or "",
+                "safe_name": row[7] or "",
+                "bank_name": row[8] or "",
+                "status": row[9] or "issued"  # Updated index
             })
         
         return {
@@ -2331,158 +2392,6 @@ async def process_transfer_order(order_id: int, processing_data: dict, db: Sessi
     except Exception as e:
         print(f"Error processing transfer order: {e}")
         return {"success": False, "error": str(e)}
-
-@app.get("/cheques/printable-sqlite")
-async def get_printable_cheques_sqlite(
-    safe_id: Optional[int] = None,
-    status: str = "issued"
-):
-    """Get list of cheques that can be printed from SQLite database"""
-    import sqlite3
-    try:
-        conn = sqlite3.connect('warehouse.db')
-        cursor = conn.cursor()
-        
-        # Build query
-        query = """
-            SELECT c.id, c.cheque_number, c.amount, c.issue_date, c.description,
-                   c.issued_to, s.name as safe_name, ba.account_name as bank_name,
-                   c.status
-            FROM cheques c
-            LEFT JOIN safes s ON c.safe_id = s.id
-            LEFT JOIN bank_accounts ba ON c.bank_account_id = ba.id  
-            WHERE c.status = ?
-        """
-        
-        params = [status]
-        
-        if safe_id:
-            query += " AND c.safe_id = ?"
-            params.append(safe_id)
-            
-        query += " ORDER BY c.issue_date DESC, c.cheque_number DESC"
-        
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        
-        cheques = []
-        for row in rows:
-            cheques.append({
-                "id": row[0],
-                "cheque_number": row[1],
-                "amount": float(row[2]) if row[2] else 0,
-                "issue_date": row[3],
-                "description": row[4] or "",
-                "issued_to": row[5] or "",
-                "safe_name": row[6] or "",
-                "bank_name": row[7] or "",
-                "status": row[8] or "issued"
-            })
-        
-        conn.close()
-        
-        return {
-            "success": True,
-            "cheques": cheques,
-            "total": len(cheques)
-        }
-        
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Failed to fetch printable cheques: {str(e)}",
-            "cheques": [],
-            "total": 0
-        }
-
-@app.post("/cheques/{cheque_id}/print-arabic-sqlite")
-async def print_existing_cheque_arabic_sqlite(
-    cheque_id: int,
-    payload: Optional[Dict[str, Any]] = Body(None),
-    db: Session = Depends(get_db)
-):
-    """Print existing cheque in Arabic format from SQLite"""
-    import sqlite3
-    try:
-        # Get cheque data from SQLite
-        conn = sqlite3.connect('warehouse.db')
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT c.id, c.cheque_number, c.amount, c.issue_date, c.description,
-                   c.issued_to, s.name as safe_name, ba.bank_name,
-                   ba.account_name, c.created_at, c.status,
-                   e.id as expense_id, e.expense_date, e.created_at as expense_created_at,
-                   ec.name as category_name, ec.path as category_path
-            FROM cheques c
-            LEFT JOIN safes s ON c.safe_id = s.id
-            LEFT JOIN bank_accounts ba ON c.bank_account_id = ba.id
-            LEFT JOIN expenses e ON e.cheque_id = c.id
-            LEFT JOIN expense_categories ec ON e.category_id = ec.id
-            WHERE c.id = ?
-            LIMIT 1
-        """, (cheque_id,))
-        
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
-            raise HTTPException(status_code=404, detail="Cheque not found")
-        
-        # Prepare enhanced cheque data with new financial fields
-        cheque_data = {
-            # Original fields
-            "cheque_number": row[1],
-            "amount_number": float(row[2]) if row[2] else 0,
-            "issued_to": row[5] or "غير محدد",
-            "expense_description": row[4] or "بدون وصف",
-            "date": row[3] or "2024-12-01",
-            "safe_name": row[6] or "الخزنة الرئيسية",
-            "bank_name": row[7] or "البنك المصري",
-            "payee_notice": "يصرف للمستفيد الأول",
-            
-            # New financial form fields
-            "server_date": row[9] if row[9] else datetime.now().isoformat(),  # cheque created_at (index 9)
-            "expense_number": f"EXP-{row[11]}" if row[11] else f"CHQ-{row[1]}",  # expense_id (index 11) or cheque_number
-            "reference_number": f"REF-{row[0]}-{datetime.now().strftime('%Y%m%d')}",  # cheque_id + date
-            "account_code": f"ACC-{row[6][:3].upper()}" if row[6] else "ACC-GEN",  # safe name abbreviation
-            "department": row[15] if row[15] else "الإدارة المالية",  # category_path (index 15) or default
-            "category_path": row[15],  # IMPORTANT: This is what the table logic expects (index 15)
-            
-            # Additional metadata
-            "cheque_status": row[10] or "issued",  # cheque status (index 10)
-            "expense_date": row[12] if row[12] else None,  # expense_date (index 12)
-            "category_name": row[14] if row[14] else None,  # category_name (index 14)
-        }
-        
-        print(f"🔍 DEBUG: Cheque data prepared: {cheque_data}")  # Debug print
-        
-        # Merge any overrides from payload
-        if payload and "field_positions" in payload:
-            cheque_data["field_positions"] = payload["field_positions"]
-        
-        if payload and "font_language" in payload:
-            cheque_data["font_language"] = payload["font_language"]
-        
-        # Import and use Arabic cheque generator
-        from arabic_cheque_generator import generate_arabic_cheque
-        pdf_bytes = generate_arabic_cheque(cheque_data)
-        
-        # Return PDF
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"inline; filename=cheque_{cheque_data['cheque_number']}_arabic.pdf"
-            }
-        )
-        
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Arabic cheque generator not available. Please install required packages.")
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Cheque template not found. Please upload a template first.")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to print cheque: {str(e)}")
 
 # ==========================================
 # SECURE FOODICS CONFIGURATION ENDPOINTS
@@ -3584,6 +3493,285 @@ async def get_expense_categories_api(db: Session = Depends(get_db)):
             "error": str(e),
             "data": []
         }
+
+@api_router.get("/expenses/cheques")
+async def get_cheques_for_expenses_simple(db: Session = Depends(get_db)):
+    """Get all cheques with their expense counts for filtering (no authentication required)"""
+    try:
+        result = db.execute(text("""
+            SELECT c.id, c.cheque_number, c.amount, c.description, c.issue_date,
+                   s.name as safe_name, COUNT(e.id) as expense_count,
+                   COALESCE(SUM(e.amount), 0) as total_expenses
+            FROM cheques c
+            LEFT JOIN safes s ON c.safe_id = s.id
+            LEFT JOIN expenses e ON c.id = e.cheque_id
+            GROUP BY c.id, c.cheque_number, c.amount, c.description, c.issue_date, s.name
+            ORDER BY c.issue_date DESC, c.id DESC
+        """))
+        
+        cheques = []
+        for row in result:
+            cheques.append({
+                "id": row[0],
+                "cheque_number": row[1] or "",
+                "amount": float(row[2]) if row[2] else 0.0,
+                "description": row[3] or "",
+                "issue_date": row[4].isoformat() if row[4] else None,
+                "safe_name": row[5] or "Unknown Safe",
+                "expense_count": row[6] or 0,
+                "total_expenses": float(row[7]) if row[7] else 0.0
+            })
+        
+        return {
+            "success": True,
+            "count": len(cheques),
+            "data": cheques
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "data": []
+        }
+
+@api_router.get("/expenses/search")
+async def search_expenses_simple(
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    cheque_id: Optional[int] = None,
+    cheque_number: Optional[str] = None,
+    category_id: Optional[int] = None,
+    status: Optional[str] = None,
+    safe_id: Optional[int] = None,
+    search_term: Optional[str] = None,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """Search expenses with filters (no authentication required)"""
+    try:
+        # Build dynamic query
+        where_conditions = []
+        params = {}
+        
+        # Date range filter
+        if from_date:
+            where_conditions.append("e.expense_date >= :from_date")
+            params["from_date"] = from_date
+        if to_date:
+            where_conditions.append("e.expense_date <= :to_date")
+            params["to_date"] = to_date
+        
+        # Cheque filters
+        if cheque_id:
+            where_conditions.append("e.cheque_id = :cheque_id")
+            params["cheque_id"] = cheque_id
+        if cheque_number:
+            where_conditions.append("c.cheque_number LIKE :cheque_number")
+            params["cheque_number"] = f"%{cheque_number}%"
+        
+        # Other filters
+        if category_id:
+            where_conditions.append("e.category_id = :category_id")
+            params["category_id"] = category_id
+        if status:
+            where_conditions.append("e.status = :status")
+            params["status"] = status
+        if safe_id:
+            where_conditions.append("e.safe_id = :safe_id")
+            params["safe_id"] = safe_id
+        if search_term:
+            where_conditions.append("(e.description LIKE :search_term OR e.notes LIKE :search_term)")
+            params["search_term"] = f"%{search_term}%"
+        
+        # Build WHERE clause
+        where_clause = ""
+        if where_conditions:
+            where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        # Set limit
+        params["limit"] = limit
+        
+        result = db.execute(text(f"""
+            SELECT e.id, e.description, e.amount, e.expense_date, e.status, e.notes,
+                   ec.name as category_name, s.name as safe_name, c.cheque_number,
+                   e.cheque_id, e.category_id, e.safe_id
+            FROM expenses e
+            LEFT JOIN expense_categories ec ON e.category_id = ec.id
+            LEFT JOIN safes s ON e.safe_id = s.id
+            LEFT JOIN cheques c ON e.cheque_id = c.id
+            {where_clause}
+            ORDER BY e.expense_date DESC, e.id DESC
+            LIMIT :limit
+        """), params)
+        
+        expenses = []
+        for row in result:
+            expenses.append({
+                "id": row[0],
+                "description": row[1] or "",
+                "amount": float(row[2]) if row[2] else 0.0,
+                "expense_date": row[3].isoformat() if row[3] else None,
+                "status": row[4] or "pending",
+                "notes": row[5] or "",
+                "category_name": row[6] or "Uncategorized",
+                "safe_name": row[7] or "Unknown Safe",
+                "cheque_number": row[8] or "",
+                "cheque_id": row[9],
+                "category_id": row[10],
+                "safe_id": row[11]
+            })
+        
+        return {
+            "success": True,
+            "count": len(expenses),
+            "data": expenses
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "data": []
+        }
+
+@api_router.post("/expenses/summary/html")
+async def generate_expense_summary_html_simple(
+    request_data: dict,
+    language: str = "ar",
+    db: Session = Depends(get_db)
+):
+    """Generate HTML summary for selected expenses (no authentication required)"""
+    try:
+        expense_ids = request_data.get("expense_ids", [])
+        summary_info = request_data.get("summary_info", {})
+        
+        if not expense_ids:
+            return {"success": False, "error": "No expenses selected"}
+        
+        # Get expenses data
+        result = db.execute(text("""
+            SELECT e.id, e.description, e.amount, e.expense_date, e.status, e.notes,
+                   ec.name as category_name, s.name as safe_name, c.cheque_number
+            FROM expenses e
+            LEFT JOIN expense_categories ec ON e.category_id = ec.id
+            LEFT JOIN safes s ON e.safe_id = s.id
+            LEFT JOIN cheques c ON e.cheque_id = c.id
+            WHERE e.id IN ({})
+            ORDER BY e.expense_date DESC
+        """.format(','.join(map(str, expense_ids)))))
+        
+        expenses = []
+        total_amount = 0
+        for row in result:
+            expense = {
+                "id": row[0],
+                "description": row[1] or "",
+                "amount": float(row[2]) if row[2] else 0.0,
+                "expense_date": row[3].isoformat() if row[3] else None,
+                "status": row[4] or "pending",
+                "notes": row[5] or "",
+                "category_name": row[6] or "Uncategorized",
+                "safe_name": row[7] or "Unknown Safe",
+                "cheque_number": row[8] or ""
+            }
+            expenses.append(expense)
+            total_amount += expense["amount"]
+        
+        # Generate HTML (simplified version)
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="{language}">
+        <head>
+            <meta charset="UTF-8">
+            <title>Expense Summary</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; direction: {'rtl' if language == 'ar' else 'ltr'}; }}
+                .header {{ text-align: center; margin-bottom: 20px; }}
+                .summary {{ background: #f5f5f5; padding: 15px; margin-bottom: 20px; }}
+                table {{ width: 100%; border-collapse: collapse; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: {'right' if language == 'ar' else 'left'}; }}
+                th {{ background-color: #28a745; color: white; }}
+                .total {{ font-weight: bold; background-color: #e9ecef; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>{'ملخص المصروفات' if language == 'ar' else 'Expense Summary'}</h1>
+                <p>{'التاريخ' if language == 'ar' else 'Date'}: {summary_info.get('date_range', 'All Dates')}</p>
+            </div>
+            
+            <div class="summary">
+                <p><strong>{'العدد الإجمالي' if language == 'ar' else 'Total Count'}:</strong> {len(expenses)}</p>
+                <p><strong>{'المبلغ الإجمالي' if language == 'ar' else 'Total Amount'}:</strong> ${total_amount:,.2f}</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>{'الوصف' if language == 'ar' else 'Description'}</th>
+                        <th>{'المبلغ' if language == 'ar' else 'Amount'}</th>
+                        <th>{'التاريخ' if language == 'ar' else 'Date'}</th>
+                        <th>{'الفئة' if language == 'ar' else 'Category'}</th>
+                        <th>{'الخزنة' if language == 'ar' else 'Safe'}</th>
+                        <th>{'رقم الشيك' if language == 'ar' else 'Cheque Number'}</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+        
+        for expense in expenses:
+            html_content += f"""
+                    <tr>
+                        <td>{expense['description']}</td>
+                        <td>${expense['amount']:,.2f}</td>
+                        <td>{expense['expense_date']}</td>
+                        <td>{expense['category_name']}</td>
+                        <td>{expense['safe_name']}</td>
+                        <td>{expense['cheque_number']}</td>
+                    </tr>
+            """
+        
+        html_content += f"""
+                    <tr class="total">
+                        <td><strong>{'الإجمالي' if language == 'ar' else 'Total'}</strong></td>
+                        <td><strong>${total_amount:,.2f}</strong></td>
+                        <td colspan="4"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
+        
+        return Response(content=html_content, media_type="text/html")
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/expenses/summary/download")
+async def download_expense_summary_html_simple(
+    request_data: dict,
+    language: str = "ar",
+    db: Session = Depends(get_db)
+):
+    """Download HTML summary for selected expenses (no authentication required)"""
+    try:
+        # Reuse the HTML generation logic
+        html_response = await generate_expense_summary_html_simple(request_data, language, db)
+        
+        if isinstance(html_response, Response):
+            # Return as file download
+            return Response(
+                content=html_response.body,
+                media_type="text/html",
+                headers={
+                    "Content-Disposition": f"attachment; filename=expense_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+                }
+            )
+        else:
+            return html_response
+            
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 app.include_router(api_router)
 

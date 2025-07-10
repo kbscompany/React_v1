@@ -5,6 +5,7 @@ import { API_BASE_URL, SIMPLE_API_URL } from '../config/api';
 import { roleManager, PERMISSIONS } from '../lib/roleManager';
 import { Search, Eye, Clock, CheckCircle, AlertCircle, X, Plus, Receipt, BookOpen, Settings, FileText, Printer, Upload, Send } from 'lucide-react';
 import IssueChequeModal from './IssueChequeModal';
+import { PX_TO_CM } from '../utils/px-to-cm';
 
 interface BankAccount {
   id: number;
@@ -32,6 +33,7 @@ interface Cheque {
   issued_to?: string;
   status: string;
   safe_id: number | null;
+  safe_name?: string; // Safe name from API
   is_settled: boolean;
   settlement_date?: string;
   total_expenses: string | number;
@@ -153,6 +155,7 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
 
   // Add state for printing
   const [printingChequeId, setPrintingChequeId] = useState<number | null>(null);
+  const [printOptionsModal, setPrintOptionsModal] = useState<{ isOpen: boolean; cheque: Cheque | null }>({ isOpen: false, cheque: null });
 
   // Add state for invoice upload
   const [invoiceUploadModalOpen, setInvoiceUploadModalOpen] = useState(false);
@@ -298,13 +301,26 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
         }
         
         const queryString = queryParams.join('&');
-        const chequesResponse = await axios.get(`${SIMPLE_API_URL}/safes/${selectedSafe}/cheques?${queryString}`);
+        const chequesResponse = await axios.get(`${API_BASE_URL}/safes/${selectedSafe}/cheques?${queryString}`);
         
         // Handle different API response formats safely
         const chequesData = chequesResponse.data;
+        console.log('🔍 DEBUG: Raw cheques response:', chequesData);
+        
         if (Array.isArray(chequesData)) {
+          console.log('✅ DEBUG: Cheques data is array, first cheque:', chequesData[0]);
+          console.log('📅 DEBUG: First cheque due_date:', chequesData[0]?.due_date);
+          console.log('🔍 DEBUG: All cheques with due_date info:', chequesData.map(c => ({
+            id: c.id,
+            cheque_number: c.cheque_number,
+            due_date: c.due_date,
+            due_date_type: typeof c.due_date,
+            due_date_value: c.due_date
+          })));
           setCheques(chequesData);
         } else if (chequesData && Array.isArray(chequesData.data)) {
+          console.log('✅ DEBUG: Cheques data has data property, first cheque:', chequesData.data[0]);
+          console.log('📅 DEBUG: First cheque due_date:', chequesData.data[0]?.due_date);
           setCheques(chequesData.data);
         } else {
           console.warn('Unexpected cheques response format:', chequesData);
@@ -652,7 +668,295 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
     }
   };
 
-  // Add print cheque handler with proper error handling and debugging
+  // Open print options modal instead of direct printing
+  const openPrintOptionsModal = (cheque: Cheque) => {
+    setPrintOptionsModal({ isOpen: true, cheque });
+  };
+
+  // HTML Print functionality using saved field positions
+  const handleHtmlPrint = async (cheque: Cheque, preview = false) => {
+    if (!cheque) return;
+
+    try {
+      // Load saved field positions and settings from backend
+      const [positionsResponse, settingsResponse] = await Promise.all([
+        axios.get(`${API_BASE_URL}/arabic-cheque/cheque-field-positions`),
+        axios.get(`${API_BASE_URL}/arabic-cheque/cheque-settings`)
+      ]);
+
+      const savedPositions = positionsResponse.data || {};
+      const savedSettings = settingsResponse.data || {};
+      const fontSize = savedSettings.font_size || 16;
+
+      // Field definitions (same as ChequePrintManager)
+      const FIELD_DEFS = [
+        { key: 'cheque_number', label: 'رقم الشيك' },
+        { key: 'amount_number', label: 'المبلغ بالأرقام' },
+        { key: 'amount_words', label: 'المبلغ كتابة' },
+        { key: 'beneficiary_name', label: 'اسم المستفيد' },
+        { key: 'issue_date', label: 'تاريخ الإصدار' },
+        { key: 'due_date', label: 'تاريخ الاستحقاق' },
+        { key: 'description', label: 'وصف الشيك' },
+        { key: 'payee_notice', label: 'يصرف للمستفيد الأول' },
+        { key: 'recipient', label: 'المستلم' },
+        { key: 'receipt_date', label: 'تاريخ الاستلام' },
+        { key: 'note_1', label: 'محرر الشيك' },
+        { key: 'note_4', label: 'ملاحظة 4' },
+        { key: 'company_table', label: 'جدول معلومات الشركة' },
+        // Additional fields that might be in positions
+        { key: 'safe_name', label: 'اسم الخزنة' },
+        { key: 'bank_name', label: 'اسم البنك' }
+      ];
+
+      // Generate cheque data - using exact field mappings
+      const amount = typeof cheque.amount === 'string' ? parseFloat(cheque.amount) : cheque.amount;
+      
+      // Extract safe name from cheque object
+      const safeName = cheque.safe_name || safes.find(s => s.id === cheque.safe_id)?.name || 'غير محدد';
+      
+      // Debug log to check cheque structure
+      console.log('🏦 Full cheque object:', cheque);
+      console.log('🔍 Available fields in cheque:', Object.keys(cheque));
+      
+      // Parse bank info from bank_account field (format: "Account Name (Bank Name)")
+      let bankName = '';
+      let accountName = '';
+      if (cheque.bank_account) {
+        const bankMatch = cheque.bank_account.match(/^(.+?)\s*\((.+?)\)$/);
+        if (bankMatch) {
+          accountName = bankMatch[1].trim();
+          bankName = bankMatch[2].trim();
+        } else {
+          bankName = cheque.bank_account;
+        }
+      }
+
+      const chequeData: Record<string, string> = {
+        cheque_number: cheque.cheque_number || '',
+        amount_number: amount.toFixed(2),
+        amount_words: convertToArabicWords(amount),
+        beneficiary_name: cheque.issued_to || '',
+        issue_date: cheque.issue_date ? new Date(cheque.issue_date).toLocaleDateString('ar-EG') : '',
+        due_date: cheque.due_date ? new Date(cheque.due_date).toLocaleDateString('ar-EG') : '',
+        description: cheque.description || 'بدون وصف',  // Ensure we only use actual cheque description
+        payee_notice: 'ادفعوا بموجب هذا الشيك',
+        recipient: cheque.issued_to || '',
+        receipt_date: new Date().toLocaleDateString('ar-EG'),
+        note_1: safeName,
+        note_4: bankName,
+        company_table: '', // Not used in field rendering
+        safe_name: safeName,
+        bank_name: bankName
+      };
+
+      // Debug logging
+      console.log('📍 Loaded positions:', savedPositions);
+      console.log('📄 Cheque data being printed:', cheque);
+      console.log('🔍 Raw cheque.description:', cheque.description);
+      console.log('🔍 Raw cheque.due_date:', cheque.due_date);
+      console.log('🎨 Generated cheque fields:', chequeData);
+      console.log('📝 Final description field:', chequeData.description);
+      console.log('📅 Final due_date field:', chequeData.due_date);
+      console.log('🏦 Bank info:', { bankName, accountName, safeName });
+
+      // Use unified pixel-to-cm conversion
+      const scaleX = PX_TO_CM;
+      const scaleY = PX_TO_CM;
+
+      // Check if we have a template background
+      let backgroundStyle = '';
+      try {
+        const templateResponse = await axios.get(`${API_BASE_URL}/cheque-template-status`);
+        if (templateResponse.data.template_exists) {
+          backgroundStyle = `
+            background-image: url('${API_BASE_URL}/cheque-template-preview');
+            background-size: 21cm 29.7cm;
+            background-repeat: no-repeat;
+            background-position: center;
+          `;
+        }
+      } catch (e) {
+        // Template not available, continue without background
+      }
+
+      const htmlContent = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طباعة شيك ${cheque.cheque_number}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        html, body {
+            width: 210mm;
+            height: 297mm;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            direction: rtl;
+            background: white;
+        }
+        .cheque-container {
+            width: 21cm;
+            height: 29.7cm;
+            position: relative;
+            margin: 0;
+            background-color: white;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+            ${backgroundStyle}
+        }
+        .cheque-field {
+            position: absolute;
+            font-size: ${fontSize}pt;
+            color: #000;
+            white-space: nowrap;
+            font-weight: bold;
+            direction: rtl;
+        }
+        .company-table {
+            position: absolute;
+            top: 0.5cm;
+            right: 0.5cm;
+            left: 0.5cm;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #333;
+            padding: 10px;
+        }
+        .company-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12pt;
+        }
+        .company-table th,
+        .company-table td {
+            border: 1px solid #333;
+            padding: 5px;
+            text-align: center;
+        }
+        @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+            }
+            body { 
+                print-color-adjust: exact; 
+                -webkit-print-color-adjust: exact;
+                margin: 0;
+            }
+            .no-print { 
+                display: none !important; 
+            }
+            .cheque-container {
+                page-break-after: avoid;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cheque-container">
+        ${savedPositions.company_table ? `
+        <div class="company-table">
+            <table>
+                <tr>
+                    <th colspan="3">استوديو كيكات كى بى اس - معلومات الشركة</th>
+                </tr>
+                <tr>
+                    <td>اسم الشركة</td>
+                    <td>رقم الهاتف</td>
+                    <td>العنوان</td>
+                </tr>
+                <tr>
+                    <td>استوديو كيكات كى بى اس</td>
+                    <td>+966 XX XXX XXXX</td>
+                    <td>الرياض، المملكة العربية السعودية</td>
+                </tr>
+            </table>
+        </div>
+        ` : ''}
+
+        ${FIELD_DEFS.filter(field => {
+          // Render all fields that have positions saved (except company_table)
+          return field.key !== 'company_table' && savedPositions[field.key];
+        }).map(field => {
+          const pos = savedPositions[field.key];
+          if (!pos || (!pos.x && pos.x !== 0) || (!pos.y && pos.y !== 0)) {
+            console.warn(`⚠️ Invalid position for field ${field.key}:`, pos);
+            return '';
+          }
+          
+          const leftCm = (pos.x * scaleX).toFixed(2);
+          const topCm = (pos.y * scaleY).toFixed(2);
+          const fieldValue = chequeData[field.key] || '';
+          
+          // Log each field being rendered
+          console.log(`📝 Rendering field ${field.key}: "${fieldValue}" at (${leftCm}cm, ${topCm}cm)`);
+          
+          // Only show actual data, not field labels
+          return `<div class="cheque-field" style="left: ${leftCm}cm; top: ${topCm}cm;">${fieldValue}</div>`;
+        }).join('\n        ')}
+    </div>
+
+    <div class="no-print" style="position: fixed; top: 10px; left: 10px; background: #333; color: white; padding: 10px; border-radius: 5px; z-index: 1000;">
+        <button onclick="window.print()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer;">
+            طباعة HTML
+        </button>
+        <button onclick="window.close()" style="background: #f44336; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer;">
+            إغلاق
+        </button>
+    </div>
+</body>
+</html>`;
+
+      if (preview) {
+        // Show in modal (could be implemented later)
+        alert('HTML Preview coming soon!');
+      } else {
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          printWindow.focus();
+          
+          // Auto-trigger print after delay
+          setTimeout(() => {
+            printWindow.print();
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading field positions for HTML print:', error);
+      alert('Error loading field positions. Please check your field configuration in Cheque Printing settings.');
+    }
+  };
+
+  const convertToArabicWords = (amount: number): string => {
+    // Enhanced Arabic number conversion
+    const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+    const tens = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+    const hundreds = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+    
+    const integerPart = Math.floor(amount);
+    const decimalPart = Math.round((amount - integerPart) * 100);
+    
+    // For now, return a simple format
+    return `${integerPart.toLocaleString('ar-SA')} ريال سعودي`;
+  };
+
+  // Add print cheque handler with proper error handling and debugging (PDF version)
   const handlePrintCheque = async (cheque: Cheque) => {
     console.log('🖨️ Starting print process for cheque:', cheque);
     
@@ -1004,7 +1308,6 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
               <div className="ml-3">
                 <h3 className="text-sm font-medium">{t('chequeManagement.success.title')}</h3>
                 <p className="mt-1 text-sm text-green-200">{successMessage}</p>
-                <p className="mt-1 text-xs text-green-200">{t('chequeManagement.success.message')}</p>
               </div>
               <div className="ml-auto pl-3">
                 <div className="-mx-1.5 -my-1.5">
@@ -1421,14 +1724,14 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
 
                               {/* Print Cheque Button - available for all cheques */}
                               <button
-                                onClick={() => handlePrintCheque(cheque)}
+                                onClick={() => openPrintOptionsModal(cheque)}
                                 disabled={printingChequeId === cheque.id}
                                 className={`px-3 py-1 text-white text-sm rounded disabled:opacity-50 flex items-center gap-1 ${
                                   cheque.is_printed 
                                     ? 'bg-orange-600 hover:bg-orange-700' 
                                     : 'bg-purple-600 hover:bg-purple-700'
                                 }`}
-                                title={cheque.is_printed ? "Reprint cheque in Arabic format" : "Print cheque in Arabic format"}
+                                title={cheque.is_printed ? "Choose print format for reprint" : "Choose print format"}
                               >
                                 {printingChequeId === cheque.id ? (
                                   <>
@@ -1438,7 +1741,7 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                                 ) : (
                                   <>
                                     <Printer className="w-3 h-3" />
-                                    {cheque.is_printed ? 'Reprint' : t('chequeManagement.buttons.print')}
+                                    {cheque.is_printed ? 'Print' : t('chequeManagement.buttons.print')}
                                   </>
                                 )}
                               </button>
@@ -1491,10 +1794,10 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => handlePrintCheque(cheque)}
+                                  onClick={() => openPrintOptionsModal(cheque)}
                                   disabled={printingChequeId === cheque.id}
                                   className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1"
-                                  title="Print cheque in Arabic format"
+                                  title="Choose print format"
                                 >
                                   {printingChequeId === cheque.id ? (
                                     <>
@@ -2381,10 +2684,10 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                               
                               {/* Print Button */}
                               <button
-                                onClick={() => handlePrintCheque(cheque)}
+                                onClick={() => openPrintOptionsModal(cheque)}
                                 disabled={printingChequeId === cheque.id}
                                 className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1"
-                                title="Print cheque in Arabic format"
+                                title="Choose print format"
                               >
                                 {printingChequeId === cheque.id ? (
                                   <>
@@ -2711,6 +3014,71 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Options Modal */}
+      {printOptionsModal.isOpen && printOptionsModal.cheque && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Choose Print Format</h3>
+              <button
+                onClick={() => setPrintOptionsModal({ isOpen: false, cheque: null })}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm font-semibold text-blue-800">
+                Cheque #{printOptionsModal.cheque.cheque_number}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Amount: ${typeof printOptionsModal.cheque.amount === 'string' ? parseFloat(printOptionsModal.cheque.amount).toFixed(2) : printOptionsModal.cheque.amount.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  setPrintOptionsModal({ isOpen: false, cheque: null });
+                  await handleHtmlPrint(printOptionsModal.cheque, false);
+                }}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-3"
+              >
+                <span className="text-lg">🌐</span>
+                <div className="text-left">
+                  <div className="font-medium">HTML Print</div>
+                  <div className="text-xs text-blue-100">Modern web-based printing with responsive design</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={async () => {
+                  setPrintOptionsModal({ isOpen: false, cheque: null });
+                  await handlePrintCheque(printOptionsModal.cheque);
+                }}
+                className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-3"
+              >
+                <span className="text-lg">📄</span>
+                <div className="text-left">
+                  <div className="font-medium">PDF Print</div>
+                  <div className="text-xs text-purple-100">Traditional PDF format with Arabic fonts</div>
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-4 pt-4 border-t">
+              <button
+                onClick={() => setPrintOptionsModal({ isOpen: false, cheque: null })}
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

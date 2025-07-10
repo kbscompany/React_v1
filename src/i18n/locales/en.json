@@ -210,6 +210,7 @@
     "expenseManagement": "Expense Management",
     "cheques": "Cheque Management",
     "chequeManagement": "Cheque Management",
+    "chequePrint": "Cheque Printing",
     "warehouse": "Warehouse Management",
     "inventory": "Recipe Management",
     "itemManagement": "Item Management",
@@ -245,7 +246,8 @@
       "expenses": "Expenses",
       "expenseCategories": "Expense Categories",
       "supplierPayments": "Supplier Payments",
-      "summary": "Summary"
+      "summary": "Summary",
+      "chequePrint": "Cheque Printing"
     },
     "buttons": {
       "newCheque": "New Cheque",
@@ -889,8 +891,8 @@
       "available": "Available"
     },
     "success": {
-      "title": "Early Settlement Completed Successfully!",
-      "message": "The cheque has been marked as settled and the safe balance has been updated."
+      "title": "Operation Completed Successfully!",
+      "message": "The operation has been completed and the data has been updated."
     },
     "settlement": {
       "manualNotes": "Manual settlement from ChequeManagement",

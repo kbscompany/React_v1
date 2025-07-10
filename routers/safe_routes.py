@@ -155,7 +155,7 @@ async def get_safe_cheques(
         # Get cheques assigned to this safe
         result = db.execute(text(f"""
             SELECT c.id, c.cheque_number, c.amount, c.status, 
-                   c.issue_date, c.description, c.issued_to,
+                   c.issue_date, c.due_date, c.description, c.issued_to,
                    ba.account_name, ba.bank_name,
                    COALESCE(
                        (SELECT SUM(e.amount) FROM expenses e WHERE e.cheque_id = c.id AND e.status != 'rejected'),
@@ -179,19 +179,19 @@ async def get_safe_cheques(
         
         cheques = []
         for row in result:
-            total_expenses = float(row[9]) if row[9] else 0.0  # Updated index
+            total_expenses = float(row[10]) if row[10] else 0.0  # Updated index (due_date added)
             cheque_amount = float(row[2]) if row[2] else 0.0
-            remaining_amount = float(row[10]) if row[10] else cheque_amount  # Updated index
+            remaining_amount = float(row[11]) if row[11] else cheque_amount  # Updated index
             is_overspent = total_expenses > cheque_amount
             
             # Calculate overspent amount
-            overspent_amount = float(row[12]) if row[12] else 0.0  # Updated index
+            overspent_amount = float(row[13]) if row[13] else 0.0  # Updated index
             if is_overspent and overspent_amount == 0.0:
                 overspent_amount = total_expenses - cheque_amount
             
             # Check for settlement attachments if cheque is settled
             attachments = []
-            if bool(row[11]):  # is_settled
+            if bool(row[12]):  # is_settled (updated index)
                 try:
                     EARLY_SETTLEMENT_UPLOAD_DIR = "uploads/early_settlement_files"
                     attachment_pattern = os.path.join(EARLY_SETTLEMENT_UPLOAD_DIR, f"settlement_{row[0]}_*")
@@ -218,17 +218,18 @@ async def get_safe_cheques(
                 "amount": cheque_amount,
                 "status": row[3] or "assigned",
                 "issue_date": row[4].isoformat() if row[4] else None,
-                "description": row[5] or "",
-                "issued_to": row[6] or "",  # Add issued_to field
-                "bank_account": f"{row[7]} ({row[8]})" if row[7] else "Unknown",  # Correct indices
+                "due_date": row[5].isoformat() if row[5] else None,  # Added due_date field
+                "description": row[6] or "",  # Updated index
+                "issued_to": row[7] or "",  # Updated index
+                "bank_account": f"{row[8]} ({row[9]})" if row[8] else "Unknown",  # Updated indices
                 "total_expenses": total_expenses,
                 "remaining_amount": remaining_amount,
-                "is_settled": bool(row[11]),  # Updated index
+                "is_settled": bool(row[12]),  # Updated index
                 "is_overspent": is_overspent,
                 "overspent_amount": overspent_amount,
-                "settlement_date": row[13].isoformat() if row[13] else None,  # Updated index
+                "settlement_date": row[14].isoformat() if row[14] else None,  # Updated index
                 "safe_id": safe_id,  # Use the safe_id parameter directly
-                "settled_by_cheque_id": row[15] if len(row) > 15 else None,  # Updated index
+                "settled_by_cheque_id": row[16] if len(row) > 16 else None,  # Updated index
                 "expense_count": 0,
                 "attachments": attachments,
                 "has_attachments": len(attachments) > 0
