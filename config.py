@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "allow"  # Allow extra fields in environment variables
 
 # Utility function to generate secure secret key
 def generate_secret_key(length: int = 64) -> str:

@@ -402,11 +402,20 @@ async def create_expense(
         else:
             raise HTTPException(status_code=400, detail="Cheque is not assigned to any safe")
         
+        # PRIMARY VALIDATION: Safe balance can never go negative
+        if amount > safe_balance:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot create expense: Insufficient funds in safe '{safe_name}'. "
+                       f"Expense amount: ${amount:.2f}, Available balance: ${safe_balance:.2f}. "
+                       f"Safe balance cannot go negative."
+            )
+        
         # Calculate overspend amount if any
         new_total_expenses = current_expenses + amount
         overspend_amount = max(0, new_total_expenses - cheque_amount)
         
-        # Validate safe balance constraints
+        # SECONDARY VALIDATION: Additional check for cheque overspend scenarios
         if overspend_amount > 0:
             if overspend_amount > safe_balance:
                 # Calculate maximum allowed expense

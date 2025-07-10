@@ -213,6 +213,110 @@ async def root():
 async def test():
     return {"status": "API is working", "timestamp": datetime.now().isoformat()}
 
+# Items management endpoints for IngredientManagement component
+@app.get("/items-for-ingredients")
+async def get_items_for_ingredients(db: Session = Depends(get_db)):
+    """Get items for ingredient management"""
+    try:
+        result = db.execute(text("""
+            SELECT i.id, i.name, i.unit, i.price_per_unit, i.category_id,
+                   ic.name as category_name
+            FROM items i
+            LEFT JOIN inventory_categories ic ON i.category_id = ic.id
+            ORDER BY i.name ASC
+        """))
+        
+        items = []
+        for row in result:
+            items.append({
+                "id": row[0],
+                "name": row[1] or "Unknown Item",
+                "unit": row[2] or "units", 
+                "price_per_unit": float(row[3]) if row[3] else 0.0,
+                "category_id": row[4],
+                "category_name": row[5] or "Uncategorized"
+            })
+        
+        return {"success": True, "data": items}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.post("/items-for-ingredients")
+async def create_item_for_ingredients(item_data: dict, db: Session = Depends(get_db)):
+    """Create item for ingredient management"""
+    try:
+        name = item_data.get("name")
+        unit = item_data.get("unit", "units")
+        price_per_unit = item_data.get("price_per_unit", 0.0)
+        category_id = item_data.get("category_id")
+        
+        if not name:
+            raise HTTPException(status_code=400, detail="Item name is required")
+        
+        # Insert new item
+        db.execute(text("""
+            INSERT INTO items (name, unit, price_per_unit, category_id)
+            VALUES (:name, :unit, :price_per_unit, :category_id)
+        """), {
+            "name": name,
+            "unit": unit,
+            "price_per_unit": price_per_unit,
+            "category_id": category_id
+        })
+        
+        db.commit()
+        return {"success": True, "message": "Item created successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.put("/items-for-ingredients/{item_id}")
+async def update_item_for_ingredients(item_id: int, item_data: dict, db: Session = Depends(get_db)):
+    """Update item for ingredient management"""
+    try:
+        name = item_data.get("name")
+        unit = item_data.get("unit", "units")
+        price_per_unit = item_data.get("price_per_unit", 0.0)
+        category_id = item_data.get("category_id")
+        
+        if not name:
+            raise HTTPException(status_code=400, detail="Item name is required")
+        
+        # Update item
+        db.execute(text("""
+            UPDATE items 
+            SET name = :name, unit = :unit, price_per_unit = :price_per_unit, category_id = :category_id
+            WHERE id = :id
+        """), {
+            "name": name,
+            "unit": unit,
+            "price_per_unit": price_per_unit,
+            "category_id": category_id,
+            "id": item_id
+        })
+        
+        db.commit()
+        return {"success": True, "message": "Item updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.delete("/items-for-ingredients/{item_id}")
+async def delete_item_for_ingredients(item_id: int, db: Session = Depends(get_db)):
+    """Delete item for ingredient management"""
+    try:
+        # Delete the item
+        db.execute(text("DELETE FROM items WHERE id = :id"), {"id": item_id})
+        db.commit()
+        return {"success": True, "message": "Item deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 # Essential cheque endpoints for frontend compatibility
 @app.put("/cheques/{cheque_id}")
 async def update_cheque(
@@ -1163,8 +1267,8 @@ async def print_existing_cheque_arabic(
         
         cheque_data = {
             # Primary cheque fields - these are the fields the Arabic generator expects
-            "beneficiary_name": cheque_row[5] or "غير محدد",  # Maps to issued_to
-            "issued_to": cheque_row[5] or "غير محدد",  # Also include as issued_to for company table
+            "beneficiary_name": cheque_row[6] or "غير محدد",  # Maps to issued_to
+            "issued_to": cheque_row[6] or "غير محدد",  # Also include as issued_to for company table
             "amount_number": amount,
             "amount_numbers": str(int(amount)),  # For amount in digits field
             "cheque_number": cheque_row[1] or "",
@@ -1177,13 +1281,13 @@ async def print_existing_cheque_arabic(
             "expense_id": "expense_id",
              # Include both date formats
             
-            # Description and expense info
-            "expense_description": cheque_row[6] or f"شيك رقم {cheque_row[1]}",
-            "description": cheque_row[6] or "",
+            # Description and expense info - FIX: Use correct column index for description
+            "expense_description": cheque_row[5] or f"شيك رقم {cheque_row[1]}",
+            "description": cheque_row[5] or "",  # FIXED: Now uses correct index for description
             
             # New positioning fields
             "payee_notice": "يصرف للمستفيد الأول",
-            "recipient": "المستلم",
+            "recipient": "مدير الشؤون المالية",  # FIXED: Use role instead of duplicate name
             "receipt_date": "تاريخ الاستلام",
             
             # Bank and safe info

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import '../styles/navigation.css'
 import IngredientManagement from './IngredientManagement'
 // import ExpenseManagement from './ExpenseManagement' // Moved to Finance Center
 // import ExpenseCategoryManagement from './ExpenseCategoryManagement.tsx' // Moved to Finance Center
@@ -102,8 +103,11 @@ function Dashboard({ user, onLogout }) {
         }}>
           <div style={{
             display: 'flex',
-            borderBottom: '1px solid #e9ecef'
-          }}>
+            borderBottom: '1px solid #e9ecef',
+            overflowX: 'auto'
+          }}
+          className="navigation-tabs"
+          >
             {tabs.map(tab => {
               // Debug: Log role checking
               if (tab.adminOnly) {
@@ -131,7 +135,10 @@ function Dashboard({ user, onLogout }) {
                     cursor: 'pointer',
                     fontSize: '16px',
                     transition: 'all 0.2s',
-                    fontWeight: tab.id === 'super-admin' ? 'bold' : 'normal'
+                    fontWeight: tab.id === 'super-admin' ? 'bold' : 'normal',
+                    flexShrink: 0,
+                    minWidth: 'fit-content',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   {tab.label}

@@ -900,10 +900,29 @@ function ExpenseManagement({ user }) {
                 </select>
                 {expenseForm.cheque_id && (() => {
                   const selectedCheque = cheques.find(c => c.id === parseInt(expenseForm.cheque_id))
-                  if (selectedCheque && selectedCheque.remaining_amount < parseFloat(expenseForm.amount || 0)) {
-                    const overspendAmount = parseFloat(expenseForm.amount || 0) - selectedCheque.remaining_amount
-                    const currentSafe = safes.find(s => s.id === selectedSafe.id)
-                    const canOverspend = currentSafe && overspendAmount <= currentSafe.current_balance
+                  const currentSafe = safes.find(s => s.id === selectedSafe.id)
+                  const expenseAmount = parseFloat(expenseForm.amount || 0)
+                  
+                  if (!selectedCheque || !currentSafe || expenseAmount <= 0) {
+                    return null
+                  }
+                  
+                  // PRIMARY CHECK: Safe balance validation
+                  if (expenseAmount > currentSafe.current_balance) {
+                    return (
+                      <div className="alert alert-danger mt-2">
+                        <strong>⚠️ Insufficient Safe Balance!</strong><br/>
+                        Expense amount: {formatCurrency(expenseAmount)}<br/>
+                        Safe balance: {formatCurrency(currentSafe.current_balance)}<br/>
+                        <strong>Safe balance cannot go negative.</strong>
+                      </div>
+                    )
+                  }
+                  
+                  // SECONDARY CHECK: Cheque overspend validation (only if safe balance is sufficient)
+                  if (selectedCheque.remaining_amount < expenseAmount) {
+                    const overspendAmount = expenseAmount - selectedCheque.remaining_amount
+                    const canOverspend = overspendAmount <= currentSafe.current_balance
                     
                     return (
                       <div className={`alert ${canOverspend ? 'alert-warning' : 'alert-danger'} mt-2`}>
@@ -916,6 +935,7 @@ function ExpenseManagement({ user }) {
                       </div>
                     )
                   }
+                  
                   return null
                 })()}
               </div>
@@ -1016,14 +1036,26 @@ function ExpenseManagement({ user }) {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (() => {
+                    const currentSafe = safes.find(s => s.id === selectedSafe?.id)
+                    const expenseAmount = parseFloat(expenseForm.amount || 0)
+                    return expenseAmount > 0 && currentSafe && expenseAmount > currentSafe.current_balance
+                  })()}
                   style={{
                     padding: '0.5rem 1rem',
-                    background: loading ? '#6c757d' : '#28a745',
+                    background: loading || (() => {
+                      const currentSafe = safes.find(s => s.id === selectedSafe?.id)
+                      const expenseAmount = parseFloat(expenseForm.amount || 0)
+                      return expenseAmount > 0 && currentSafe && expenseAmount > currentSafe.current_balance
+                    })() ? '#6c757d' : '#28a745',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: loading ? 'not-allowed' : 'pointer'
+                    cursor: loading || (() => {
+                      const currentSafe = safes.find(s => s.id === selectedSafe?.id)
+                      const expenseAmount = parseFloat(expenseForm.amount || 0)
+                      return expenseAmount > 0 && currentSafe && expenseAmount > currentSafe.current_balance
+                    })() ? 'not-allowed' : 'pointer'
                   }}
                 >
                   {loading ? t('expenseManagement.createExpenseModal.creating') : t('expenseManagement.createExpenseModal.create')}

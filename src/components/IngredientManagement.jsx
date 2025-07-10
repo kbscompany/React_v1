@@ -7,6 +7,8 @@ function IngredientManagement() {
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     unit: '',
@@ -19,15 +21,24 @@ function IngredientManagement() {
   }, [])
 
   const fetchData = async () => {
+    setLoading(true)
+    setError('')
     try {
       const [itemsRes, categoriesRes] = await Promise.all([
-        axios.get('/items-simple'),
-        axios.get('/categories-simple')
+        axios.get('http://100.29.4.72:8000/items-manage?per_page=1000'),
+        axios.get('http://100.29.4.72:8000/categories-simple')
       ])
-      setItems(itemsRes.data)
-      setCategories(categoriesRes.data)
+      
+      // Handle response format - items-manage returns different structure
+      const itemsData = itemsRes.data?.items || []
+      const categoriesData = categoriesRes.data?.data || []
+      
+      setItems(itemsData)
+      setCategories(categoriesData)
+      setSuccess('Data loaded successfully')
     } catch (error) {
       console.error('Error fetching data:', error)
+      setError('Failed to load data. Please check server connection.')
     } finally {
       setLoading(false)
     }
@@ -35,37 +46,64 @@ function IngredientManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
+    setSuccess('')
+    
+    // Temporary: EC2 server doesn't have POST/PUT endpoints for items yet
+    setError('⚠️ Add/Edit functionality not yet deployed to EC2 server. Items can only be viewed at this time.')
+    return;
     
     try {
       const data = {
         ...formData,
-        price_per_unit: formData.price_per_unit ? parseFloat(formData.price_per_unit) : null,
+        price_per_unit: formData.price_per_unit ? parseFloat(formData.price_per_unit) : 0.0,
         category_id: formData.category_id ? parseInt(formData.category_id) : null
       }
 
+      // Clean up empty values
+      if (data.category_id === '' || isNaN(data.category_id)) {
+        data.category_id = null
+      }
+      
+      if (!data.unit || data.unit.trim() === '') {
+        data.unit = 'units'
+      }
+
       if (editingItem) {
-        await axios.put(`/items/${editingItem.id}`, data)
+        await axios.put(`http://100.29.4.72:8000/items-simple/${editingItem.id}`, data)
+        setSuccess('Item updated successfully')
       } else {
-        await axios.post('/items', data)
+        await axios.post('http://100.29.4.72:8000/items-simple', data)
+        setSuccess('Item created successfully')
       }
       
       await fetchData()
       resetForm()
     } catch (error) {
       console.error('Error saving item:', error)
-      alert('Error saving item. Please try again.')
+      const errorMessage = error.response?.data?.detail || 'Error saving item. Server may need restart to register endpoints.'
+      setError(errorMessage)
     }
   }
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this item?')) return
     
+    setError('')
+    setSuccess('')
+    
+    // Temporary: EC2 server doesn't have DELETE endpoint for items yet
+    setError('⚠️ Delete functionality not yet deployed to EC2 server. Items can only be viewed at this time.')
+    return;
+    
     try {
-      await axios.delete(`/items/${id}`)
+      await axios.delete(`http://100.29.4.72:8000/items-simple/${id}`)
+      setSuccess('Item deleted successfully')
       await fetchData()
     } catch (error) {
       console.error('Error deleting item:', error)
-      alert('Error deleting item. Please try again.')
+      const errorMessage = error.response?.data?.detail || 'Error deleting item. Server may need restart to register endpoints.'
+      setError(errorMessage)
     }
   }
 
@@ -118,6 +156,33 @@ function IngredientManagement() {
           Add New Item
         </button>
       </div>
+
+      {/* Error and Success Messages */}
+      {error && (
+        <div style={{
+          padding: '1rem',
+          marginBottom: '1rem',
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          border: '1px solid #f5c6cb',
+          borderRadius: '4px'
+        }}>
+          {error}
+        </div>
+      )}
+      
+      {success && (
+        <div style={{
+          padding: '1rem',
+          marginBottom: '1rem',
+          backgroundColor: '#d1edff',
+          color: '#0c5460',
+          border: '1px solid #bee5eb',
+          borderRadius: '4px'
+        }}>
+          {success}
+        </div>
+      )}
 
       {/* Add/Edit Form */}
       {showAddForm && (
@@ -275,7 +340,7 @@ function IngredientManagement() {
                   </h5>
                   <div style={{ fontSize: '14px', color: '#666' }}>
                     Unit: {item.unit || 'N/A'} | 
-                    Category: {item.category?.name || 'Uncategorized'} | 
+                    Category: {item.category_name || 'Uncategorized'} | 
                     Price: ${item.price_per_unit || 'N/A'}
                   </div>
                 </div>

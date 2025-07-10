@@ -166,6 +166,10 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
   // Add state for Issue to Safe modal
   const [showIssueChequeModal, setShowIssueChequeModal] = useState(false);
 
+  // Add state for detailed view modal
+  const [detailViewModalOpen, setDetailViewModalOpen] = useState(false);
+  const [selectedChequeForDetail, setSelectedChequeForDetail] = useState<Cheque | null>(null);
+
   // Helper function to safely convert to number
   const toNumber = (value: string | number): number => {
     return typeof value === 'string' ? parseFloat(value) || 0 : value;
@@ -739,11 +743,11 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
         issue_date: cheque.issue_date ? new Date(cheque.issue_date).toLocaleDateString('ar-EG') : '',
         due_date: cheque.due_date ? new Date(cheque.due_date).toLocaleDateString('ar-EG') : '',
         description: cheque.description || 'بدون وصف',  // Ensure we only use actual cheque description
-        payee_notice: 'ادفعوا بموجب هذا الشيك',
-        recipient: cheque.issued_to || '',
+        payee_notice: 'يصرف للمستفيد الأول',  // FIXED: Match backend text
+        recipient: 'مدير الشؤون المالية',  // FIXED: Use role instead of duplicate name
         receipt_date: new Date().toLocaleDateString('ar-EG'),
-        note_1: safeName,
-        note_4: bankName,
+        note_1: 'محرر الشيك: إدارة الشؤون المالية',  // FIXED: Proper content instead of safe name
+        note_4: `MR-${cheque.id}-${new Date().getFullYear()}`,  // FIXED: Reference number instead of bank name
         company_table: '', // Not used in field rendering
         safe_name: safeName,
         bank_name: bankName
@@ -1235,6 +1239,12 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
     return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">{t('chequeManagement.status.available')}</span>;
   };
 
+  // Function to open detail view modal
+  const openDetailViewModal = (cheque: Cheque) => {
+    setSelectedChequeForDetail(cheque);
+    setDetailViewModalOpen(true);
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6">{t('chequeManagement.title')}</h2>
@@ -1721,6 +1731,16 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
                                   🚫 Cancel
                                 </button>
                               )}
+
+                              {/* View Details Button - available for all cheques */}
+                              <button
+                                onClick={() => openDetailViewModal(cheque)}
+                                className="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 flex items-center gap-1"
+                                title="View all cheque details"
+                              >
+                                <Eye className="w-3 h-3" />
+                                View Details
+                              </button>
 
                               {/* Print Cheque Button - available for all cheques */}
                               <button
@@ -3102,6 +3122,301 @@ const ChequeManagement: React.FC<ChequeManagementProps> = ({ user }) => {
             setTimeout(() => setSuccessMessage(null), 4000);
           }}
         />
+      )}
+
+      {/* Detailed View Modal */}
+      {detailViewModalOpen && selectedChequeForDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4 text-green-600">{t('chequeManagement.detailedView.title')}</h3>
+            
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm font-semibold text-green-800">
+                {t('chequeManagement.detailedView.chequeNumber')} #{selectedChequeForDetail.cheque_number}
+              </p>
+              <p className="text-xs text-green-600 mt-1">
+                {t('chequeManagement.detailedView.amount')}: ${toNumber(selectedChequeForDetail.amount).toFixed(2)}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Issue Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.issueDate')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.issue_date}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Due Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.dueDate')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.due_date}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.description')}
+                </label>
+                <textarea
+                  value={selectedChequeForDetail.description}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  rows={3}
+                />
+              </div>
+
+              {/* Issued To */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.issuedTo')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.issued_to}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Bank Account */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.bankAccount')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.bank_account}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.amount')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={toNumber(selectedChequeForDetail.amount)}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Total Expenses */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.totalExpenses')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={toNumber(selectedChequeForDetail.total_expenses)}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.status')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.status}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Safe Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.safeName')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.safe_name}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Settled By Cheque ID */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.settledByChequeId')}
+                </label>
+                <input
+                  type="number"
+                  value={selectedChequeForDetail.settled_by_cheque_id}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Is Settled */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.isSettled')}
+                </label>
+                <input
+                  type="checkbox"
+                  checked={selectedChequeForDetail.is_settled}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Settlement Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.settlementDate')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.settlement_date}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Is Supplier Payment */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.isSupplierPayment')}
+                </label>
+                <input
+                  type="checkbox"
+                  checked={selectedChequeForDetail.is_supplier_payment}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Supplier Invoice Uploaded */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.supplierInvoiceUploaded')}
+                </label>
+                <input
+                  type="checkbox"
+                  checked={selectedChequeForDetail.supplier_invoice_uploaded}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Is Overspent */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.isOverspent')}
+                </label>
+                <input
+                  type="checkbox"
+                  checked={selectedChequeForDetail.is_overspent}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Overspent Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.overspentAmount')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={toNumber(selectedChequeForDetail.overspent_amount)}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Settled By Cheque ID */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.settledByChequeId')}
+                </label>
+                <input
+                  type="number"
+                  value={selectedChequeForDetail.settled_by_cheque_id}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Has Attachments */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.hasAttachments')}
+                </label>
+                <input
+                  type="checkbox"
+                  checked={selectedChequeForDetail.has_attachments}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Print Count */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.printCount')}
+                </label>
+                <input
+                  type="number"
+                  value={selectedChequeForDetail.print_count}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Printed At */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('chequeManagement.detailedView.printedAt')}
+                </label>
+                <input
+                  type="text"
+                  value={selectedChequeForDetail.printed_at}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setDetailViewModalOpen(false);
+                  setSelectedChequeForDetail(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

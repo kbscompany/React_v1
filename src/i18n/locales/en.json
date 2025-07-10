@@ -965,6 +965,29 @@
       "createSafes": "Create safes in the Finance Center",
       "contactAdmin": "Or contact an administrator",
       "refreshData": "🔄 Refresh Data"
+    },
+    "detailedView": {
+      "title": "Cheque Details",
+      "chequeNumber": "Cheque Number",
+      "amount": "Amount",
+      "issueDate": "Issue Date",
+      "dueDate": "Due Date",
+      "description": "Description",
+      "issuedTo": "Issued To",
+      "bankAccount": "Bank Account",
+      "totalExpenses": "Total Expenses",
+      "status": "Status",
+      "safeName": "Safe Name",
+      "settledByChequeId": "Settled By Cheque ID",
+      "isSettled": "Is Settled",
+      "settlementDate": "Settlement Date",
+      "isSupplierPayment": "Is Supplier Payment",
+      "supplierInvoiceUploaded": "Supplier Invoice Uploaded",
+      "isOverspent": "Is Overspent",
+      "overspentAmount": "Overspent Amount",
+      "hasAttachments": "Has Attachments",
+      "printCount": "Print Count",
+      "printedAt": "Printed At"
     }
   },
   "warehouse": {

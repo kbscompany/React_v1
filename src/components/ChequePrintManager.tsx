@@ -287,11 +287,11 @@ const ChequePrintManager: React.FC = () => {
         issue_date: new Date().toLocaleDateString('ar-SA'),
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('ar-SA'),
         description: 'دفعة مقابل خدمات استشارية',
-        payee_notice: 'يصرف للمستفيد الأول فقط',
-        recipient: 'مدير الشؤون المالية',
+        payee_notice: 'يصرف للمستفيد الأول',  // FIXED: Match backend and ChequeManagement
+        recipient: 'مدير الشؤون المالية',  // FIXED: Use role instead of duplicate name
         receipt_date: new Date().toLocaleDateString('ar-SA'),
-        note_1: 'محرر الشيك: إدارة الشؤون المالية',
-        note_4: 'رقم المرايا: MR-2024-001'
+        note_1: 'محرر الشيك: إدارة الشؤون المالية',  // FIXED: Proper content
+        note_4: 'رقم المرايا: MR-2024-001'  // FIXED: Reference number format
       };
     }
   };

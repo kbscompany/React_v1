@@ -78,6 +78,11 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null);
 
+  // Supplier search states
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
+  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
+
   // Form data
   const [formData, setFormData] = useState({
     supplier_id: 0,
@@ -127,6 +132,52 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
       setSearchResults([]);
     }
   }, [searchTerm]);
+
+  // Supplier filtering effect
+  useEffect(() => {
+    if (supplierSearchTerm.length === 0) {
+      setFilteredSuppliers(suppliers);
+    } else {
+      const filtered = suppliers.filter(supplier =>
+        supplier.name.toLowerCase().includes(supplierSearchTerm.toLowerCase()) ||
+        supplier.contact_phone?.includes(supplierSearchTerm) ||
+        supplier.contact_email?.toLowerCase().includes(supplierSearchTerm.toLowerCase())
+      );
+      setFilteredSuppliers(filtered);
+    }
+  }, [suppliers, supplierSearchTerm]);
+
+  // Update filtered suppliers when suppliers change
+  useEffect(() => {
+    setFilteredSuppliers(suppliers);
+  }, [suppliers]);
+
+  // Click outside handler to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.supplier-dropdown-container')) {
+        setShowSupplierDropdown(false);
+      }
+    };
+
+    if (showSupplierDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSupplierDropdown]);
+
+  // Supplier selection handlers
+  const handleSupplierSelect = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setShowSupplierDropdown(false);
+    setSupplierSearchTerm(supplier.name);
+  };
+
+  const handleSupplierInputFocus = () => {
+    setShowSupplierDropdown(true);
+    setSupplierSearchTerm('');
+  };
 
   const fetchSuppliers = async () => {
     try {
@@ -297,6 +348,12 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
     setSearchTerm('');
     setSearchResults([]);
     setItems([]);
+    
+    // Reset supplier search
+    setSupplierSearchTerm('');
+    setFilteredSuppliers([]);
+    setShowSupplierDropdown(false);
+    
     setFormData({
       supplier_id: 0,
       warehouse_id: null,
@@ -437,36 +494,103 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
                 {errors.supplier && (
                   <p className="text-red-600 text-sm mb-2">{errors.supplier}</p>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {suppliers.map(supplier => (
-                    <div
-                      key={supplier.id}
-                      onClick={() => setSelectedSupplier(supplier)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        selectedSupplier?.id === supplier.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-gray-900">{supplier.name}</h3>
-                        {selectedSupplier?.id === supplier.id && (
-                          <CheckCircle className="w-5 h-5 text-blue-600" />
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {supplier.contact_phone && (
-                          <p>📞 {supplier.contact_phone}</p>
-                        )}
-                        {supplier.contact_email && (
-                          <p>📧 {supplier.contact_email}</p>
-                        )}
-                        <p>💰 {supplier.default_currency}</p>
-                        <p>📦 {supplier.total_orders || 0} orders</p>
-                      </div>
+                
+                {/* Searchable Supplier Dropdown */}
+                <div className="relative supplier-dropdown-container">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search suppliers by name, phone, or email..."
+                      value={showSupplierDropdown ? supplierSearchTerm : (selectedSupplier?.name || '')}
+                      onChange={(e) => {
+                        setSupplierSearchTerm(e.target.value);
+                        setShowSupplierDropdown(true);
+                      }}
+                      onFocus={handleSupplierInputFocus}
+                      className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {selectedSupplier && (
+                      <CheckCircle className="absolute right-3 top-3 w-5 h-5 text-green-600" />
+                    )}
+                  </div>
+
+                  {/* Dropdown List */}
+                  {showSupplierDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {filteredSuppliers.length > 0 ? (
+                        filteredSuppliers.map(supplier => (
+                          <div
+                            key={supplier.id}
+                            onClick={() => handleSupplierSelect(supplier)}
+                            className={`p-4 cursor-pointer transition-all hover:bg-blue-50 border-b border-gray-100 last:border-b-0 ${
+                              selectedSupplier?.id === supplier.id ? 'bg-blue-50 border-blue-200' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-medium text-gray-900">{supplier.name}</h3>
+                              {selectedSupplier?.id === supplier.id && (
+                                <CheckCircle className="w-4 h-4 text-blue-600" />
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
+                              {supplier.contact_phone && (
+                                <p className="flex items-center">
+                                  <span className="w-4 text-center">📞</span>
+                                  {supplier.contact_phone}
+                                </p>
+                              )}
+                              {supplier.contact_email && (
+                                <p className="flex items-center">
+                                  <span className="w-4 text-center">📧</span>
+                                  {supplier.contact_email}
+                                </p>
+                              )}
+                              <p className="flex items-center">
+                                <span className="w-4 text-center">💰</span>
+                                {supplier.default_currency}
+                              </p>
+                              <p className="flex items-center">
+                                <span className="w-4 text-center">📦</span>
+                                {supplier.total_orders || 0} orders
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-gray-500">
+                          <Search className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p>No suppliers found matching "{supplierSearchTerm}"</p>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )}
                 </div>
+
+                {/* Selected Supplier Summary */}
+                {selectedSupplier && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-blue-900">Selected: {selectedSupplier.name}</h4>
+                        <p className="text-sm text-blue-700">
+                          {selectedSupplier.default_currency} • {selectedSupplier.total_orders || 0} previous orders
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedSupplier(null);
+                          setSupplierSearchTerm('');
+                          setShowSupplierDropdown(false);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 p-1"
+                        title="Clear selection"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

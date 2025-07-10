@@ -1,0 +1,41 @@
+/* Navigation Tabs Scrollbar Styles */
+.navigation-tabs {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #007bff #f1f3f4;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.navigation-tabs::-webkit-scrollbar {
+  height: 8px;
+}
+
+.navigation-tabs::-webkit-scrollbar-track {
+  background: #f1f3f4;
+  border-radius: 4px;
+}
+
+.navigation-tabs::-webkit-scrollbar-thumb {
+  background: #007bff;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.navigation-tabs::-webkit-scrollbar-thumb:hover {
+  background: #0056b3;
+}
+
+.navigation-tabs::-webkit-scrollbar-thumb:active {
+  background: #004085;
+}
+
+/* Additional responsive improvements */
+@media (max-width: 768px) {
+  .navigation-tabs {
+    padding-bottom: 4px;
+  }
+  
+  .navigation-tabs::-webkit-scrollbar {
+    height: 6px;
+  }
+} 
