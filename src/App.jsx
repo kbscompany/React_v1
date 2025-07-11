@@ -50,18 +50,32 @@ function App() {
 
   const handleLogin = async (username, password, rememberMe) => {
     try {
+      console.log('🔄 Starting login process...')
       const formData = new FormData()
       formData.append('username', username)
       formData.append('password', password)
 
+      console.log('📡 Calling /token endpoint...')
       const response = await axios.post('/token', formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       })
 
+      console.log('✅ Login response received:', response.data)
       const { access_token } = response.data
+      
+      if (!access_token) {
+        console.error('❌ No access_token in response:', response.data)
+        return { success: false, error: 'No access token received' }
+      }
+
+      console.log('💾 Storing token...', `${access_token.substring(0, 20)}...`)
       setAuthToken(access_token, rememberMe)
+      
+      // Verify token was stored
+      const storedToken = rememberMe ? localStorage.getItem('token') : sessionStorage.getItem('token')
+      console.log('🔍 Token verification:', storedToken ? `${storedToken.substring(0, 20)}...` : 'NOT STORED!')
       
       if (rememberMe) {
         localStorage.setItem('username', username)
@@ -72,10 +86,12 @@ function App() {
       }
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
       
+      console.log('👤 Fetching user info...')
       await fetchUserInfo()
+      console.log('🎉 Login process completed successfully!')
       return { success: true }
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error('❌ Login failed:', error)
       return { 
         success: false, 
         error: error.response?.data?.detail || 'Login failed' 

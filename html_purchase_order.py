@@ -109,77 +109,79 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
             font-family: {'Cairo, sans-serif' if is_arabic else 'Arial, sans-serif'};
             direction: {direction};
             margin: 0;
-            padding: 20px;
-            line-height: 1.6;
+            padding: 10px;
+            line-height: 1.4;
             color: #333;
             background: #f5f5f5;
+            font-size: 12px;
         }}
         
         .container {{
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
         }}
         
         .header {{
             text-align: center;
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
         }}
         
         .company-name {{
-            font-size: 32px;
+            font-size: 20px;
             font-weight: 700;
             color: #1a1a1a;
-            margin: 0 0 10px 0;
+            margin: 0 0 5px 0;
         }}
         
         .company-details {{
-            font-size: 14px;
+            font-size: 11px;
             color: #666;
-            margin: 5px 0;
+            margin: 3px 0;
         }}
         
         .po-title {{
-            font-size: 28px;
+            font-size: 16px;
             font-weight: 700;
             color: #007bff;
             text-align: center;
-            margin: 30px 0;
+            margin: 10px 0;
         }}
         
         .info-grid {{
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin: 30px 0;
+            gap: 15px;
+            margin: 15px 0;
         }}
         
         .info-box {{
             background: #f8f9fa;
-            padding: 25px;
-            border-radius: 8px;
-            border-{('right' if is_arabic else 'left')}: 4px solid #007bff;
+            padding: 12px;
+            border-radius: 6px;
+            border-{('right' if is_arabic else 'left')}: 3px solid #007bff;
         }}
         
         .info-title {{
-            font-size: 18px;
+            font-size: 13px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
             border-bottom: 1px solid #dee2e6;
-            padding-bottom: 8px;
+            padding-bottom: 3px;
         }}
         
         .info-row {{
             display: flex;
             justify-content: space-between;
-            margin: 12px 0;
-            padding: 8px 0;
+            margin: 4px 0;
+            padding: 2px 0;
+            font-size: 11px;
         }}
         
         .info-label {{
@@ -195,36 +197,37 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         }}
         
         .section-title {{
-            font-size: 20px;
+            font-size: 14px;
             font-weight: 600;
             color: #333;
-            margin: 40px 0 20px 0;
-            padding-bottom: 8px;
+            margin: 15px 0 8px 0;
+            padding-bottom: 3px;
             border-bottom: 2px solid #007bff;
         }}
         
         .items-table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border-radius: 6px;
             overflow: hidden;
         }}
         
         .items-table th {{
             background: #007bff;
             color: white;
-            padding: 15px 12px;
+            padding: 8px 6px;
             text-align: center;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 11px;
         }}
         
         .items-table td {{
-            padding: 15px 12px;
+            padding: 6px;
             border-bottom: 1px solid #dee2e6;
             text-align: {text_align};
+            font-size: 11px;
         }}
         
         /* Column-specific alignment */
@@ -244,22 +247,23 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         }}
         
         .total-section {{
-            margin: 40px 0;
+            margin: 15px 0;
             display: flex;
             justify-content: {'flex-start' if is_arabic else 'flex-end'};
         }}
         
         .total-table {{
             border-collapse: collapse;
-            min-width: 350px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
+            min-width: 250px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border-radius: 6px;
             overflow: hidden;
         }}
         
         .total-table td {{
-            padding: 12px 20px;
+            padding: 6px 12px;
             border-bottom: 1px solid #dee2e6;
+            font-size: 11px;
         }}
         
         .total-label {{
@@ -278,19 +282,19 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         .grand-total {{
             background: #28a745 !important;
             color: white !important;
-            font-size: 18px;
+            font-size: 13px;
             font-weight: 700;
         }}
         
         .terms {{
-            margin-top: 50px;
-            padding: 25px;
+            margin-top: 20px;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 6px;
+            font-size: 10px;
             color: #666;
             text-align: center;
-            line-height: 1.8;
+            line-height: 1.5;
         }}
         
         .print-btn {{
@@ -317,8 +321,64 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         
         @media print {{
             .print-btn {{ display: none; }}
-            body {{ background: white; padding: 0; }}
-            .container {{ box-shadow: none; margin: 0; padding: 20px; }}
+            body {{ background: white; padding: 0; font-size: 10px; }}
+            .container {{ box-shadow: none; margin: 0; padding: 5px; }}
+            .header {{ 
+                margin-bottom: 8px; 
+                padding-bottom: 6px; 
+            }}
+            .company-name {{ 
+                font-size: 18px; 
+            }}
+            .po-title {{ 
+                font-size: 14px; 
+                margin: 6px 0; 
+            }}
+            .info-grid {{ 
+                margin: 8px 0; 
+                gap: 10px; 
+            }}
+            .info-box {{ 
+                padding: 8px; 
+            }}
+            .info-title {{ 
+                font-size: 11px; 
+                margin-bottom: 5px; 
+            }}
+            .info-row {{ 
+                margin: 2px 0; 
+                font-size: 9px; 
+            }}
+            .section-title {{ 
+                font-size: 12px; 
+                margin: 8px 0 5px 0; 
+            }}
+            .items-table {{ 
+                margin: 8px 0; 
+            }}
+            .items-table th {{ 
+                padding: 4px 3px; 
+                font-size: 9px; 
+            }}
+            .items-table td {{ 
+                padding: 3px; 
+                font-size: 9px; 
+            }}
+            .total-section {{ 
+                margin: 8px 0; 
+            }}
+            .total-table td {{ 
+                padding: 3px 8px; 
+                font-size: 9px; 
+            }}
+            .grand-total {{ 
+                font-size: 11px; 
+            }}
+            .terms {{ 
+                margin-top: 10px; 
+                padding: 6px; 
+                font-size: 8px; 
+            }}
         }}
         
         @media (max-width: 768px) {{

@@ -97,75 +97,77 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         body {{
             font-family: {'Cairo, Amiri' if language == 'ar' else 'Arial, sans-serif'};
             direction: {text_dir};
-            margin: 20px;
-            line-height: 1.6;
+            margin: 10px;
+            line-height: 1.4;
             color: #333;
+            font-size: 12px;
         }}
         
         .container {{
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            padding: 30px;
+            padding: 15px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }}
         
         .header {{
             text-align: center;
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
         }}
         
         .company-name {{
-            font-size: 28px;
+            font-size: 20px;
             font-weight: 700;
             color: #1a1a1a;
             margin: 0;
         }}
         
         .company-details {{
-            font-size: 14px;
+            font-size: 11px;
             color: #666;
-            margin: 10px 0;
+            margin: 5px 0;
         }}
         
         .po-title {{
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 700;
             color: #007bff;
             text-align: center;
-            margin: 20px 0;
+            margin: 10px 0;
         }}
         
         .info-section {{
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin: 30px 0;
+            gap: 15px;
+            margin: 15px 0;
         }}
         
         .info-box {{
             background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #007bff;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #007bff;
         }}
         
         .info-title {{
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             border-bottom: 1px solid #dee2e6;
-            padding-bottom: 5px;
+            padding-bottom: 3px;
         }}
         
         .info-row {{
             display: flex;
             justify-content: space-between;
-            margin: 8px 0;
-            padding: 5px 0;
+            margin: 4px 0;
+            padding: 2px 0;
+            font-size: 11px;
         }}
         
         .info-label {{
@@ -178,37 +180,39 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         }}
         
         .items-section {{
-            margin: 30px 0;
+            margin: 15px 0;
         }}
         
         .section-title {{
-            font-size: 18px;
+            font-size: 14px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
+            margin-bottom: 8px;
+            padding-bottom: 3px;
             border-bottom: 2px solid #007bff;
         }}
         
         .items-table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 10px 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }}
         
         .items-table th {{
             background: #007bff;
             color: white;
-            padding: 12px;
+            padding: 8px 6px;
             text-align: center;
             font-weight: 600;
+            font-size: 11px;
         }}
         
         .items-table td {{
-            padding: 12px;
+            padding: 6px;
             border-bottom: 1px solid #dee2e6;
             text-align: {text_align};
+            font-size: 11px;
         }}
         
         .items-table tr:nth-child(even) {{
@@ -220,19 +224,20 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         }}
         
         .total-section {{
-            margin: 30px 0;
+            margin: 15px 0;
             text-align: {'left' if language == 'ar' else 'right'};
         }}
         
         .total-table {{
             {'float: left' if language == 'ar' else 'float: right'};
             border-collapse: collapse;
-            min-width: 300px;
+            min-width: 250px;
         }}
         
         .total-table td {{
-            padding: 10px 15px;
+            padding: 6px 10px;
             border: 1px solid #dee2e6;
+            font-size: 11px;
         }}
         
         .total-label {{
@@ -249,16 +254,16 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
         .grand-total {{
             background: #28a745 !important;
             color: white !important;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
         }}
         
         .terms {{
-            margin-top: 50px;
-            padding: 20px;
+            margin-top: 20px;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 12px;
+            border-radius: 6px;
+            font-size: 10px;
             color: #666;
             text-align: center;
         }}
@@ -288,10 +293,60 @@ def generate_purchase_order_html(po_data: Dict[str, Any], language: str = 'ar') 
             .container {{
                 box-shadow: none;
                 margin: 0;
-                padding: 0;
+                padding: 5px;
             }}
             body {{
                 margin: 0;
+                font-size: 10px;
+            }}
+            .header {{
+                margin-bottom: 8px;
+                padding-bottom: 6px;
+            }}
+            .company-name {{
+                font-size: 18px;
+            }}
+            .po-title {{
+                font-size: 14px;
+                margin: 6px 0;
+            }}
+            .info-section {{
+                margin: 10px 0;
+                gap: 10px;
+            }}
+            .info-box {{
+                padding: 8px;
+            }}
+            .info-title {{
+                font-size: 11px;
+                margin-bottom: 5px;
+            }}
+            .items-section {{
+                margin: 10px 0;
+            }}
+            .section-title {{
+                font-size: 12px;
+                margin-bottom: 5px;
+            }}
+            .items-table th {{
+                padding: 5px 4px;
+                font-size: 9px;
+            }}
+            .items-table td {{
+                padding: 4px;
+                font-size: 9px;
+            }}
+            .total-section {{
+                margin: 10px 0;
+            }}
+            .total-table td {{
+                padding: 4px 8px;
+                font-size: 9px;
+            }}
+            .terms {{
+                margin-top: 15px;
+                padding: 8px;
+                font-size: 8px;
             }}
         }}
     </style>

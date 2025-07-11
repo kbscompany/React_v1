@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Eye, Edit, Trash2, FileText, CreditCard, Package, Calendar, DollarSign, User, AlertCircle, CheckCircle, Printer } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, FileText, CreditCard, Package, Calendar, DollarSign, User, AlertCircle, CheckCircle, Printer, UserPlus, Check } from 'lucide-react';
 import CreatePurchaseOrderForm from './CreatePurchaseOrderForm';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken, getAuthHeaders } from '../utils/auth';
@@ -15,6 +15,12 @@ interface Supplier {
   total_amount?: number;
 }
 
+interface Warehouse {
+  id: number;
+  name: string;
+  location?: string;
+}
+
 interface PurchaseOrder {
   id: number;
   supplier_id: number;
@@ -27,6 +33,9 @@ interface PurchaseOrder {
   notes?: string;
   item_count: number;
   supplier?: Supplier;
+  warehouse_id?: number;
+  warehouse_name?: string;
+  warehouse?: Warehouse;
 }
 
 interface PurchaseOrderItem {
@@ -71,6 +80,19 @@ const PurchaseOrderManagement: React.FC = () => {
   const [chequeGenerating, setChequeGenerating] = useState(false);
   const [safes, setSafes] = useState<any[]>([]);
 
+  // Add Supplier Modal States
+  const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
+  const [supplierCreating, setSupplierCreating] = useState(false);
+  const [supplierForm, setSupplierForm] = useState({
+    name: '',
+    contact_name: '',
+    phone: '',
+    email: '',
+    address: '',
+    notes: ''
+  });
+  const [supplierErrors, setSupplierErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -111,7 +133,7 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('http://100.29.4.72:8000/api/purchase-orders/suppliers', {
+      const response = await fetch('/api/purchase-orders/suppliers', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -126,7 +148,7 @@ const PurchaseOrderManagement: React.FC = () => {
   const fetchBankAccounts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://100.29.4.72:8000/bank-accounts-simple', {
+      const response = await fetch('/bank-accounts-simple', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -148,7 +170,7 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSafes = async () => {
     try {
-      const response = await fetch('http://100.29.4.72:8000/safes-simple', {
+      const response = await fetch('/safes-simple', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -164,13 +186,208 @@ const PurchaseOrderManagement: React.FC = () => {
     }
   };
 
-  const fetchPODetails = async (poId: number) => {
+  // Approve Purchase Order function with confirmation
+  const approvePurchaseOrder = async (poId: number) => {
+    // Find the purchase order details
+    const po = purchaseOrders.find((order: PurchaseOrder) => order.id === poId);
+    if (!po) {
+      alert('Purchase order not found!');
+      return;
+    }
+
+    // Show confirmation dialog with order details
+    const confirmMessage = `Are you sure you want to approve this purchase order?
+
+Purchase Order Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PO Number: #${po.id}
+🏢 Supplier: ${po.supplier_name}
+💰 Amount: $${(Number(po.total_amount) || 0).toFixed(2)} USD
+📦 Items: ${po.item_count} item(s)
+📅 Created: ${new Date(po.created_at).toLocaleDateString()}
+⚡ Priority: ${po.priority}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  Once approved, this order will be ready for receiving.
+Click OK to proceed with approval.`;
+
+    if (!confirm(confirmMessage)) {
+      return; // User cancelled
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/purchase-orders/${poId}/approve`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        // Update the local state immediately for instant feedback
+        setPurchaseOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.id === poId 
+              ? { ...order, status: 'Approved' }
+              : order
+          )
+        );
+
+        // Show success message
+        alert(`✅ Purchase Order #${poId} approved successfully!\n\n📝 Status changed: Draft → Approved\n📦 Ready for receiving`);
+        
+        // Force refresh from server to sync with database (with longer delay to ensure DB is updated)
+        setTimeout(() => {
+          console.log('🔄 Refreshing purchase orders after approval...');
+          fetchPurchaseOrders();
+        }, 1000);
+      } else {
+        // Handle error responses
+        const errorData = await response.json();
+        if (response.status === 403) {
+          alert('❌ Permission denied: Only administrators and cost control managers can approve purchase orders.');
+        } else if (response.status === 400) {
+          alert(`❌ Cannot approve: ${errorData.detail || 'Purchase order cannot be approved in current state.'}`);
+        } else if (response.status === 404) {
+          alert(`❌ Purchase Order #${poId} not found!`);
+        } else {
+          alert('❌ Failed to approve purchase order. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error approving purchase order:', error);
+      alert('❌ Network error occurred while approving purchase order.');
+    }
+  };
+
+  // Add Supplier function
+  const addSupplier = async () => {
+    // Validate form
+    const errors: Record<string, string> = {};
+    if (!supplierForm.name.trim()) {
+      errors.name = 'Supplier name is required';
+    }
+
+    setSupplierErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setSupplierCreating(true);
+    try {
+      const response = await fetch('/api/purchase-orders/suppliers', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          name: supplierForm.name.trim(),
+          contact_name: supplierForm.contact_name.trim() || null,
+          phone: supplierForm.phone.trim() || null,
+          email: supplierForm.email.trim() || null,
+          address: supplierForm.address.trim() || null,
+          notes: supplierForm.notes.trim() || null
+        })
+      });
+
+      if (response.ok) {
+        handleCloseSupplierModal();
+        fetchSuppliers(); // Refresh supplier list
+        // You could add a toast notification here
+      } else {
+        const errorData = await response.json();
+        setSupplierErrors({ submit: errorData.detail || 'Failed to create supplier' });
+      }
+    } catch (error) {
+      setSupplierErrors({ submit: 'Network error occurred' });
+    } finally {
+      setSupplierCreating(false);
+    }
+  };
+
+  const handleCloseSupplierModal = () => {
+    setShowAddSupplierModal(false);
+    setSupplierForm({
+      name: '',
+      contact_name: '',
+      phone: '',
+      email: '',
+      address: '',
+      notes: ''
+    });
+    setSupplierErrors({});
+  };
+
+  const printPurchaseOrder = async (poId: number) => {
+    try {
+      // Check both localStorage and sessionStorage for token
+      const localToken = localStorage.getItem('token');
+      const sessionToken = sessionStorage.getItem('token');
+      
+      console.log('🔍 Debug - Token check:');
+      console.log('  localStorage token:', localToken ? `${localToken.substring(0, 20)}...` : 'NOT FOUND');
+      console.log('  sessionStorage token:', sessionToken ? `${sessionToken.substring(0, 20)}...` : 'NOT FOUND');
+      
+      const token = localToken || sessionToken;
+      
+      if (!token) {
+        console.error('❌ No token found in either localStorage or sessionStorage');
+        alert('No authentication token found. Please log in again.');
+        return;
+      }
+
+      console.log('✅ Using token for printing:', token.substring(0, 20) + '...');
+
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/${poId}/html?language=ar&token=${token}`);
+      
+      if (response.ok) {
+        const htmlContent = await response.text();
+        // Create a new window with the HTML content
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          // Optional: Auto-print
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        }
+      } else {
+        console.error('Failed to fetch purchase order HTML:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        alert(`Failed to load purchase order for printing. Status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error printing purchase order:', error);
+      alert('Error occurred while loading purchase order for printing');
+    }
+  };
+
+  const printCheque = async (poId: number, chequeId: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/purchase-orders/${poId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      if (!token) {
+        alert('No authentication token found. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/${poId}/cheque/${chequeId}/arabic-pdf?token=${token}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Clean up the object URL after a delay
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      } else {
+        console.error('Failed to fetch cheque PDF:', response.status);
+        alert('Failed to load cheque for printing');
+      }
+    } catch (error) {
+      console.error('Error printing cheque:', error);
+      alert('Error occurred while loading cheque for printing');
+    }
+  };
+
+  const fetchPODetails = async (poId: number) => {
+    try {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/${poId}`, {
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -185,13 +402,9 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const updatePOStatus = async (poId: number, status: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/purchase-orders/${poId}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/${poId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status })
       });
 
@@ -211,13 +424,9 @@ const PurchaseOrderManagement: React.FC = () => {
 
     setChequeGenerating(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/purchase-orders/${selectedPO.id}/generate-cheque`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/${selectedPO.id}/generate-cheque`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           bank_account_id: selectedBankAccount,
           safe_id: selectedSafe,
@@ -230,8 +439,7 @@ const PurchaseOrderManagement: React.FC = () => {
         const data = await response.json();
         // Auto-print the cheque
         if (data.cheque_id) {
-          const token = localStorage.getItem('token');
-          window.open(`/api/purchase-orders/${selectedPO.id}/cheque/${data.cheque_id}/arabic-pdf?token=${token}`, '_blank');
+          printCheque(selectedPO.id, data.cheque_id);
         }
         setShowChequeModal(false);
         setSelectedBankAccount(0);
@@ -252,13 +460,9 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const receivePurchaseOrder = async (poId: number) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/purchase-orders/${poId}/receive`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/${poId}/receive`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -280,7 +484,8 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'draft': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'received': return 'bg-green-100 text-green-800 border-green-300';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
       default: return 'bg-gray-100 text-gray-800 border-gray-300';
@@ -315,13 +520,22 @@ const PurchaseOrderManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">{t('purchaseOrders.title')}</h1>
           <p className="text-gray-600 mt-1">{t('purchaseOrders.subtitle')}</p>
         </div>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{t('purchaseOrders.createOrder')}</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('purchaseOrders.createOrder')}</span>
+          </button>
+          <button
+            onClick={() => setShowAddSupplierModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>{t('purchaseOrders.addSupplier')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -490,17 +704,24 @@ const PurchaseOrderManagement: React.FC = () => {
                     </button>
                     
                     <button
-                      onClick={() => {
-                        const token = localStorage.getItem('token');
-                        window.open(`/api/purchase-orders/${po.id}/html?language=ar&token=${token}`, '_blank');
-                      }}
+                      onClick={() => printPurchaseOrder(po.id)}
                       className="text-gray-600 hover:text-gray-900"
                       title={t('purchaseOrders.actions.printOrder')}
                     >
                       <Printer className="w-4 h-4" />
                     </button>
                     
-                    {po.status === 'Pending' && (
+                    {(po.status === 'draft' || po.status === 'Pending') && (
+                      <button
+                        onClick={() => approvePurchaseOrder(po.id)}
+                        className="text-green-600 hover:text-green-900"
+                        title={t('purchaseOrders.actions.approve')}
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                    
+                    {(po.status === 'approved' || po.status === 'Approved') && (
                       <button
                         onClick={() => receivePurchaseOrder(po.id)}
                         className="text-indigo-600 hover:text-indigo-900"
@@ -510,7 +731,7 @@ const PurchaseOrderManagement: React.FC = () => {
                       </button>
                     )}
                     
-                    {(po.status === 'Pending' || po.status === 'Received') && (
+                    {(po.status === 'draft' || po.status === 'approved' || po.status === 'received') && (
                       <button
                         onClick={() => {
                           setSelectedPO(po);
@@ -559,6 +780,127 @@ const PurchaseOrderManagement: React.FC = () => {
         }}
       />
 
+      {/* Add Supplier Modal */}
+      {showAddSupplierModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                         <div className="px-6 py-4 border-b border-gray-200">
+               <h2 className="text-lg font-semibold text-gray-900">{t('purchaseOrders.addSupplierModal.title')}</h2>
+             </div>
+             
+             <div className="p-6 space-y-4">
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   {t('purchaseOrders.addSupplierModal.name')}
+                 </label>
+                 <input
+                   type="text"
+                   value={supplierForm.name}
+                   onChange={(e) => setSupplierForm(prev => ({ ...prev, name: e.target.value }))}
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   required
+                 />
+                 {supplierErrors.name && <p className="text-red-500 text-xs mt-1">{supplierErrors.name}</p>}
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   {t('purchaseOrders.addSupplierModal.contactName')}
+                 </label>
+                 <input
+                   type="text"
+                   value={supplierForm.contact_name}
+                   onChange={(e) => setSupplierForm(prev => ({ ...prev, contact_name: e.target.value }))}
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   required
+                 />
+                 {supplierErrors.contact_name && <p className="text-red-500 text-xs mt-1">{supplierErrors.contact_name}</p>}
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   {t('purchaseOrders.addSupplierModal.phone')}
+                 </label>
+                 <input
+                   type="text"
+                   value={supplierForm.phone}
+                   onChange={(e) => setSupplierForm(prev => ({ ...prev, phone: e.target.value }))}
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 />
+                 {supplierErrors.phone && <p className="text-red-500 text-xs mt-1">{supplierErrors.phone}</p>}
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   {t('purchaseOrders.addSupplierModal.email')}
+                 </label>
+                 <input
+                   type="email"
+                   value={supplierForm.email}
+                   onChange={(e) => setSupplierForm(prev => ({ ...prev, email: e.target.value }))}
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 />
+                 {supplierErrors.email && <p className="text-red-500 text-xs mt-1">{supplierErrors.email}</p>}
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   {t('purchaseOrders.addSupplierModal.address')}
+                 </label>
+                 <textarea
+                   value={supplierForm.address}
+                   onChange={(e) => setSupplierForm(prev => ({ ...prev, address: e.target.value }))}
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 />
+                 {supplierErrors.address && <p className="text-red-500 text-xs mt-1">{supplierErrors.address}</p>}
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   {t('purchaseOrders.addSupplierModal.notes')}
+                 </label>
+                 <textarea
+                   value={supplierForm.notes}
+                   onChange={(e) => setSupplierForm(prev => ({ ...prev, notes: e.target.value }))}
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 />
+                 {supplierErrors.notes && <p className="text-red-500 text-xs mt-1">{supplierErrors.notes}</p>}
+               </div>
+ 
+               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                 <div className="flex items-start space-x-2">
+                   <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                   <div className="text-sm text-yellow-800">
+                     <p className="font-medium">{t('purchaseOrders.addSupplierModal.info')}</p>
+                   </div>
+                 </div>
+               </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={handleCloseSupplierModal}
+                  className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={addSupplier}
+                  disabled={supplierCreating}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                                     {supplierCreating ? (
+                     <>
+                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                       <span>{t('purchaseOrders.addSupplierModal.creating')}</span>
+                     </>
+                   ) : (
+                     <>
+                       <UserPlus className="w-4 h-4" />
+                       <span>{t('purchaseOrders.addSupplierModal.add')}</span>
+                     </>
+                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PO Details Modal */}
       {showDetailsModal && selectedPO && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -595,6 +937,9 @@ const PurchaseOrderManagement: React.FC = () => {
                       <p><span className="font-medium">{t('purchaseOrders.details.created')}</span> {new Date(selectedPO.created_at).toLocaleDateString()}</p>
                       {selectedPO.expected_date && (
                         <p><span className="font-medium">{t('purchaseOrders.details.expectedDelivery')}</span> {selectedPO.expected_date}</p>
+                      )}
+                      {(selectedPO.warehouse_name || selectedPO.warehouse?.name) && (
+                        <p><span className="font-medium">{t('purchaseOrders.details.warehouse')}</span> {selectedPO.warehouse_name || selectedPO.warehouse?.name}</p>
                       )}
                     </div>
                   </div>

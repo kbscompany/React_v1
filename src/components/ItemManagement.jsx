@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import { getAuthHeaders } from '../utils/auth';
 
 const ItemManagement = () => {
   const { t } = useTranslation();
@@ -77,6 +78,18 @@ const ItemManagement = () => {
 
   const API_BASE = 'http://100.29.4.72:8000';
 
+  // Debounced search - wait 500ms after user stops typing
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (activeTab === 'items') {
+        loadItems();
+      }
+    }, 500);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, selectedCategory]);
+
+  // Load data when tab changes or page changes (without search delay)
   useEffect(() => {
     loadCategories();
     if (activeTab === 'items') {
@@ -89,7 +102,7 @@ const ItemManagement = () => {
     } else if (activeTab === 'cakes') {
       loadCakes();
     }
-  }, [activeTab, currentPage, searchTerm, selectedCategory]);
+  }, [activeTab, currentPage]);
 
   // NEW: Load available data for editing
   const loadAvailableDataForEditing = async () => {
@@ -398,13 +411,9 @@ const ItemManagement = () => {
 
   const updateItem = async (itemId, itemData) => {
     try {
-      // Temporary fix: Show message that backend needs to be fixed
-      setError('⚠️ Backend endpoint not available. PUT /items-manage/{id} endpoint needs to be implemented.');
-      return;
-      
       const response = await fetch(`${API_BASE}/items-manage/${itemId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(itemData)
       });
       
@@ -424,12 +433,9 @@ const ItemManagement = () => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     
     try {
-      // Temporary fix: Show message that backend needs to be fixed
-      setError('⚠️ Backend endpoint not available. DELETE /items-manage/{id} endpoint needs to be implemented.');
-      return;
-      
       const response = await fetch(`${API_BASE}/items-manage/${itemId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (response.ok) {
@@ -446,13 +452,9 @@ const ItemManagement = () => {
 
   const addPackage = async (itemId, packageData) => {
     try {
-      // Temporary fix: Show message that backend needs to be fixed
-      setError('⚠️ Backend endpoint not available. POST /items-manage/{id}/packages endpoint needs to be implemented.');
-      return;
-      
       const response = await fetch(`${API_BASE}/items-manage/${itemId}/packages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(packageData)
       });
       
@@ -473,12 +475,9 @@ const ItemManagement = () => {
     if (!window.confirm('Are you sure you want to delete this package?')) return;
     
     try {
-      // Temporary fix: Show message that backend needs to be fixed
-      setError('⚠️ Backend endpoint not available. DELETE /items-manage/packages/{id} endpoint needs to be implemented.');
-      return;
-      
       const response = await fetch(`${API_BASE}/items-manage/packages/${packageId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (response.ok) {

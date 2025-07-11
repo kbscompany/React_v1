@@ -900,7 +900,7 @@ function ExpenseManagement({ user }) {
                 </select>
                 {expenseForm.cheque_id && (() => {
                   const selectedCheque = cheques.find(c => c.id === parseInt(expenseForm.cheque_id))
-                  const currentSafe = safes.find(s => s.id === selectedSafe.id)
+                    const currentSafe = safes.find(s => s.id === selectedSafe.id)
                   const expenseAmount = parseFloat(expenseForm.amount || 0)
                   
                   if (!selectedCheque || !currentSafe || expenseAmount <= 0) {

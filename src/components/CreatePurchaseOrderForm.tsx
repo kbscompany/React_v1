@@ -181,7 +181,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('/api/purchase-orders/suppliers', {
+      const response = await fetch('http://100.29.4.72:8000/api/purchase-orders/suppliers', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -200,7 +200,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
     
     setSearchLoading(true);
     try {
-      const response = await fetch(`/api/purchase-orders/items/search?q=${encodeURIComponent(searchTerm)}`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/items/search?q=${encodeURIComponent(searchTerm)}`, {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -218,7 +218,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
   const fetchSupplierPackages = async () => {
     if (!selectedSupplier) return;
     try {
-      const response = await fetch(`/api/purchase-orders/suppliers/${selectedSupplier.id}/packages`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/suppliers/${selectedSupplier.id}/packages`, {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -234,28 +234,48 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
   const filteredItems = searchResults;
 
   const addItem = (searchItem: any, package_?: SupplierPackage) => {
-    const unitPrice = package_?.price_per_unit || searchItem.price_per_unit || 0;
-    const quantity = package_?.quantity_per_package || 1;
+    if (package_) {
+      // When adding by package: order 1 package by default
+      const newItem: PurchaseOrderItem = {
+        supplier_item_id: searchItem.id,
+        supplier_package_id: package_.id,
+        quantity: 1, // 1 package, not individual units
+        unit_price: package_.price_per_package, // Price per package
+        total_price: package_.price_per_package * 1, // 1 package price
+        supplier_item: {
+          id: searchItem.id,
+          supplier_id: selectedSupplier?.id || 0,
+          name: searchItem.name,
+          unit: `${package_.package_name} (${package_.quantity_per_package} ${searchItem.unit})`, // Show package info in unit
+          price_per_unit: searchItem.price_per_unit || 0,
+          currency: selectedSupplier?.default_currency || 'USD',
+          is_active: true
+        },
+        supplier_package: package_
+      };
+      
+      setItems(prev => [...prev, newItem]);
+    } else {
+      // When adding by individual units: order 1 unit by default
+      const newItem: PurchaseOrderItem = {
+        supplier_item_id: searchItem.id,
+        quantity: 1, // 1 individual unit
+        unit_price: searchItem.price_per_unit || 0,
+        total_price: (searchItem.price_per_unit || 0) * 1,
+        supplier_item: {
+          id: searchItem.id,
+          supplier_id: selectedSupplier?.id || 0,
+          name: searchItem.name,
+          unit: searchItem.unit,
+          price_per_unit: searchItem.price_per_unit || 0,
+          currency: selectedSupplier?.default_currency || 'USD',
+          is_active: true
+        }
+      };
+      
+      setItems(prev => [...prev, newItem]);
+    }
     
-    const newItem: PurchaseOrderItem = {
-      supplier_item_id: searchItem.id,
-      supplier_package_id: package_?.id,
-      quantity: quantity,
-      unit_price: unitPrice,
-      total_price: unitPrice * quantity,
-      supplier_item: {
-        id: searchItem.id,
-        supplier_id: selectedSupplier?.id || 0,
-        name: searchItem.name,
-        unit: searchItem.unit,
-        price_per_unit: searchItem.price_per_unit || 0,
-        currency: selectedSupplier?.default_currency || 'USD',
-        is_active: true
-      },
-      supplier_package: package_
-    };
-
-    setItems(prev => [...prev, newItem]);
     setSearchTerm('');
     setSearchResults([]);
   };
@@ -319,7 +339,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
         }))
       };
 
-      const response = await fetch('/api/purchase-orders/', {
+      const response = await fetch('http://100.29.4.72:8000/api/purchase-orders/', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(orderData)
@@ -374,7 +394,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
     setTemplateLoading(true);
     try {
       // 1. get template
-      const tplRes = await fetch(`/api/purchase-orders/suppliers/${selectedSupplier.id}/po-template`, {
+      const tplRes = await fetch(`http://100.29.4.72:8000/api/purchase-orders/suppliers/${selectedSupplier.id}/po-template`, {
         headers: getAuthHeaders()
       });
       if (!tplRes.ok) {
@@ -388,7 +408,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
       }
       // 2. fetch item details
       const ids = tplData.items.map((i: any) => i.item_id).join(',');
-      const itemsRes = await fetch(`/api/purchase-orders/items/by-ids?ids=${ids}`, {
+      const itemsRes = await fetch(`http://100.29.4.72:8000/api/purchase-orders/items/by-ids?ids=${ids}`, {
         headers: getAuthHeaders()
       });
       if (!itemsRes.ok) {
@@ -436,7 +456,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
       const payload = {
         items: items.map(i => ({ item_id: i.supplier_item_id, default_quantity: i.quantity }))
       };
-      const res = await fetch(`/api/purchase-orders/suppliers/${selectedSupplier.id}/po-template`, {
+      const res = await fetch(`http://100.29.4.72:8000/api/purchase-orders/suppliers/${selectedSupplier.id}/po-template`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
@@ -520,32 +540,32 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                       {filteredSuppliers.length > 0 ? (
                         filteredSuppliers.map(supplier => (
-                          <div
-                            key={supplier.id}
+                    <div
+                      key={supplier.id}
                             onClick={() => handleSupplierSelect(supplier)}
                             className={`p-4 cursor-pointer transition-all hover:bg-blue-50 border-b border-gray-100 last:border-b-0 ${
                               selectedSupplier?.id === supplier.id ? 'bg-blue-50 border-blue-200' : ''
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-medium text-gray-900">{supplier.name}</h3>
-                              {selectedSupplier?.id === supplier.id && (
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-gray-900">{supplier.name}</h3>
+                        {selectedSupplier?.id === supplier.id && (
                                 <CheckCircle className="w-4 h-4 text-blue-600" />
-                              )}
-                            </div>
+                        )}
+                      </div>
                             <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
-                              {supplier.contact_phone && (
+                        {supplier.contact_phone && (
                                 <p className="flex items-center">
                                   <span className="w-4 text-center">📞</span>
                                   {supplier.contact_phone}
                                 </p>
-                              )}
-                              {supplier.contact_email && (
+                        )}
+                        {supplier.contact_email && (
                                 <p className="flex items-center">
                                   <span className="w-4 text-center">📧</span>
                                   {supplier.contact_email}
                                 </p>
-                              )}
+                        )}
                               <p className="flex items-center">
                                 <span className="w-4 text-center">💰</span>
                                 {supplier.default_currency}
@@ -554,14 +574,14 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
                                 <span className="w-4 text-center">📦</span>
                                 {supplier.total_orders || 0} orders
                               </p>
-                            </div>
-                          </div>
+                      </div>
+                    </div>
                         ))
                       ) : (
                         <div className="p-4 text-center text-gray-500">
                           <Search className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                           <p>No suppliers found matching "{supplierSearchTerm}"</p>
-                        </div>
+                </div>
                       )}
                     </div>
                   )}
@@ -711,46 +731,103 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
                 )}
               </div>
 
-              {/* Search Results */}
+              {/* Search Results - Package-First Interface */}
               {filteredItems.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
                   {filteredItems.map((item: any) => {
                     const packages = getPackagesForItem(item.id);
                     return (
                       <div key={item.id} className="p-4 border-b border-gray-100 last:border-b-0">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{item.name}</h4>
-                            <p className="text-sm text-gray-600">{item.unit} • ${item.price_per_unit || 0}</p>
-                          </div>
-                          <button
-                            onClick={() => addItem(item)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                          >
-                            {t('purchaseOrders.create.step2.addItem')}
-                          </button>
+                        {/* Item Header */}
+                        <div className="mb-3">
+                          <h4 className="font-medium text-gray-900 flex items-center">
+                            📦 {item.name}
+                            <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              Base: {item.unit} • ${item.price_per_unit || 0}
+                            </span>
+                          </h4>
                         </div>
                         
-                        {/* Package Options */}
-                        {packages.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            <p className="text-sm font-medium text-gray-700">{t('purchaseOrders.create.step2.package')} {t('common.options')}:</p>
+                        {/* Package Options (Primary) */}
+                        {packages.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-green-700 flex items-center">
+                              📦 Available Packages (Recommended):
+                            </p>
                             {packages.map(pkg => (
-                              <div key={pkg.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                <div className="text-sm">
-                                  <span className="font-medium">{pkg.package_name}</span>
-                                  <span className="text-gray-600 ml-2">
-                                    {pkg.quantity_per_package} {item.unit} • ${pkg.price_per_package}
-                                  </span>
+                              <div key={pkg.id} className="flex items-center justify-between bg-green-50 border border-green-200 p-3 rounded-lg hover:bg-green-100 transition-colors">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="font-bold text-green-800">{pkg.package_name}</span>
+                                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">
+                                      PACKAGE
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-green-700 mt-1">
+                                    <span className="font-medium">{pkg.quantity_per_package} {item.unit}</span> per package
+                                    <span className="mx-2">•</span>
+                                    <span className="font-bold">${pkg.price_per_package} per package</span>
+                                    <span className="mx-2">•</span>
+                                    <span className="text-green-600">${pkg.price_per_unit.toFixed(3)} per {item.unit}</span>
+                                  </div>
                                 </div>
                                 <button
                                   onClick={() => addItem(item, pkg)}
-                                  className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-medium flex items-center space-x-1"
                                 >
-                                  {t('purchaseOrders.create.step2.addItem')}
+                                  <span>📦</span>
+                                  <span>Add Package</span>
                                 </button>
                               </div>
                             ))}
+                            
+                            {/* Individual Units Option (Secondary) */}
+                            <div className="pt-2 border-t border-gray-200">
+                              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-gray-700">Order by Individual Units</span>
+                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                                      INDIVIDUAL
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-gray-600 mt-1">
+                                    <span>${item.price_per_unit || 0} per {item.unit}</span>
+                                    <span className="mx-2">•</span>
+                                    <span className="text-amber-600">Manual quantity entry required</span>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => addItem(item)}
+                                  className="px-3 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                                >
+                                  Add Individual
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* No packages available - individual units only */
+                          <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-amber-800">⚠️ No packages available</span>
+                                  <span className="text-xs bg-amber-200 text-amber-800 px-2 py-1 rounded">
+                                    INDIVIDUAL ONLY
+                                  </span>
+                                </div>
+                                <div className="text-sm text-amber-700 mt-1">
+                                  Order by individual {item.unit} • ${item.price_per_unit || 0} per {item.unit}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => addItem(item)}
+                                className="px-3 py-2 bg-amber-600 text-white rounded text-sm hover:bg-amber-700"
+                              >
+                                Add Individual
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -769,31 +846,58 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
                     {items.map((item, index) => (
                       <div key={index} className="p-4 flex items-center space-x-4">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{item.supplier_item?.name}</h4>
+                          <div className="flex items-center space-x-2">
+                            <h4 className="font-medium text-gray-900">{item.supplier_item?.name}</h4>
+                            {item.supplier_package ? (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                                📦 PACKAGE
+                              </span>
+                            ) : (
+                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                📊 INDIVIDUAL
+                              </span>
+                            )}
+                          </div>
                           {item.supplier_package && (
-                            <p className="text-sm text-green-600">{item.supplier_package.package_name}</p>
+                            <p className="text-sm text-green-600 mt-1">
+                              📦 {item.supplier_package.package_name} 
+                              <span className="text-gray-500 ml-1">
+                                ({item.supplier_package.quantity_per_package} {item.supplier_item?.name} per package)
+                              </span>
+                            </p>
                           )}
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                          <label className="text-sm text-gray-600">{t('purchaseOrders.create.step2.quantity')}:</label>
+                          <label className="text-sm text-gray-600">
+                            {item.supplier_package ? 'Packages:' : 'Quantity:'}
+                          </label>
                           <input
                             type="number"
                             value={item.quantity}
                             onChange={(e) => updateItemQuantity(index, Number(e.target.value))}
                             className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                            min="0.1"
-                            step="0.1"
+                            min="1"
+                            step={item.supplier_package ? "1" : "0.1"}
                           />
-                          <span className="text-sm text-gray-600">{item.supplier_item?.unit}</span>
+                          <span className="text-sm text-gray-600">
+                            {item.supplier_package ? 'packages' : item.supplier_item?.unit}
+                          </span>
                         </div>
                         
                         <div className="text-sm text-gray-600">
-                          <span>{t('purchaseOrders.create.step2.unitPrice')}: ${item.unit_price}</span>
+                          <div>
+                            {item.supplier_package ? 'Per Package:' : 'Per Unit:'} ${item.unit_price}
+                          </div>
+                          {item.supplier_package && (
+                            <div className="text-xs text-green-600">
+                              Total Units: {(item.quantity * item.supplier_package.quantity_per_package).toFixed(1)} {item.supplier_item?.name}
+                            </div>
+                          )}
                         </div>
                         
                         <div className="text-sm font-medium text-gray-900">
-                          <span>{t('purchaseOrders.create.step2.total')}: ${item.total_price.toFixed(2)}</span>
+                          <span>Total: ${item.total_price.toFixed(2)}</span>
                         </div>
                         
                         <button

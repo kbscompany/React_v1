@@ -1011,7 +1011,7 @@ class PurchaseOrder(Base):
     supplier_id = Column(Integer, ForeignKey("suppliers.id", ondelete="CASCADE"), nullable=False)
     order_date = Column(Date, nullable=False)
     expected_date = Column(Date, nullable=True)  # Fixed: matches actual database column name
-    status = Column(Enum('Pending', 'Received', 'Cancelled'), default="Pending")  # Fixed: matches actual database enum
+    status = Column(Enum('Pending', 'Approved', 'Received', 'Cancelled'), default="Pending")  # Updated: includes Approved status
     payment_status = Column(String(20), default="unpaid")  # unpaid, paid
     payment_date = Column(DateTime(timezone=True), nullable=True)
     paid_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
@@ -1023,6 +1023,10 @@ class PurchaseOrder(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
+    # Approval tracking - NEW fields for approval workflow
+    approved_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    
     # Relationships
     supplier = relationship("Supplier", back_populates="purchase_orders")
     warehouse = relationship("Warehouse")
@@ -1030,6 +1034,7 @@ class PurchaseOrder(Base):
     received_by_user = relationship("User", foreign_keys=[received_by])
     paid_by_user = relationship("User", foreign_keys=[paid_by])
     payment_cheque = relationship("Cheque", foreign_keys=[payment_cheque_id])
+    approved_by_user = relationship("User", foreign_keys=[approved_by])
     
     @property
     def calculated_total(self):

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -82,25 +83,13 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const statusFilter = activeTab === 'pending' ? 'Pending' : 'Received';
+      const statusFilter = activeTab === 'pending' ? 'Approved' : 'Received';
       
-      const response = await fetch(
-        `/api/purchase-orders/?warehouse_id=${selectedWarehouse}&status=${statusFilter}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await axios.get(
+        `/api/purchase-orders/?warehouse_id=${selectedWarehouse}&status=${statusFilter}`
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setPurchaseOrders(data);
+      setPurchaseOrders(response.data);
     } catch (error) {
       console.error('Error loading purchase orders:', error);
       toast({
@@ -144,8 +133,6 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
     if (!selectedOrder) return;
 
     try {
-      const token = localStorage.getItem('token');
-      
       // Prepare the receive data with updated quantities
       const receiveData = {
         items: selectedOrder.items.map(item => ({
@@ -156,21 +143,10 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
         }))
       };
 
-      const response = await fetch(
+      await axios.post(
         `/api/purchase-orders/${selectedOrder.id}/receive-with-details`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(receiveData)
-        }
+        receiveData
       );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       toast({
         title: "Success",
@@ -194,21 +170,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
     if (!confirm(t('confirmations.returnOrder'))) return;
 
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(
-        `/api/purchase-orders/${orderId}/return`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      await axios.post(`/api/purchase-orders/${orderId}/return`);
 
       toast({
         title: "Success",

@@ -322,8 +322,8 @@ def generate_purchase_order_pdf(po_data: Dict[str, Any], language: str = 'ar') -
     # Order Info Section
     if language == 'ar':
         order_info_data = [
-                    [process_arabic_text('تاريخ الطلب:'), datetime.fromisoformat(po_data['order_date'].replace('Z', '+00:00')).strftime('%Y/%m/%d')],
-        [process_arabic_text('التاريخ المتوقع:'), datetime.fromisoformat(po_data.get('expected_date', po_data['order_date']).replace('Z', '+00:00')).strftime('%Y/%m/%d') if po_data.get('expected_date') else process_arabic_text('غير محدد')],
+            [process_arabic_text('تاريخ الطلب:'), datetime.fromisoformat(po_data['order_date'].replace('Z', '+00:00')).strftime('%Y/%m/%d')],
+            [process_arabic_text('التاريخ المتوقع:'), datetime.fromisoformat(po_data.get('expected_date', po_data['order_date']).replace('Z', '+00:00')).strftime('%Y/%m/%d') if po_data.get('expected_date') else process_arabic_text('غير محدد')],
             [process_arabic_text('الحالة:'), process_arabic_text(translate_status(po_data['status'], 'ar'))],
             [process_arabic_text('حالة الدفع:'), process_arabic_text(translate_payment_status(po_data.get('payment_status', 'unpaid'), 'ar'))],
         ]

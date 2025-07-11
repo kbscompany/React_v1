@@ -1111,6 +1111,7 @@
     "title": "أوامر الشراء",
     "subtitle": "إدارة طلبات الموردين والمشتريات",
     "createOrder": "إنشاء أمر شراء",
+    "addSupplier": "إضافة مورد",
     "loading": "جاري تحميل أوامر الشراء...",
     "searchPlaceholder": "البحث بالمورد أو رقم أمر الشراء...",
     "noOrders": "لا توجد أوامر شراء",
@@ -1157,9 +1158,23 @@
     
     "actions": {
       "viewDetails": "عرض التفاصيل",
+      "approve": "اعتماد",
       "printOrder": "طباعة أمر الشراء",
       "markReceived": "تحديد كمستلم",
       "generateCheque": "إنشاء شيك"
+    },
+
+    "addSupplierModal": {
+      "title": "إضافة مورد جديد",
+      "name": "اسم المورد *",
+      "contactName": "اسم جهة الاتصال",
+      "phone": "رقم الهاتف",
+      "email": "البريد الإلكتروني",
+      "address": "العنوان",
+      "notes": "ملاحظات",
+      "info": "إضافة مورد جديد لاستخدامه في أوامر الشراء.",
+      "add": "إضافة مورد",
+      "creating": "جاري الإنشاء..."
     },
     
     "details": {
@@ -1170,6 +1185,7 @@
       "priority": "الأولوية:",
       "created": "تم الإنشاء:",
       "expectedDelivery": "التسليم المتوقع:",
+      "warehouse": "المخزن:",
       "supplierName": "الاسم:",
       "phone": "الهاتف:",
       "email": "البريد الإلكتروني:",
@@ -1572,5 +1588,11 @@
       "to": "إلى",
       "total": "الإجمالي"
     }
+  },
+  "warehouse": {
+    "noReceivedOrders": "لا توجد طلبات مستلمة",
+    "receiveOrder": "استلام الطلب",
+    "adjustQuantities": "تعديل الكميات المستلمة أو إرجاع العناصر",
+    "confirmReceive": "تأكيد الاستلام"
   }
 } 

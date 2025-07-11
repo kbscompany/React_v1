@@ -279,6 +279,7 @@ async def get_purchase_orders(
         # Map DB status to frontend status nomenclature
         status_map = {
             "Pending": "draft",
+            "Approved": "approved",
             "Received": "received",
             "Cancelled": "cancelled"
         }
@@ -358,6 +359,7 @@ async def create_purchase_order(
         # Map DB status to frontend status nomenclature
         status_map = {
             "Pending": "draft",
+            "Approved": "approved",
             "Received": "received",
             "Cancelled": "cancelled"
         }
@@ -403,6 +405,7 @@ async def get_purchase_order(
     # Map DB status to frontend status nomenclature
     status_map = {
         "Pending": "draft",
+        "Approved": "approved",
         "Received": "received",
         "Cancelled": "cancelled"
     }
@@ -424,6 +427,50 @@ async def get_purchase_order(
         "items": po.items,
         "calculated_total": po.calculated_total,
         "item_count": len(po.items)
+    }
+
+@router.post("/{po_id}/approve")
+async def approve_purchase_order(
+    po_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Approve a purchase order - requires admin or cost control manager permission"""
+    # Check user permission - only admins and cost control managers can approve
+    allowed_roles = ["admin", "cost control manager"]
+    if not current_user.role or current_user.role.name.lower() not in allowed_roles:
+        raise HTTPException(
+            status_code=403, 
+            detail="Only administrators and cost control managers can approve purchase orders"
+        )
+    
+    # Get the purchase order
+    po = db.query(models.PurchaseOrder).filter(models.PurchaseOrder.id == po_id).first()
+    if not po:
+        raise HTTPException(status_code=404, detail="Purchase order not found")
+    
+    # Check if already approved or received
+    if po.status == "Approved":
+        raise HTTPException(status_code=400, detail="Purchase order is already approved")
+    if po.status == "Received":
+        raise HTTPException(status_code=400, detail="Cannot approve a received purchase order")
+    if po.status == "Cancelled":
+        raise HTTPException(status_code=400, detail="Cannot approve a cancelled purchase order")
+    
+    # Approve the purchase order
+    po.status = "Approved"
+    po.approved_by = current_user.id
+    po.approved_at = datetime.now()
+    
+    db.commit()
+    db.refresh(po)
+    
+    return {
+        "message": "Purchase order approved successfully",
+        "po_id": po.id,
+        "approved_by": current_user.username,
+        "approved_at": po.approved_at,
+        "status": "approved"
     }
 
 @router.put("/{po_id}", response_model=schemas.PurchaseOrderWithDetails)

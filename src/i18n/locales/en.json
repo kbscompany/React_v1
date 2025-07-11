@@ -1221,6 +1221,7 @@
     "title": "Purchase Orders",
     "subtitle": "Manage supplier orders and procurement",
     "createOrder": "Create Purchase Order",
+    "addSupplier": "Add Supplier",
     "loading": "Loading purchase orders...",
     "searchPlaceholder": "Search by supplier or PO number...",
     "noOrders": "No purchase orders",
@@ -1267,10 +1268,24 @@
     
     "actions": {
       "viewDetails": "View Details",
+      "approve": "Approve",
       "printOrder": "Print Purchase Order",
       "markReceived": "Mark as Received",
       "generateCheque": "Generate Cheque",
       "cancel": "Cancel"
+    },
+
+    "addSupplierModal": {
+      "title": "Add New Supplier",
+      "name": "Supplier Name *",
+      "contactName": "Contact Name",
+      "phone": "Phone Number",
+      "email": "Email Address",
+      "address": "Address",
+      "notes": "Notes",
+      "info": "Add a new supplier to use in purchase orders.",
+      "add": "Add Supplier",
+      "creating": "Creating..."
     },
     
     "details": {
@@ -1281,6 +1296,7 @@
       "priority": "Priority:",
       "created": "Created:",
       "expectedDelivery": "Expected Delivery:",
+      "warehouse": "Warehouse:",
       "supplierName": "Name:",
       "phone": "Phone:",
       "email": "Email:",
@@ -1583,5 +1599,11 @@
       "to": "to",
       "total": "total"
     }
+  },
+  "warehouse": {
+    "noReceivedOrders": "No received orders found",
+    "receiveOrder": "Receive Order",
+    "adjustQuantities": "Adjust quantities received or return items",
+    "confirmReceive": "Confirm Receive"
   }
 } 
