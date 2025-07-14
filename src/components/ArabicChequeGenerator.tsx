@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios from 'axios';
-import { PX_TO_CM } from '../utils/px-to-cm';
 
 interface FieldPosition {
   x: number;
@@ -28,6 +27,10 @@ const FIELD_DEFS: ChequeField[] = [
   { key: 'note_4', label: 'رقم المرايا' },
 ];
 
+// Browser coordinate system constants (top-left origin)
+const BROWSER_PAGE_WIDTH = 595;  // Standard A4 width in points
+const BROWSER_PAGE_HEIGHT = 842; // Standard A4 height in points
+
 const ArabicChequeGenerator = () => {
   const API_BASE_URL = 'http://100.29.4.72:8000';
 
@@ -36,24 +39,22 @@ const ArabicChequeGenerator = () => {
   const [templateFile, setTemplateFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [positions, setPositions] = useState({});
-  const [visibility, setVisibility] = useState({});
+  // All positions stored in browser coordinates (top-left origin, y=0 at top)
+  const [positions, setPositions] = useState<Record<string, FieldPosition>>({});
+  const [visibility, setVisibility] = useState<Record<string, boolean>>({});
   const [debugMode, setDebugMode] = useState(false);
   const [fontSize, setFontSize] = useState(16);
-  const overlayRef = useRef(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Track dragging state
-  const [dragging, setDragging] = useState(null);
-
-  // PDF template preview dimensions
-  const [pageWidth, setPageWidth] = useState(595); // points → px (1:1 scale)
-  const [pageHeight, setPageHeight] = useState(842);
+  const [dragging, setDragging] = useState<{
+    key: string;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
 
   // Track if we have a template preview available
   const [hasTemplatePreview, setHasTemplatePreview] = useState(false);
-  
-  // Track actual image dimensions for scaling
-  const [imageScale, setImageScale] = useState({ x: 1, y: 1 });
   
   // Print preview state
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -67,7 +68,7 @@ const ArabicChequeGenerator = () => {
   // Track system status
   const [systemStatus, setSystemStatus] = useState(null);
 
-  // Handle manual coordinate changes
+  // Handle manual coordinate changes - coordinates stay in browser space
   const handleManualCoordinateChange = (fieldKey: string, coordinate: 'x' | 'y', value: string) => {
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -81,33 +82,30 @@ const ArabicChequeGenerator = () => {
     }
   };
 
-  // Handle global mouse move while dragging (this was missing!)
+  // Handle global mouse move while dragging - all coordinates in browser space
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (!dragging || !overlayRef.current) return;
       const rect = overlayRef.current.getBoundingClientRect();
-      let newX = e.clientX - rect.left - dragging.offsetX;
-      let newY = e.clientY - rect.top - dragging.offsetY;
+      const newX = e.clientX - rect.left - dragging.offsetX;
+      const newY = e.clientY - rect.top - dragging.offsetY;
       
-      // Allow positioning beyond margins - remove clamping restrictions
-      // Users can now position text anywhere, including outside normal page boundaries
-      
+      // No coordinate transformation needed - all in browser space
       setPositions(prev => ({
         ...prev,
         [dragging.key]: { x: newX, y: newY }
       }));
     };
 
-    const handleTouchMove = (e) => {
+    const handleTouchMove = (e: TouchEvent) => {
       if (!dragging || !overlayRef.current) return;
-      e.preventDefault(); // Prevent scrolling
+      e.preventDefault();
       const touch = e.touches[0];
       const rect = overlayRef.current.getBoundingClientRect();
-      let newX = touch.clientX - rect.left - dragging.offsetX;
-      let newY = touch.clientY - rect.top - dragging.offsetY;
+      const newX = touch.clientX - rect.left - dragging.offsetX;
+      const newY = touch.clientY - rect.top - dragging.offsetY;
       
-      // Allow positioning beyond margins - remove clamping restrictions
-      
+      // No coordinate transformation needed - all in browser space
       setPositions(prev => ({
         ...prev,
         [dragging.key]: { x: newX, y: newY }
@@ -130,13 +128,12 @@ const ArabicChequeGenerator = () => {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [dragging, pageWidth, pageHeight]);
+  }, [dragging]);
 
   useEffect(() => {
     // Check system status
     axios.get(`${API_BASE_URL}/arabic-cheque/system-status`).then(res => {
       setSystemStatus(res.data);
-      // Alert if fonts are not registered
       if (!res.data.fonts_registered) {
         console.error('Arabic fonts not registered:', res.data.font_error);
         alert('تحذير: الخطوط العربية غير مسجلة. قد لا يظهر النص العربي بشكل صحيح.');
@@ -145,30 +142,35 @@ const ArabicChequeGenerator = () => {
       console.error('Failed to check system status:', err);
     });
 
+    // Load saved positions - they are already in browser coordinate space
     axios.get(`${API_BASE_URL}/arabic-cheque/cheque-field-positions`).then(res => {
       setPositions(res.data);
     }).catch(() => {
-      // If no saved positions, use defaults
-      const defaultPositions = {};
-      FIELD_DEFS.forEach(field => {
-        defaultPositions[field.key] = { x: 100, y: 100 + (FIELD_DEFS.indexOf(field) * 50) };
+      // If no saved positions, use defaults in browser coordinate space
+      const defaultPositions: Record<string, FieldPosition> = {};
+      FIELD_DEFS.forEach((field, index) => {
+        defaultPositions[field.key] = { 
+          x: 100, 
+          y: 100 + (index * 50) // Browser coordinates: y increases downward
+        };
       });
       setPositions(defaultPositions);
     });
 
-    // Load template status once
+    // Load template status
     axios.get(`${API_BASE_URL}/arabic-cheque/cheque-template-status`).then(res => {
       setTemplateStatus(res.data);
       setHasTemplatePreview(res.data.template_exists);
     }).catch(() => setTemplateStatus(null));
 
-    const defaultVisibility = {};
+    // Set default visibility
+    const defaultVisibility: Record<string, boolean> = {};
     FIELD_DEFS.forEach(field => {
       defaultVisibility[field.key] = true;
     });
     setVisibility(defaultVisibility);
 
-    // inside useEffect after loading positions and template status
+    // Load font size settings
     axios.get(`${API_BASE_URL}/arabic-cheque/cheque-settings`).then(res => {
       if (res.data && res.data.font_size) {
         setFontSize(res.data.font_size);
@@ -195,13 +197,12 @@ const ArabicChequeGenerator = () => {
     return sampleData;
   };
 
-  // HTML printing function
+  // HTML printing function - uses consistent coordinate conversion
   const handleHtmlPrint = (preview = false) => {
     const chequeData = generateSampleChequeData();
     
-    // Use unified pixel-to-cm conversion
-    const scaleX = PX_TO_CM;
-    const scaleY = PX_TO_CM;
+    // Convert browser coordinates to CSS centimeters for HTML printing
+    const pxToCm = (px: number) => (px * 0.026458).toFixed(2);
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -306,12 +307,13 @@ const ArabicChequeGenerator = () => {
           const pos = positions[field.key];
           if (!pos) return '';
           
-          const leftCm = (pos.x * scaleX).toFixed(2);
-          const topCm = (pos.y * scaleY).toFixed(2);
+          // Convert browser coordinates directly to CSS centimeters
+          const leftCm = pxToCm(pos.x);
+          const topCm = pxToCm(pos.y);
           
           return `
             <div class="cheque-field" style="left: ${leftCm}cm; top: ${topCm}cm;">
-                ${chequeData[field.key] || field.label}
+                ${chequeData[field.key as keyof typeof chequeData] || field.label}
             </div>
           `;
         }).join('')}
@@ -329,73 +331,54 @@ const ArabicChequeGenerator = () => {
 </html>`;
 
     if (preview) {
-      // Show HTML preview in modal
       setShowHtmlPreview(true);
-      // Create a blob URL for the HTML content
       const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       setPrintPreviewUrl(url);
     } else {
-      // Open HTML in new window for printing
       const printWindow = window.open('', '_blank');
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+      }
     }
   };
 
-  // Updated handlePrint function to show method selection
   const handlePrintWithOptions = (preview = false) => {
     setPendingPrintPreview(preview);
     setShowPrintMethodModal(true);
   };
 
-  // Original PDF print function (renamed for clarity)
+  // PDF print function - send browser coordinates as-is to backend
   const handlePdfPrint = (preview = false) => {
-    // Transform coordinates from UI to PDF
-    const transformedPositions = {};
-    for (const [key, pos] of Object.entries(positions)) {
-      if (pos && typeof pos === 'object' && 'x' in pos && 'y' in pos) {
-        // The UI uses the same dimensions as PDF (595x842)
-        // But Y-axis is inverted: UI has origin at top-left, PDF at bottom-left
-        const posX = (pos as any).x;
-        const posY = (pos as any).y;
-        transformedPositions[key] = {
-          x: posX,
-          y: pageHeight - posY  // Invert Y coordinate
-        };
-      }
-    }
-    
-    // Use different endpoint for preview with template
     const endpoint = preview 
       ? `${API_BASE_URL}/arabic-cheque/cheques/1/preview-with-template`
       : `${API_BASE_URL}/arabic-cheque/cheques/1/print-arabic-sqlite`;
     
+    // Send positions in browser coordinate space - backend will handle conversion
     axios.post(endpoint, {
-      field_positions: transformedPositions,
+      field_positions: positions, // Browser coordinates - no transformation
       field_visibility: visibility,
       font_language: 'ar',
       debug_mode: debugMode,
-      font_size: fontSize  // Pass font size to backend
+      font_size: fontSize
     }, { responseType: 'blob' }).then(res => {
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       
       if (preview) {
-        // Show preview in modal
         setPrintPreviewUrl(url);
         setShowPrintPreview(true);
       } else {
-        // Open in new window
         window.open(url);
       }
     });
   };
 
   const saveDefaults = () => {
+    // Save positions in browser coordinate space
     axios.post(`${API_BASE_URL}/arabic-cheque/cheque-field-positions`, positions).then(() => {
-      // also save font size
       axios.post(`${API_BASE_URL}/arabic-cheque/cheque-settings`, { font_size: fontSize });
       alert('Saved successfully');
     });
@@ -421,11 +404,10 @@ const ArabicChequeGenerator = () => {
 
       alert('تم رفع قالب الشيك بنجاح');
       setTemplateFile(null);
-      // Reload template status
       const statusRes = await axios.get(`${API_BASE_URL}/arabic-cheque/cheque-template-status`);
       setTemplateStatus(statusRes.data);
       setHasTemplatePreview(statusRes.data.template_exists);
-    } catch (error) {
+    } catch (error: any) {
       let errorMessage = 'فشل في رفع قالب الشيك';
       if (error.response) {
         if (error.response.status === 413) {
@@ -444,7 +426,8 @@ const ArabicChequeGenerator = () => {
   };
 
   const resetToDefaults = () => {
-    const defaultPositions = {};
+    // Reset to default browser coordinates
+    const defaultPositions: Record<string, FieldPosition> = {};
     FIELD_DEFS.forEach((field, index) => {
       defaultPositions[field.key] = { x: 100, y: 100 + (index * 50) };
     });
@@ -537,24 +520,23 @@ const ArabicChequeGenerator = () => {
         
         <div className="mt-4 p-3 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-700">
-            💡 <strong>نصائح للاستخدام:</strong> يمكنك الآن إدخال إحداثيات دقيقة يدوياً أو سحب الحقول في المعاينة أدناه. 
-            يمكن استخدام قيم سالبة أو قيم أكبر من حدود الصفحة لوضع النص خارج الهوامش العادية.
+            💡 <strong>نصائح للاستخدام:</strong> جميع الإحداثيات في نظام المتصفح (أعلى-يسار). 
+            يمكنك إدخال إحداثيات دقيقة يدوياً أو سحب الحقول في المعاينة أدناه.
           </p>
         </div>
       </div>
 
-      {/* PDF preview with overlay */}
-      <div className="relative mb-6 border-2 border-gray-300" style={{ width: pageWidth, height: pageHeight }} ref={overlayRef}>
-        {/* Background template - using image preview */}
+      {/* PDF preview with overlay - all in browser coordinate space */}
+      <div className="relative mb-6 border-2 border-gray-300" style={{ width: BROWSER_PAGE_WIDTH, height: BROWSER_PAGE_HEIGHT }} ref={overlayRef}>
+        {/* Background template */}
         {hasTemplatePreview ? (
           <div className="absolute inset-0">
             <img 
               src={`${API_BASE_URL}/arabic-cheque/cheque-template-preview`}
               alt="قالب الشيك"
               className="w-full h-full"
-              style={{ width: pageWidth, height: pageHeight, objectFit: 'fill' }}
-              onLoad={(e) => {
-                // Image is loaded, positions should align with PDF coordinates
+              style={{ width: BROWSER_PAGE_WIDTH, height: BROWSER_PAGE_HEIGHT, objectFit: 'fill' }}
+              onLoad={() => {
                 console.log('Template image loaded');
               }}
             />
@@ -568,7 +550,7 @@ const ArabicChequeGenerator = () => {
           </div>
         )}
 
-        {/* Draggable overlay fields */}
+        {/* Draggable overlay fields - all in browser coordinates */}
         {FIELD_DEFS.filter(field => field.key !== 'company_table').map(field => (
           visibility[field.key] && (
             <div
@@ -587,7 +569,7 @@ const ArabicChequeGenerator = () => {
               }}
               onTouchStart={e => {
                 if (!overlayRef.current) return;
-                e.preventDefault(); // Prevent scrolling
+                e.preventDefault();
                 const touch = e.touches[0];
                 const rect = overlayRef.current.getBoundingClientRect();
                 const offsetX = touch.clientX - rect.left - (positions[field.key]?.x ?? 0);
@@ -733,7 +715,6 @@ const ArabicChequeGenerator = () => {
               <button
                 className="bg-green-600 text-white px-6 py-2 rounded"
                 onClick={() => {
-                  // Open for printing
                   const printWindow = window.open(printPreviewUrl);
                   if (printWindow) {
                     printWindow.onload = () => {
@@ -761,7 +742,7 @@ const ArabicChequeGenerator = () => {
         </div>
       )}
 
-      {/* PDF Print Preview Modal (existing) */}
+      {/* PDF Print Preview Modal */}
       {showPrintPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 w-[90%] h-[90%] flex flex-col">

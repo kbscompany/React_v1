@@ -10,7 +10,7 @@ import { Separator } from '../ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { Trash2, Plus, TrendingDown, Save, FolderOpen, Bookmark } from 'lucide-react';
-import { transferTemplateAPI, stockAPI } from '../../services/api';
+import { transferTemplateAPI, stockAPI, transferAPI } from '../../services/api';
 
 const CreateTransferOrder = ({ warehouses, onNotification }: any) => {
   const { t } = useTranslation();
@@ -60,7 +60,20 @@ const CreateTransferOrder = ({ warehouses, onNotification }: any) => {
 
   const loadIngredients = async () => {
     try {
-      const response = await fetch('http://100.29.4.72:8000/api/warehouse/ingredients');
+      const getAuthHeaders = () => {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const headers: { [key: string]: string } = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        return headers;
+      };
+
+      const response = await fetch('http://100.29.4.72:8000/api/warehouse/ingredients', {
+        headers: getAuthHeaders()
+      });
       if (!response.ok) throw new Error('Failed to load ingredients');
       const data = await response.json();
       setIngredients(data);
@@ -196,37 +209,46 @@ const CreateTransferOrder = ({ warehouses, onNotification }: any) => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://100.29.4.72:8000/api/warehouse/transfer-orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          source_warehouse_id: parseInt(sourceWarehouse),
-          target_warehouse_id: parseInt(targetWarehouse),
-          items: transferItems.map((item: any) => ({
-            ingredient_id: item.ingredient_id,
-            quantity: item.quantity
-          }))
-        })
-      });
+      const transferData = {
+        source_warehouse_id: parseInt(sourceWarehouse),
+        target_warehouse_id: parseInt(targetWarehouse),
+        items: transferItems.map((item: any) => ({
+          ingredient_id: item.ingredient_id,
+          quantity: item.quantity
+        }))
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create transfer order');
+      // Use the centralized API service with proper authentication
+      const response = await transferAPI.create(transferData);
+      
+      if (response.data.success) {
+        onNotification('success', `Transfer order #${response.data.transfer_order_id} created successfully`);
+        
+        // Reset form
+        setTransferItems([]);
+        setSourceWarehouse('');
+        setTargetWarehouse('');
+      } else {
+        throw new Error(response.data.message || 'Failed to create transfer order');
       }
-
-      const result = await response.json();
-      onNotification('success', `Transfer order #${result.transfer_order_id} created successfully`);
       
-      // Reset form
-      setTransferItems([]);
-      setSourceWarehouse('');
-      setTargetWarehouse('');
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating transfer order:', error);
-      onNotification('error', error instanceof Error ? error.message : 'Failed to create transfer order');
+      
+      // Handle different types of errors
+      let errorMessage = 'Failed to create transfer order';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You don\'t have permission to create transfer orders from this warehouse.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      onNotification('error', errorMessage);
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ const SuperAdminPanel = () => {
   const { t } = useTranslation();
   const [safes, setSafes] = useState([]);
   const [users, setUsers] = useState([]);
+  const [userRoles, setUserRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success', 'error', 'warning'
@@ -19,9 +20,20 @@ const SuperAdminPanel = () => {
     totalBalance: 0
   });
 
+  // User management state
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userFormData, setUserFormData] = useState({
+    username: '',
+    password: '',
+    role_id: 7,  // Default to Staff role
+    is_active: true
+  });
+
   useEffect(() => {
     loadSystemStats();
     loadUsers();
+    loadUserRoles();
   }, []);
 
   const loadSystemStats = async () => {
@@ -58,35 +70,139 @@ const SuperAdminPanel = () => {
 
   const loadUsers = async () => {
     try {
-      // For now, we'll create a mock user list since we don't have a users endpoint
-      // In a real implementation, this would fetch from an API endpoint
-      const mockUsers = [
-        { id: 1, username: 'admin', email: 'admin@bakery.com', role: 'superAdmin', is_active: true },
-        { id: 2, username: 'manager', email: 'manager@bakery.com', role: 'manager', is_active: true },
-        { id: 3, username: 'accountant', email: 'accountant@bakery.com', role: 'accountant', is_active: true },
-        { id: 4, username: 'warehouse_staff', email: 'warehouse@bakery.com', role: 'warehouseManager', is_active: true }
-      ];
-      setUsers(mockUsers);
+      const response = await api.get('/admin-simple/users');
+      const usersData = response.data || [];
+      setUsers(usersData);
     } catch (error) {
       console.error('Error loading users:', error);
-      showMessage('Error loading users', 'error');
+      showMessage('Error loading users: ' + (error.response?.data?.detail || error.message), 'error');
+    }
+  };
+
+  const loadUserRoles = async () => {
+    try {
+      const response = await api.get('/admin-simple/user-roles');
+      const rolesData = response.data || [];
+      setUserRoles(rolesData);
+    } catch (error) {
+      console.error('Error loading user roles:', error);
+      showMessage('Error loading user roles: ' + (error.response?.data?.detail || error.message), 'error');
     }
   };
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      // For now, we'll update the local state
-      // In a real implementation, this would make an API call
-      setUsers(prevUsers =>
-        prevUsers.map(user =>
-          user.id === userId ? { ...user, role: newRole } : user
-        )
-      );
+      await api.put(`/admin-simple/users/${userId}`, { role_id: newRole });
       showMessage(`Role updated successfully for user ${userId}`, 'success');
+      await loadUsers(); // Reload users to reflect changes
     } catch (error) {
       console.error('Error updating user role:', error);
-      showMessage('Error updating user role', 'error');
+      showMessage('Error updating user role: ' + (error.response?.data?.detail || error.message), 'error');
     }
+  };
+
+  const handleCreateUser = async () => {
+    if (!userFormData.username || !userFormData.password) {
+      showMessage('Username and password are required', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post('/admin-simple/users', userFormData);
+      showMessage('User created successfully', 'success');
+      setShowUserForm(false);
+      setUserFormData({ username: '', password: '', role_id: 7, is_active: true });
+      await loadUsers();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      showMessage('Error creating user: ' + (error.response?.data?.detail || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!userFormData.username) {
+      showMessage('Username is required', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const updateData = {
+        username: userFormData.username,
+        role_id: userFormData.role_id,
+        is_active: userFormData.is_active
+      };
+      
+      // Only include password if it's provided
+      if (userFormData.password) {
+        updateData.password = userFormData.password;
+      }
+
+      await api.put(`/admin-simple/users/${editingUser.id}`, updateData);
+      showMessage('User updated successfully', 'success');
+      setShowUserForm(false);
+      setEditingUser(null);
+      setUserFormData({ username: '', password: '', role_id: 7, is_active: true });
+      await loadUsers();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      showMessage('Error updating user: ' + (error.response?.data?.detail || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId, username) => {
+    confirmAndExecute(
+      `delete user "${username}"`,
+      async () => {
+        setLoading(true);
+        try {
+          await api.delete(`/admin-simple/users/${userId}`);
+          showMessage(`User "${username}" deleted successfully`, 'success');
+          await loadUsers();
+        } catch (error) {
+          console.error('Error deleting user:', error);
+          showMessage('Error deleting user: ' + (error.response?.data?.detail || error.message), 'error');
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
+  };
+
+  const handleToggleUserActive = async (userId, username) => {
+    setLoading(true);
+    try {
+      const response = await api.post(`/admin-simple/users/${userId}/toggle-active`);
+      showMessage(response.data.message, 'success');
+      await loadUsers();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      showMessage('Error toggling user status: ' + (error.response?.data?.detail || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEditUser = (user) => {
+    setEditingUser(user);
+    setUserFormData({
+      username: user.username,
+      password: '',
+      role_id: user.role_id,
+      is_active: user.is_active
+    });
+    setShowUserForm(true);
+  };
+
+  const cancelUserForm = () => {
+    setShowUserForm(false);
+    setEditingUser(null);
+    setUserFormData({ username: '', password: '', role_id: 7, is_active: true });
   };
 
   const showMessage = (text, type) => {
@@ -292,11 +408,156 @@ const SuperAdminPanel = () => {
           border: '1px solid #e2e8f0',
           marginBottom: '20px'
         }}>
-          <h2 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>👥 User Role Management</h2>
-          <p style={{ margin: '0 0 20px 0', color: '#64748b' }}>
-            Manage user roles and permissions. Control who can access which features of the system.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ margin: '0', color: '#1e293b' }}>👥 User Management</h2>
+            <button
+              onClick={() => setShowUserForm(true)}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#059669',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }}
+            >
+              + Create New User
+            </button>
+          </div>
           
+          {/* User Form Modal */}
+          {showUserForm && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000
+            }}>
+              <div style={{
+                background: 'white',
+                padding: '30px',
+                borderRadius: '10px',
+                maxWidth: '500px',
+                width: '90%',
+                maxHeight: '80vh',
+                overflowY: 'auto'
+              }}>
+                <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>
+                  {editingUser ? 'Edit User' : 'Create New User'}
+                </h3>
+                
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Username *
+                  </label>
+                  <input
+                    type="text"
+                    value={userFormData.username}
+                    onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Password {editingUser ? '(Leave empty to keep current)' : '*'}
+                  </label>
+                  <input
+                    type="password"
+                    value={userFormData.password}
+                    onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Role
+                  </label>
+                  <select
+                    value={userFormData.role_id}
+                    onChange={(e) => setUserFormData({ ...userFormData, role_id: parseInt(e.target.value) })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {userRoles.map(role => (
+                      <option key={role.id} value={role.id}>{role.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={userFormData.is_active}
+                      onChange={(e) => setUserFormData({ ...userFormData, is_active: e.target.checked })}
+                    />
+                    <span style={{ fontWeight: 'bold' }}>Active User</span>
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={cancelUserForm}
+                    style={{
+                      padding: '10px 20px',
+                      backgroundColor: '#6b7280',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={editingUser ? handleUpdateUser : handleCreateUser}
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      backgroundColor: '#059669',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.6 : 1,
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {loading ? 'Saving...' : (editingUser ? 'Update User' : 'Create User')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Users List */}
           <div style={{ display: 'grid', gap: '15px' }}>
             {users.map(user => (
               <div key={user.id} style={{
@@ -308,7 +569,12 @@ const SuperAdminPanel = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
                   <div>
                     <h4 style={{ margin: '0 0 5px 0', color: '#1e293b' }}>{user.username}</h4>
-                    <p style={{ margin: '0 0 5px 0', color: '#64748b', fontSize: '14px' }}>{user.email}</p>
+                    <p style={{ margin: '0 0 5px 0', color: '#64748b', fontSize: '14px' }}>
+                      Role: {user.role?.name || 'Unknown'}
+                    </p>
+                    <p style={{ margin: '0 0 5px 0', color: '#64748b', fontSize: '14px' }}>
+                      Created: {new Date(user.created_at).toLocaleDateString()}
+                    </p>
                     <span style={{
                       padding: '4px 8px',
                       backgroundColor: user.is_active ? '#dcfce7' : '#fef2f2',
@@ -319,6 +585,52 @@ const SuperAdminPanel = () => {
                     }}>
                       {user.is_active ? 'Active' : 'Inactive'}
                     </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => startEditUser(user)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#0369a1',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleToggleUserActive(user.id, user.username)}
+                      disabled={loading}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: user.is_active ? '#f59e0b' : '#059669',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                        fontSize: '12px'
+                      }}
+                    >
+                      {user.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user.id, user.username)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
                 
@@ -331,23 +643,18 @@ const SuperAdminPanel = () => {
             ))}
           </div>
           
-          <div style={{
-            marginTop: '20px',
-            padding: '15px',
-            background: '#f0f9ff',
-            borderRadius: '8px',
-            border: '1px solid #bae6fd'
-          }}>
-            <h4 style={{ margin: '0 0 10px 0', color: '#0369a1' }}>💡 Role Management Tips</h4>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: '#0369a1' }}>
-              <li>Super Admin: Full system access including user management</li>
-              <li>Admin: Most features with user management capabilities</li>
-              <li>Manager: Supervisory access with limited admin features</li>
-              <li>Accountant: Finance-focused access (expenses, cheques, reports)</li>
-              <li>Warehouse Manager: Full warehouse and inventory control</li>
-              <li>Viewer: Read-only access to basic features</li>
-            </ul>
-          </div>
+          {users.length === 0 && (
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: '#64748b',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0'
+            }}>
+              No users found. Create your first user!
+            </div>
+          )}
         </div>
       )}
 

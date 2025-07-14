@@ -4,6 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { ChevronDown } from 'lucide-react';
 import CreateTransferOrder from './warehouse/CreateTransferOrder';
 import ReceiveTransferOrder from './warehouse/ReceiveTransferOrder';
 import ReceiveFromSupplier from './warehouse/ReceiveFromSupplier';
@@ -32,6 +33,8 @@ interface NotificationState {
 const WarehouseManagement: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>('warehouse-settings');
+  const [activeOrderTab, setActiveOrderTab] = useState<string>('create-transfer');
+  const [showOrdersDropdown, setShowOrdersDropdown] = useState<boolean>(false);
   
   // Helper function to get translation with proper fallback
   const getTranslation = (key: string, fallback: string) => {
@@ -71,6 +74,20 @@ const WarehouseManagement: React.FC = () => {
   };
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showOrdersDropdown && !(event.target as Element).closest('.relative')) {
+        setShowOrdersDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showOrdersDropdown]);
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     type: 'info',
@@ -166,22 +183,60 @@ const WarehouseManagement: React.FC = () => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="warehouse-settings">
             {getTranslationSafe('warehouse.tabs.warehouses')}
           </TabsTrigger>
           <TabsTrigger value="foodics-dashboard">
             {getTranslationSafe('warehouse.tabs.foodicsDashboard')}
           </TabsTrigger>
-          <TabsTrigger value="create-transfer">
-            {getTranslationSafe('warehouse.tabs.createTransfer')}
-          </TabsTrigger>
-          <TabsTrigger value="receive-transfer">
-            {getTranslationSafe('warehouse.tabs.receiveOrders')}
-          </TabsTrigger>
-          <TabsTrigger value="receive-from-supplier">
-            {getTranslationSafe('warehouse.tabs.receiveFromSupplier')}
-          </TabsTrigger>
+          
+          {/* Orders Dropdown */}
+          <div className="relative">
+            <TabsTrigger 
+              value="orders" 
+              onClick={() => setShowOrdersDropdown(!showOrdersDropdown)}
+              className="flex items-center gap-2"
+            >
+              {getTranslationSafe('warehouse.tabs.orders')}
+              <ChevronDown className="h-4 w-4" />
+            </TabsTrigger>
+            {showOrdersDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <button
+                  onClick={() => {
+                    setActiveTab('orders');
+                    setActiveOrderTab('create-transfer');
+                    setShowOrdersDropdown(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  {getTranslationSafe('warehouse.tabs.createTransfer')}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('orders');
+                    setActiveOrderTab('receive-transfer');
+                    setShowOrdersDropdown(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  {getTranslationSafe('warehouse.tabs.receiveOrders')}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('orders');
+                    setActiveOrderTab('receive-from-supplier');
+                    setShowOrdersDropdown(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  {getTranslationSafe('warehouse.tabs.receiveFromSupplier')}
+                </button>
+              </div>
+            )}
+          </div>
+          
           <TabsTrigger value="stock-management">
             {getTranslationSafe('warehouse.tabs.stockManagement')}
           </TabsTrigger>
@@ -208,25 +263,25 @@ const WarehouseManagement: React.FC = () => {
           />
         </TabsContent>
 
-        <TabsContent value="create-transfer" className="mt-6">
-          <CreateTransferOrder
-            warehouses={warehouses}
-            onNotification={showNotification}
-          />
-        </TabsContent>
-
-        <TabsContent value="receive-transfer" className="mt-6">
-          <ReceiveTransferOrder
-            warehouses={warehouses}
-            onNotification={showNotification}
-          />
-        </TabsContent>
-
-        <TabsContent value="receive-from-supplier" className="mt-6">
-          <ReceiveFromSupplier
-            warehouses={warehouses}
-            onNotification={showNotification}
-          />
+        <TabsContent value="orders" className="mt-6">
+          {activeOrderTab === 'create-transfer' && (
+            <CreateTransferOrder
+              warehouses={warehouses}
+              onNotification={showNotification}
+            />
+          )}
+          {activeOrderTab === 'receive-transfer' && (
+            <ReceiveTransferOrder
+              warehouses={warehouses}
+              onNotification={showNotification}
+            />
+          )}
+          {activeOrderTab === 'receive-from-supplier' && (
+            <ReceiveFromSupplier
+              warehouses={warehouses}
+              onNotification={showNotification}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="stock-management" className="mt-6">

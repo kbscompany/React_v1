@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text
+from typing import List, Optional
+import models
+import schemas
 from database import get_db
-from auth import get_current_active_user, User
+from auth import get_current_active_user, get_password_hash
 
-router = APIRouter()
+router = APIRouter(prefix="/admin-simple", tags=["Super Admin"])
 
 @router.post("/admin-simple/reset-safe/{safe_id}")
 async def reset_safe_simple(safe_id: int, db: Session = Depends(get_db)):
@@ -164,11 +167,11 @@ async def delete_all_cheques_simple(confirm: str = None, db: Session = Depends(g
 async def reset_safe_authenticated(
     safe_id: int, 
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: models.User = Depends(get_current_active_user)
 ):
     """Reset a specific safe - authenticated version"""
-    if current_user.role not in ["superAdmin", "admin"]:
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
     
     # Call the simple version
     return await reset_safe_simple(safe_id, db)
@@ -177,11 +180,11 @@ async def reset_safe_authenticated(
 async def reset_all_safes_authenticated(
     confirm: str = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: models.User = Depends(get_current_active_user)
 ):
     """Reset ALL safes - authenticated version"""
-    if current_user.role not in ["superAdmin", "admin"]:
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
     
     # Call the simple version
     return await reset_all_safes_simple(confirm, db)
@@ -190,11 +193,221 @@ async def reset_all_safes_authenticated(
 async def delete_all_cheques_authenticated(
     confirm: str = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: models.User = Depends(get_current_active_user)
 ):
     """Delete ALL cheques - authenticated version"""
-    if current_user.role != "superAdmin":
-        raise HTTPException(status_code=403, detail="Only super admin can perform this action")
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
     
     # Call the simple version
     return await delete_all_cheques_simple(confirm, db) 
+
+# User Management Endpoints
+@router.get("/users", response_model=List[schemas.UserResponse])
+async def get_all_users(
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all users with their roles - Super Admin only"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        users = db.query(models.User).options(
+            joinedload(models.User.role)
+        ).order_by(models.User.created_at.desc()).all()
+        
+        return users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching users: {str(e)}")
+
+@router.get("/user-roles", response_model=List[schemas.UserRoleResponse])
+async def get_user_roles(
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all available user roles"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        roles = db.query(models.UserRole).order_by(models.UserRole.id).all()
+        return roles
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching roles: {str(e)}")
+
+@router.post("/users", response_model=schemas.UserResponse)
+async def create_user(
+    user_data: schemas.UserCreate,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new user - Super Admin only"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        # Check if username already exists
+        existing_user = db.query(models.User).filter(
+            models.User.username == user_data.username
+        ).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already exists")
+        
+        # Validate role exists
+        role = db.query(models.UserRole).filter(models.UserRole.id == user_data.role_id).first()
+        if not role:
+            raise HTTPException(status_code=400, detail="Invalid role ID")
+        
+        # Hash the password
+        hashed_password = get_password_hash(user_data.password)
+        
+        # Create new user
+        new_user = models.User(
+            username=user_data.username,
+            password_hash=hashed_password,
+            role_id=user_data.role_id,
+            is_active=True
+        )
+        
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        # Load user with role for response
+        user_with_role = db.query(models.User).options(
+            joinedload(models.User.role)
+        ).filter(models.User.id == new_user.id).first()
+        
+        return user_with_role
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}")
+
+@router.put("/users/{user_id}", response_model=schemas.UserResponse)
+async def update_user(
+    user_id: int,
+    user_data: schemas.UserUpdate,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update user information - Super Admin only"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        # Get the user to update
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Don't allow updating your own account through this endpoint
+        if user.id == current_user.id:
+            raise HTTPException(status_code=400, detail="Cannot update your own account through this endpoint")
+        
+        # Check if new username already exists (if username is being changed)
+        if user_data.username and user_data.username != user.username:
+            existing_user = db.query(models.User).filter(
+                models.User.username == user_data.username,
+                models.User.id != user_id
+            ).first()
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Username already exists")
+        
+        # Update fields
+        if user_data.username:
+            user.username = user_data.username
+        if user_data.role_id:
+            # Validate role exists
+            role = db.query(models.UserRole).filter(models.UserRole.id == user_data.role_id).first()
+            if not role:
+                raise HTTPException(status_code=400, detail="Invalid role ID")
+            user.role_id = user_data.role_id
+        if user_data.password:
+            user.password_hash = get_password_hash(user_data.password)
+        if user_data.is_active is not None:
+            user.is_active = user_data.is_active
+        
+        db.commit()
+        db.refresh(user)
+        
+        # Load user with role for response
+        user_with_role = db.query(models.User).options(
+            joinedload(models.User.role)
+        ).filter(models.User.id == user.id).first()
+        
+        return user_with_role
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating user: {str(e)}")
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a user - Super Admin only"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        # Get the user to delete
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Don't allow deleting your own account
+        if user.id == current_user.id:
+            raise HTTPException(status_code=400, detail="Cannot delete your own account")
+        
+        # Delete the user
+        db.delete(user)
+        db.commit()
+        
+        return {"success": True, "message": f"User '{user.username}' deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
+
+@router.post("/users/{user_id}/toggle-active")
+async def toggle_user_active(
+    user_id: int,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Toggle user active status - Super Admin only"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        # Get the user to toggle
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Don't allow deactivating your own account
+        if user.id == current_user.id:
+            raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
+        
+        # Toggle active status
+        user.is_active = not user.is_active
+        db.commit()
+        
+        status = "activated" if user.is_active else "deactivated"
+        return {"success": True, "message": f"User '{user.username}' {status} successfully", "is_active": user.is_active}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error toggling user status: {str(e)}") 

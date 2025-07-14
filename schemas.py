@@ -13,6 +13,12 @@ class UserCreate(UserBase):
     password: str
     role_id: Optional[int] = 3  # Default to Staff
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    role_id: Optional[int] = None
+    is_active: Optional[bool] = None
+
 class UserRoleResponse(BaseModel):
     id: int
     name: str
@@ -22,18 +28,13 @@ class UserRoleResponse(BaseModel):
 
 class UserResponse(UserBase):
     id: int
+    username: str
     role_id: int
-    role: UserRoleResponse  # Include full role object instead of just role_id
     is_active: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    role_id: Optional[int] = None
-    is_active: Optional[bool] = None
+    role: Optional[UserRoleResponse] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class User(UserBase):
     id: int

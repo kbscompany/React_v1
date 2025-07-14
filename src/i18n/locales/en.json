@@ -35,16 +35,57 @@
   },
   "warehouse": {
     "title": "Warehouse Management System",
-    "description": "Manage inventory transfers, stock levels, and warehouse operations",
+    "description": "Manage your warehouse locations and inventory",
     "availableWarehouses": "Available Warehouses",
     "tabs": {
       "warehouses": "🏢 Warehouses", 
-      "foodicsDashboard": "🍽️ Foodics Dashboard",
+      "foodicsDashboard": "🏪 Foodics Dashboard",
+      "orders": "📦 Orders",
       "createTransfer": "📦 Create Transfer",
       "receiveOrders": "📥 Receive Orders",
+      "receiveFromSupplier": "🚚 Receive from Supplier",
       "stockManagement": "📊 Stock Management",
       "categories": "🏷️ Categories",
       "managerAssignments": "👥 Manager Assignments"
+    },
+    "create": {
+      "title": "Create Transfer Order",
+      "subtitle": "Transfer items between warehouses",
+      "loadTemplate": "Load Template",
+      "loadTransferTemplate": "Load Transfer Template",
+      "selectSavedTemplate": "Select Saved Template",
+      "saveAsTemplate": "Save as Template",
+      "sourceWarehouse": "Source Warehouse",
+      "destinationWarehouse": "Destination Warehouse",
+      "selectSourceWarehouse": "Select source warehouse",
+      "selectDestinationWarehouse": "Select destination warehouse",
+      "quickAdd": "Quick Add",
+      "lowStock": "Low Stock",
+      "quickAddItems": "Quick Add Items",
+      "ingredient": "Ingredient",
+      "selectIngredient": "Select Ingredient",
+      "quantity": "Quantity",
+      "enterQuantity": "Enter quantity",
+      "addItem": "Add Item",
+      "lowStockSuggestions": "Low Stock Suggestions",
+      "noItemsNeedReplenishment": "No items need replenishment",
+      "suggested": "Suggested",
+      "add": "Add",
+      "addAllLowStockItems": "Add All Low Stock Items",
+      "transferOrderItems": "Transfer Order Items",
+      "available": "Available",
+      "totalItems": "Total Items",
+      "clearAll": "Clear All",
+      "createTransferOrder": "Create Transfer Order",
+      "creating": "Creating...",
+      "unknownWarehouse": "Unknown Warehouse",
+      "unknownIngredient": "Unknown Ingredient",
+      "units": "units",
+      "dest": "Dest",
+      "source": "Source",
+      "min": "Min",
+      "noTemplatesFound": "No templates found",
+      "createFirstTemplate": "Create your first template by configuring a transfer and saving it."
     },
     "warehouses": {
       "title": "Warehouse Settings",
@@ -145,61 +186,33 @@
       "assignmentSuccess": "Manager assigned successfully",
       "updateSuccess": "Assignment updated successfully",
       "deleteSuccess": "Assignment deleted successfully"
+    }
     },
-    "create": {
+  "createTransferOrder": {
       "title": "Create Transfer Order",
       "subtitle": "Transfer items between warehouses",
-      "loadTemplate": "Load Template",
-      "saveAsTemplate": "Save as Template",
-      "sourceWarehouse": "Source Warehouse",
-      "destinationWarehouse": "Destination Warehouse",
-      "selectSourceWarehouse": "Select source warehouse",
-      "selectDestinationWarehouse": "Select destination warehouse",
-      "quickAdd": "Quick Add",
-      "lowStock": "Low Stock",
-      "quickAddItems": "Quick Add Items",
-      "ingredient": "Ingredient",
-      "selectIngredient": "Select ingredient",
-      "quantity": "Quantity",
-      "enterQuantity": "Enter quantity",
-      "addItem": "Add Item",
-      "lowStockSuggestions": "Low Stock Suggestions",
-      "noItemsNeedReplenishment": "No items need replenishment",
-      "suggested": "Suggested",
-      "add": "Add",
-      "addAllLowStockItems": "Add All Low Stock Items",
-      "transferOrderItems": "Transfer Order Items",
+    "items": "Items",
+    "load": "Load",
       "available": "Available",
       "totalItems": "Total Items",
       "clearAll": "Clear All",
       "createTransferOrder": "Create Transfer Order",
-      "creating": "Creating...",
-      "loadTransferTemplate": "Load Transfer Template",
-      "selectSavedTemplate": "Select a saved template to quickly configure your transfer order",
-      "noTemplatesFound": "No templates found",
-      "createFirstTemplate": "Create your first template by configuring a transfer and saving it.",
-      "items": "items",
-      "load": "Load",
-      "saveTransferTemplate": "Save Transfer Template",
-      "saveCurrentConfiguration": "Save your current transfer configuration as a reusable template",
+    "quickAdd": "Quick Add",
+    "lowStock": "Low Stock",
+    "saveAsTemplate": "Save as Template",
+    "saveTemplateTitle": "Save Transfer Template",
+    "saveTemplateDescription": "Save your current transfer configuration as a reusable template",
       "templateName": "Template Name",
       "templateNamePlaceholder": "e.g., Daily Bakery Supplies",
-      "description": "Description (Optional)",
-      "descriptionPlaceholder": "Describe when to use this template...",
+    "templateDescription": "Description",
+    "templateDescriptionPlaceholder": "Describe when to use this template...",
       "templateSummary": "Template Summary",
       "from": "From",
       "to": "To",
       "ingredients": "ingredients",
       "cancel": "Cancel",
       "saveTemplate": "Save Template",
-      "unknown": "Unknown",
-      "unknownWarehouse": "Unknown Warehouse",
-      "unknownIngredient": "Unknown Ingredient",
-      "units": "units",
-      "dest": "Dest",
-      "source": "Source",
-      "min": "Min"
-    }
+    "unknown": "Unknown"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -706,6 +719,35 @@
       "balance": "Balance",
       "resetSafe": "Reset Safe"
     },
+    "userManagement": {
+      "title": "👥 User Management",
+      "createUser": "Create New User",
+      "editUser": "Edit User",
+      "deleteUser": "Delete User",
+      "username": "Username",
+      "password": "Password",
+      "role": "Role",
+      "active": "Active User",
+      "created": "Created",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "createNewUser": "Create User",
+      "updateUser": "Update User",
+      "noUsers": "No users found. Create your first user!",
+      "passwordHint": "(Leave empty to keep current)",
+      "usernameRequired": "Username is required",
+      "passwordRequired": "Password is required",
+      "confirmDelete": "Are you sure you want to delete this user?",
+      "userCreated": "User created successfully",
+      "userUpdated": "User updated successfully",
+      "userDeleted": "User deleted successfully",
+      "statusToggled": "User status updated successfully"
+    },
     "systemOperations": {
       "title": "🌐 System-Wide Operations",
       "resetAllSafes": {
@@ -990,617 +1032,7 @@
       "printedAt": "Printed At"
     }
   },
-  "warehouse": {
-    "description": "Manage your warehouse locations and inventory",
-    "warehouses": {
-      "title": "Warehouse Management",
-      "createNew": "Create New Warehouse",
-      "editWarehouse": "Edit Warehouse",
-      "deleteWarehouse": "Delete Warehouse",
-      "deleteConfirm": "Are you sure you want to delete this warehouse? This action cannot be undone and will remove all associated stock data.",
-      "name": "Warehouse Name",
-      "location": "Location",
-      "warehouseId": "Warehouse ID",
-      "nameRequired": "Warehouse name is required",
-      "createSuccess": "Warehouse created successfully",
-      "updateSuccess": "Warehouse updated successfully",
-      "deleteSuccess": "Warehouse deleted successfully"
-    },
-    "stockManagement": {
-      "title": "Stock Management",
-      "selectWarehouse": "Select Warehouse",
-      "selectWarehousePlaceholder": "Select warehouse",
-      "search": "Search",
-      "searchPlaceholder": "Search ingredients...",
-      "category": "Category",
-      "allCategories": "All categories",
-      "stockLevel": "Stock Level",
-      "allItems": "All items",
-      "empty": "Empty",
-      "low": "Low",
-      "lowStock": "Low stock",
-      "normal": "Normal",
-      "high": "High",
-      "highStock": "High stock",
-      "bulkReason": "Bulk Reason",
-      "bulkReasonPlaceholder": "Default reason for updates",
-      "export": "Export",
-      "pendingUpdates": "{count} pending updates",
-      "pendingStockUpdates": "Pending Stock Updates",
-      "itemsReadyToUpdate": "{count} items ready to be updated",
-      "clearAll": "Clear All",
-      "applyUpdates": "Apply Updates",
-      "applying": "Applying...",
-      "loadingItems": "Loading stock items...",
-      "noItemsFoundFilter": "No items found",
-      "noItemsInWarehouse": "This warehouse has no stock items",
-      "tryAdjustingFilters": "Try adjusting your filters",
-      "pendingUpdate": "Pending Update",
-      "current": "Current",
-      "pending": "Pending",
-      "reason": "Reason",
-      "cancel": "Cancel",
-      "ingredient": "Ingredient",
-      "currentStock": "Current Stock",
-      "unit": "Unit",
-      "minimum": "Minimum",
-      "maximum": "Maximum",
-      "packageSize": "Package Size",
-      "min": "Min",
-      "max": "Max",
-      "package": "Package",
-      "defaultUnit": "units",
-      "uncategorized": "Uncategorized",
-      "failedToLoad": "Failed to load stock items",
-      "noItemsFound": "No stock items found for this warehouse",
-      "loadedItems": "Loaded {count} stock items",
-      "packageSizeNotDefined": "Package size not defined for this item",
-      "addedPackage": "Added package",
-      "removedPackage": "Removed package",
-      "manualUpdate": "Manual update",
-      "noUpdatesToApply": "No stock updates to apply",
-      "provideReasons": "Please provide reasons for all stock updates",
-      "field": "Field",
-      "validationError": "Validation error",
-      "failedToUpdate": "Failed to update stock",
-      "item": "Item {id}",
-      "unknownError": "Unknown error",
-      "successfullyUpdated": "Successfully updated {count} items",
-      "partiallyUpdated": "Updated {successCount} items, {errorCount} failed. Errors: {errors}",
-      "allUpdatesFailed": "All updates failed. Errors: {errors}",
-      "exportSuccess": "Stock data exported successfully"
-    }
-  },
-  "bankAccountManagement": {
-    "wizard": {
-      "accountNumber": "Account Number",
-      "accountNumberPlaceholder": "e.g., ACC-2024-001",
-      "bankName": "Bank Name",
-      "bankNamePlaceholder": "e.g., First National Bank"
-    }
-  },
-  "roles": {
-    "selectRole": "Select User Role",
-    "selectedRoleDetails": "Selected Role Details",
-    "keyPermissions": "Key Permissions",
-    "names": {
-      "superAdmin": "Super Administrator",
-      "admin": "Administrator",
-      "manager": "Manager",
-      "accountant": "Accountant",
-      "warehouseManager": "Warehouse Manager",
-      "inventoryStaff": "Inventory Staff",
-      "financeStaff": "Finance Staff",
-      "viewer": "Viewer"
-    },
-    "descriptions": {
-      "superAdmin": "Full system access with all permissions including system administration",
-      "admin": "Administrative access to most features with user management capabilities",
-      "manager": "Management access with limited administrative features and oversight capabilities",
-      "accountant": "Finance and accounting focused access with full expense and cheque management",
-      "warehouseManager": "Warehouse and Recipe Management with full stock control capabilities",
-      "inventoryStaff": "Recipe Management and stock operations with limited administrative access",
-      "financeStaff": "Finance operations and expense management with reporting capabilities",
-      "viewer": "Read-only access to basic features with limited data visibility"
-    },
-    "permissions": {
-      "fullAccess": "Full Access",
-      "userManagement": "User Management",
-      "fullFinance": "Full Finance",
-      "financeAccess": "Finance Access",
-      "reports": "Reports",
-      "warehouse": "Warehouse",
-      "inventory": "Inventory",
-      "readOnly": "Read Only"
-    }
-  },
-  "dashboard": {
-    "title": "🍰 Kbs Cake Studio - Management System",
-    "welcome": "Welcome,",
-    "logout": "Logout",
-    "noAccess": "No Access",
-    "noAccessDescription": "You don't have permission to access this feature.",
-    "noAccessTitle": "No System Access",
-    "noAccessMessage": "Your account doesn't have permission to access any features. Please contact an administrator."
-  },
-  "access": {
-    "denied": "Access Denied",
-    "deniedMessage": "You don't have permission to access this page or feature.",
-    "insufficientPermissions": "Insufficient Permissions",
-    "insufficientPermissionsMessage": "You don't have the required permissions for this action.",
-    "contactAdmin": "Please contact an administrator if you believe this is an error."
-  },
-  "bankHierarchy": {
-    "title": "Banks & Accounts Management",
-    "subtitle": "Comprehensive management of banks, accounts and cheque books",
-    "addBank": "Add New Bank",
-    "searchPlaceholder": "Search banks...",
-    "noBanks": "No banks found. Start by adding your first bank.",
-    "bankAccounts": "Bank Accounts",
-    "addAccount": "Add Account",
-    "noAccounts": "No bank accounts",
-    "chequeBooks": "Cheque Books",
-    "addChequeBook": "Add Cheque Book",
-    "noChequeBooks": "No cheque books",
-    "createBank": "Create Bank",
-    "editBank": "Edit Bank",
-    "createAccount": "Create Bank Account",
-    "editAccount": "Edit Bank Account",
-    "createChequeBook": "Create Cheque Book",
-    "bank": {
-      "name": "Bank Name",
-      "namePlaceholder": "e.g., National Bank of Egypt",
-      "shortName": "Short Name",
-      "shortNamePlaceholder": "e.g., NBE",
-      "swift": "SWIFT Code",
-      "country": "Country",
-      "address": "Address",
-      "addressPlaceholder": "Main branch address",
-      "phone": "Phone",
-      "email": "Email",
-      "website": "Website"
-    },
-    "account": {
-      "bank": "Bank",
-      "selectBank": "Select Bank",
-      "name": "Account Name",
-      "namePlaceholder": "e.g., Main Current Account",
-      "number": "Account Number",
-      "iban": "IBAN",
-      "branch": "Branch",
-      "branchPlaceholder": "e.g., Tahrir Branch",
-      "branchCode": "Branch Code",
-      "type": "Account Type",
-      "types": {
-        "checking": "Checking",
-        "savings": "Savings",
-        "business": "Business"
-      },
-      "currency": "Currency",
-      "balance": "Current Balance",
-      "openingBalance": "Opening Balance",
-      "overdraft": "Overdraft Limit",
-      "overdraftLimit": "Overdraft Limit"
-    },
-    "chequeBook": {
-      "bookNumber": "Book Number",
-      "startNumber": "Start Number",
-      "endNumber": "End Number",
-      "prefix": "Prefix",
-      "series": "Series",
-      "type": "Book Type",
-      "types": {
-        "standard": "Standard",
-        "business": "Business",
-        "personal": "Personal"
-      },
-      "status": {
-        "active": "Active",
-        "closed": "Closed",
-        "cancelled": "Cancelled"
-      },
-      "used": "Used"
-    },
-    "confirmDelete": {
-      "bank": "Are you sure you want to delete this bank?",
-      "account": "Are you sure you want to delete this bank account?"
-    },
-    "messages": {
-      "fetchFailed": "Failed to fetch data",
-      "fillRequired": "Please fill in all required fields",
-      "bankCreated": "Bank created successfully",
-      "bankUpdated": "Bank updated successfully",
-      "bankDeleted": "Bank deleted successfully",
-      "accountCreated": "Bank account created successfully",
-      "accountUpdated": "Bank account updated successfully",
-      "accountDeleted": "Bank account deleted successfully",
-      "chequeBookCreated": "Cheque book created successfully"
-    }
-  },
-  "purchaseOrders": {
-    "title": "Purchase Orders",
-    "subtitle": "Manage supplier orders and procurement",
-    "createOrder": "Create Purchase Order",
-    "addSupplier": "Add Supplier",
-    "loading": "Loading purchase orders...",
-    "searchPlaceholder": "Search by supplier or PO number...",
-    "noOrders": "No purchase orders",
-    "noOrdersDescription": "Get started by creating a new purchase order.",
-    "newOrder": "New Purchase Order",
-    
-    "stats": {
-      "totalOrders": "Total Orders",
-      "received": "Received",
-      "pending": "Pending",
-      "totalValue": "Total Value"
-    },
-    
-    "filters": {
-      "allStatus": "All Status",
-      "allSuppliers": "All Suppliers",
-      "applyFilters": "Apply Filters"
-    },
-    
-    "table": {
-      "poDetails": "PO Details",
-      "supplier": "Supplier",
-      "amount": "Amount",
-      "status": "Status",
-      "priority": "Priority",
-      "actions": "Actions",
-      "poNumber": "PO #",
-      "orderDate": "Order Date",
-      "itemCount": "Item Count"
-    },
-    
-    "status": {
-      "pending": "Pending",
-      "received": "Received",
-      "cancelled": "Cancelled",
-      "draft": "Draft"
-    },
-    
-    "priority": {
-      "high": "High",
-      "medium": "Medium",
-      "low": "Low"
-    },
-    
-    "actions": {
-      "viewDetails": "View Details",
-      "approve": "Approve",
-      "printOrder": "Print Purchase Order",
-      "markReceived": "Mark as Received",
-      "generateCheque": "Generate Cheque",
-      "cancel": "Cancel"
-    },
-
-    "addSupplierModal": {
-      "title": "Add New Supplier",
-      "name": "Supplier Name *",
-      "contactName": "Contact Name",
-      "phone": "Phone Number",
-      "email": "Email Address",
-      "address": "Address",
-      "notes": "Notes",
-      "info": "Add a new supplier to use in purchase orders.",
-      "add": "Add Supplier",
-      "creating": "Creating..."
-    },
-    
-    "details": {
-      "title": "Purchase Order #{id}",
-      "orderInfo": "Order Information",
-      "supplierInfo": "Supplier Information",
-      "status": "Status:",
-      "priority": "Priority:",
-      "created": "Created:",
-      "expectedDelivery": "Expected Delivery:",
-      "warehouse": "Warehouse:",
-      "supplierName": "Name:",
-      "phone": "Phone:",
-      "email": "Email:",
-      "currency": "Currency:",
-      "orderItems": "Order Items ({count})",
-      "item": "Item",
-      "quantity": "Quantity",
-      "unitPrice": "Unit Price",
-      "total": "Total",
-      "totalAmount": "Total Amount:",
-      "notes": "Notes"
-    },
-    
-    "chequeGeneration": {
-      "title": "Generate Cheque",
-      "orderDetails": "Purchase Order Details",
-      "selectBankAccount": "Select Bank Account *",
-      "selectSafe": "Select Safe *",
-      "selectBankAccountOption": "Select a bank account...",
-      "selectSafeOption": "Select a safe...",
-      "info": "This will create and automatically print an Arabic cheque for this purchase order.",
-      "generating": "Generating...",
-      "generate": "Generate Cheque"
-    },
-    
-    "create": {
-      "title": "Create Purchase Order",
-      "steps": {
-        "supplier": "Supplier",
-        "items": "Items",
-        "review": "Review"
-      },
-      
-      "step1": {
-        "selectSupplier": "Select Supplier *",
-        "expectedDate": "Expected Delivery Date *",
-        "priority": "Priority",
-        "warehouse": "Warehouse *",
-        "selectWarehouse": "Select warehouse...",
-        "notes": "Notes"
-      },
-      
-      "step2": {
-        "searchItems": "Search for items...",
-        "addItem": "Add Item",
-        "removeItem": "Remove Item",
-        "quantity": "Quantity",
-        "unitPrice": "Unit Price",
-        "total": "Total",
-        "package": "Package",
-        "templates": {
-          "load": "Load Template",
-          "save": "Save as Template",
-          "loading": "Loading...",
-          "noTemplate": "No template saved yet for this supplier",
-          "loaded": "Template loaded",
-          "saved": "Template saved",
-          "addItemsFirst": "Add items before saving template"
-        }
-      },
-      
-      "step3": {
-        "orderSummary": "Order Summary",
-        "totalItems": "Total Items:",
-        "totalQuantity": "Total Quantity:",
-        "totalAmount": "Total Amount:",
-        "itemsList": "Items List"
-      },
-      
-      "validation": {
-        "selectSupplier": "Please select a supplier",
-        "addItems": "Please add at least one item",
-        "expectedDate": "Please select an expected delivery date",
-        "warehouse": "Warehouse is required"
-      },
-      
-      "buttons": {
-        "next": "Next",
-        "previous": "Previous",
-        "submit": "Create Purchase Order",
-        "submitting": "Creating..."
-      },
-      
-      "messages": {
-        "created": "Purchase order created successfully",
-        "failed": "Failed to create purchase order",
-        "networkError": "Network error occurred"
-      }
-    }
-  },
-  "recipeManagement": {
-    "title": "Recipe & Ingredient Management",
-    "subtitle": "Manage ingredients, sub-recipes, mid-prep recipes, and cakes",
-    "loading": "Loading data...",
-    "searchPlaceholder": "Search ingredients...",
-    "noResults": "No results found",
-    "createSuccess": "Created successfully!",
-    "updateSuccess": "Updated successfully!",
-    "deleteSuccess": "Deleted successfully!",
-    "deleteConfirm": "Are you sure you want to delete",
-    "tabs": {
-      "items": "Ingredients",
-      "subRecipes": "Sub-Recipes",
-      "midPrepRecipes": "Mid-Prep Recipes",
-      "cakes": "Cakes"
-    },
-    "items": {
-      "title": "Ingredient Management",
-      "createNew": "Add New Ingredient",
-      "searchTitle": "Search Items",
-      "searchPlaceholder": "Search items...",
-      "filterByCategory": "Filter by category",
-      "allCategories": "All Categories",
-      "perPage": "per page",
-      "reset": "Reset",
-      "clear": "Clear",
-      "showPackages": "Show Packages",
-      "hidePackages": "Hide Packages",
-      "noItems": "No Items Found",
-      "noItemsSearch": "No items match your current search criteria. Try adjusting your filters or search terms.",
-      "noItemsSystem": "No items are available in the system. This could mean:",
-      "noItemsReasons": [
-        "The backend server is not running",
-        "The database is empty",
-        "There's a connection issue",
-        "The API endpoint might be incorrect"
-      ],
-      "reloadData": "Reload Data",
-      "clearFilters": "Clear Filters",
-      "uncategorized": "Uncategorized",
-      "delete": "Delete",
-      "updateItem": "Update Item",
-      "fields": {
-        "name": "Name",
-        "category": "Category",
-        "unit": "Unit",
-        "pricePerUnit": "Price per Unit",
-        "stockQuantity": "Stock Quantity",
-        "totalValue": "Total Value",
-        "actions": "Actions",
-        "noCategory": "No Category"
-      },
-      "packages": {
-        "title": "Packages",
-        "addNew": "Add New Package",
-        "name": "Package Name",
-        "quantity": "Quantity",
-        "price": "Price",
-        "isDefault": "Default Package",
-        "noPackages": "No packages defined for this ingredient",
-        "delete": "Delete Package",
-        "packageManagement": "Package Management",
-        "existingPackages": "Existing Packages",
-        "addNewPackage": "Add New Package",
-        "packageName": "Package Name",
-        "weightPerUnit": "Weight per Unit",
-        "defaultPackage": "Default Package",
-        "addPackage": "Add Package",
-        "pricingManual": "Manual",
-        "pricingAuto": "Auto",
-        "pricing": "Pricing"
-      },
-      "statistics": {
-        "title": "Statistics",
-        "totalItems": "Total Items",
-        "totalValue": "Total Value",
-        "lowStock": "Low Stock",
-        "categories": "Categories Used",
-        "averagePrice": "Average Price"
-      }
-    },
-    "subRecipes": {
-      "title": "Sub-Recipes",
-      "createNew": "Create New Sub-Recipe",
-      "searchPlaceholder": "Search sub-recipes...",
-      "noRecipes": "No sub-recipes found. Create your first sub-recipe to get started!",
-      "noRecipesSearch": "No sub-recipes match your search.",
-      "editRecipe": "Edit Recipe",
-      "deleteRecipe": "Delete Recipe",
-      "totalCost": "Total Cost",
-      "ingredients": "Ingredients",
-      "nestedSubRecipes": "Nested Sub-Recipes",
-      "fields": {
-        "name": "Sub-Recipe Name",
-        "ingredients": "Ingredients",
-        "subRecipes": "Sub-Recipes",
-        "selectIngredient": "Select ingredient...",
-        "selectSubRecipe": "Select sub-recipe...",
-        "quantity": "Quantity",
-        "addIngredient": "Add Ingredient",
-        "addSubRecipe": "Add Sub-Recipe"
-      },
-      "create": {
-        "title": "Create New Sub-Recipe",
-        "nameRequired": "Recipe name is required",
-        "ingredientRequired": "At least one ingredient is required",
-        "liveCost": "Live Cost"
-      }
-    },
-    "midPrepRecipes": {
-      "title": "Mid-Prep Recipes",
-      "createNew": "Create Mid-Prep Recipe",
-      "searchPlaceholder": "Search mid-prep recipes...",
-      "noRecipes": "No mid-prep recipes found. Create your first recipe to get started!",
-      "noRecipesSearch": "No mid-prep recipes match your search.",
-      "editRecipe": "Edit Recipe",
-      "deleteRecipe": "Delete Recipe",
-      "totalCost": "Total Cost",
-      "directIngredients": "Direct Ingredients",
-      "subRecipes": "Sub-Recipes",
-      "fields": {
-        "name": "Mid-Prep Recipe Name",
-        "ingredients": "Ingredients",
-        "subRecipes": "Sub-Recipes",
-        "selectIngredient": "Select ingredient...",
-        "selectSubRecipe": "Select sub-recipe...",
-        "quantity": "Quantity",
-        "addIngredient": "Add Ingredient",
-        "addSubRecipe": "Add Sub-Recipe"
-      },
-      "create": {
-        "title": "Create New Mid-Prep Recipe",
-        "nameRequired": "Recipe name is required",
-        "componentRequired": "At least one ingredient or sub-recipe is required",
-        "liveCost": "Live Cost"
-      }
-    },
-    "cakes": {
-      "title": "Cakes",
-      "createNew": "Create New Cake",
-      "searchPlaceholder": "Search cakes...",
-      "noCakes": "No cakes found. Create your first cake to get started!",
-      "noCakesSearch": "No cakes match your search.",
-      "editCake": "Edit Cake",
-      "deleteCake": "Delete Cake",
-      "totalCost": "Total Cost",
-      "totalCostBeforeYield": "Total Cost (Before Yield)",
-      "costAfterYield": "Cost After Yield",
-      "pricePerUnit": "Price per Unit",
-      "yield": "Yield",
-      "ingredients": "Ingredients",
-      "subRecipes": "Sub-Recipes",
-      "midPreps": "Mid-Prep Recipes",
-      "fields": {
-        "name": "Cake Name",
-        "percentYield": "Yield Percentage (%)",
-        "ingredients": "Ingredients",
-        "subRecipes": "Sub-Recipes",
-        "midPreps": "Mid-Prep Recipes",
-        "selectIngredient": "Select ingredient...",
-        "selectSubRecipe": "Select sub-recipe...",
-        "selectMidPrep": "Select mid-prep recipe...",
-        "quantity": "Quantity",
-        "addIngredient": "Add Ingredient",
-        "addSubRecipe": "Add Sub-Recipe",
-        "addMidPrep": "Add Mid-Prep Recipe"
-      },
-      "create": {
-        "title": "Create New Cake",
-        "nameRequired": "Cake name is required",
-        "componentRequired": "At least one ingredient, sub-recipe, or mid-prep recipe is required",
-        "liveCost": "Live Cost"
-      }
-    },
-    "actions": {
-      "edit": "Edit",
-      "delete": "Delete",
-      "save": "Save",
-      "cancel": "Cancel",
-      "create": "Create",
-      "add": "Add",
-      "remove": "Remove",
-      "clear": "Clear",
-      "search": "Search",
-      "loading": "Loading...",
-      "loadingEdit": "Loading edit data...",
-      "quantity": "Qty",
-      "creating": "Creating...",
-      "cancel": "Cancel",
-      "updating": "Updating..."
-    },
-    "modals": {
-      "editSubRecipe": "Edit Sub-Recipe",
-      "editMidPrep": "Edit Mid-Prep Recipe",
-      "editCake": "Edit Cake",
-      "createSubRecipe": "Create New Sub-Recipe",
-      "createMidPrep": "Create New Mid-Prep Recipe",
-      "createCake": "Create New Cake"
-    },
-    "search": {
-      "ingredients": "Search ingredients...",
-      "subRecipes": "Search sub-recipes...",
-      "midPreps": "Search mid-prep recipes..."
-    },
-    "pagination": {
-      "page": "Page",
-      "of": "of",
-      "itemsPerPage": "items per page",
-      "showing": "Showing",
-      "to": "to",
-      "total": "total"
-    }
-  },
-  "warehouse": {
+  "warehouseReceive": {
     "noReceivedOrders": "No received orders found",
     "receiveOrder": "Receive Order",
     "adjustQuantities": "Adjust quantities received or return items",

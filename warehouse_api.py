@@ -137,6 +137,132 @@ async def get_warehouses(db: Session = Depends(get_db)):
     warehouses = db.execute(text("SELECT id, name FROM warehouses ORDER BY name")).fetchall()
     return [{"id": w[0], "name": w[1]} for w in warehouses]
 
+@router.post("/warehouses")
+async def create_warehouse(
+    warehouse_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Create a new warehouse"""
+    try:
+        name = warehouse_data.get("name", "").strip()
+        location = warehouse_data.get("location", "").strip()
+        
+        if not name:
+            raise HTTPException(status_code=400, detail="Warehouse name is required")
+        
+        # Check for duplicate names
+        existing = db.execute(text("SELECT id FROM warehouses WHERE LOWER(name) = LOWER(:name)"), 
+                            {"name": name}).fetchone()
+        if existing:
+            raise HTTPException(status_code=400, detail="Warehouse name already exists")
+        
+        # Insert new warehouse
+        result = db.execute(text("""
+            INSERT INTO warehouses (name, location, created_at)
+            VALUES (:name, :location, NOW())
+        """), {"name": name, "location": location or None})
+        
+        new_id = result.lastrowid
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Warehouse '{name}' created successfully",
+            "data": {
+                "id": new_id,
+                "name": name,
+                "location": location
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create warehouse: {str(e)}")
+
+@router.put("/warehouses/{warehouse_id}")
+async def update_warehouse(
+    warehouse_id: int,
+    warehouse_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Update an existing warehouse"""
+    try:
+        name = warehouse_data.get("name", "").strip()
+        location = warehouse_data.get("location", "").strip()
+        
+        if not name:
+            raise HTTPException(status_code=400, detail="Warehouse name is required")
+        
+        # Check if warehouse exists
+        warehouse = db.execute(text("SELECT id, name FROM warehouses WHERE id = :id"), 
+                             {"id": warehouse_id}).fetchone()
+        if not warehouse:
+            raise HTTPException(status_code=404, detail="Warehouse not found")
+        
+        # Check for duplicate names (excluding current warehouse)
+        existing = db.execute(text("SELECT id FROM warehouses WHERE LOWER(name) = LOWER(:name) AND id != :id"), 
+                            {"name": name, "id": warehouse_id}).fetchone()
+        if existing:
+            raise HTTPException(status_code=400, detail="Warehouse name already exists")
+        
+        # Update warehouse
+        db.execute(text("""
+            UPDATE warehouses 
+            SET name = :name, location = :location
+            WHERE id = :id
+        """), {"name": name, "location": location or None, "id": warehouse_id})
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Warehouse '{name}' updated successfully",
+            "data": {
+                "id": warehouse_id,
+                "name": name,
+                "location": location
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update warehouse: {str(e)}")
+
+@router.delete("/warehouses/{warehouse_id}")
+async def delete_warehouse(
+    warehouse_id: int,
+    db: Session = Depends(get_db)
+):
+    """Delete a warehouse"""
+    try:
+        # Check if warehouse exists
+        warehouse = db.execute(text("SELECT id, name FROM warehouses WHERE id = :id"), 
+                             {"id": warehouse_id}).fetchone()
+        if not warehouse:
+            raise HTTPException(status_code=404, detail="Warehouse not found")
+        
+        warehouse_name = warehouse[1]
+        
+        # Delete warehouse
+        db.execute(text("DELETE FROM warehouses WHERE id = :id"), {"id": warehouse_id})
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Warehouse '{warehouse_name}' deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete warehouse: {str(e)}")
+
 @router.get("/warehouses/{warehouse_id}/stock")
 async def get_warehouse_stock(
     warehouse_id: int,

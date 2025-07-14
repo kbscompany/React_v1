@@ -7,6 +7,10 @@ import enum
 class UserRoleEnum(str, enum.Enum):
     ADMIN = "Admin"
     WAREHOUSE_MANAGER = "Warehouse Manager"
+    KITCHEN_MANAGER = "Kitchen Manager"
+    PRODUCTION_STAFF = "Production Staff"
+    INVENTORY_STAFF = "Inventory Staff"
+    FINANCE_STAFF = "Finance Staff"
     STAFF = "Staff"
 
 class UserRole(Base):

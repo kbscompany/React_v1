@@ -189,4 +189,35 @@ export const translationAPI = {
   get: (lang: string) => api.get(`/translations/${lang}`),
 };
 
+// Foodics API
+export const foodicsAPI = {
+  getStatus: () => api.get('/api/foodics/status'),
+  configure: (apiToken: string) => {
+    const formData = new FormData();
+    formData.append('api_token', apiToken);
+    return api.post('/api/foodics/configure', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+  },
+  testConnection: () => api.post('/api/foodics/test-connection'),
+  getBranches: () => api.get('/api/foodics/branches'),
+  getProducts: (branchId: string) => api.get(`/api/foodics/products/${branchId}`),
+  syncProducts: (branchId: string) => api.post(`/api/foodics/sync-products/${branchId}`),
+  syncInventory: (shopId: number) => api.post(`/api/foodics/sync-inventory/${shopId}`),
+  getSalesData: (shopId: number, startDate: string, endDate: string) =>
+    api.get(`/api/foodics/sales-data/${shopId}`, { params: { start_date: startDate, end_date: endDate } }),
+  configureBranch: (branchId: string, branchName: string) => {
+    const formData = new FormData();
+    formData.append('branch_id', branchId);
+    formData.append('branch_name', branchName);
+    return api.post('/api/foodics/configure-branch', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+  },
+  getDefaultBranchInventory: () => api.get('/api/foodics/default-branch/inventory'),
+  getDefaultBranchSales: (startDate: string, endDate: string) =>
+    api.get('/api/foodics/default-branch/sales', { params: { start_date: startDate, end_date: endDate } }),
+  remove: () => api.delete('/api/foodics/remove'),
+};
+
 export default api; 

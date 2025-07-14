@@ -22,6 +22,10 @@ router = APIRouter(prefix="/arabic-cheque", tags=["Arabic Cheque"])
 # Get the directory where this file is located
 BASE_DIR = Path(__file__).parent
 
+# Browser coordinate system constants (consistent with frontend)
+BROWSER_PAGE_WIDTH = 595   # A4 width in points (browser coordinates)
+BROWSER_PAGE_HEIGHT = 842  # A4 height in points (browser coordinates)
+
 # Create required directories with permission checks
 def ensure_directories():
     """Ensure all required directories exist and are writable"""
@@ -73,11 +77,12 @@ except ImportError:
 
 
 class ChequePrintPayload(BaseModel):
+    # Frontend sends browser coordinates - we'll convert to PDF coordinates internally
     field_positions: Dict[str, Dict[str, float]]
     field_visibility: Dict[str, bool]
     font_language: str = "ar"
     debug_mode: bool = False
-    font_size: int = 16  # Add font size with default
+    font_size: int = 16
     
     @validator('font_size')
     def validate_font_size(cls, v):
@@ -90,31 +95,67 @@ class ChequePrintPayload(BaseModel):
         for field_name, pos in v.items():
             if not isinstance(pos, dict) or 'x' not in pos or 'y' not in pos:
                 raise ValueError(f"Invalid position format for field {field_name}")
-            # Allow coordinates beyond page boundaries - no clamping
-            # This allows text positioning outside normal margins
         return v
 
 
+def browser_to_pdf_coordinates(browser_x: float, browser_y: float) -> Tuple[float, float]:
+    """
+    Convert browser coordinates (top-left origin) to PDF coordinates (bottom-left origin).
+    
+    Args:
+        browser_x: X coordinate in browser space (left to right)
+        browser_y: Y coordinate in browser space (top to bottom)
+        
+    Returns:
+        Tuple of (pdf_x, pdf_y) coordinates
+    """
+    # X coordinate stays the same
+    pdf_x = browser_x
+    
+    # Y coordinate needs to be flipped: browser y=0 (top) -> PDF y=842 (top)
+    pdf_y = BROWSER_PAGE_HEIGHT - browser_y
+    
+    return (pdf_x, pdf_y)
+
+
+def convert_browser_positions_to_pdf(browser_positions: Dict[str, Dict[str, float]]) -> Dict[str, Tuple[float, float]]:
+    """
+    Convert browser coordinate positions to PDF coordinate tuples.
+    
+    Args:
+        browser_positions: Dictionary with format {"field": {"x": value, "y": value}}
+        
+    Returns:
+        Dictionary with format {"field": (pdf_x, pdf_y)}
+    """
+    result = {}
+    for field_key, pos in browser_positions.items():
+        if isinstance(pos, dict) and 'x' in pos and 'y' in pos:
+            pdf_x, pdf_y = browser_to_pdf_coordinates(pos['x'], pos['y'])
+            result[field_key] = (pdf_x, pdf_y)
+    return result
+
+
 class ArabicChequeGenerator:
-    FIELD_DEFS = {
-        "cheque_number": (100, 100),
-        "amount_number": (200, 100),
-        "amount_words": (100, 150),
-        "beneficiary_name": (100, 200),
-        "issue_date": (400, 100),
-        "due_date": (400, 150),
-        "description": (200, 200),
-        "payee_notice": (300, 250),
-        "recipient": (100, 300),
-        "receipt_date": (300, 300),
-        "note_1": (200, 150),
-        "note_2": (200, 150),
-        "note_3": (200, 150),
-        "note_4": (200, 150)
+    # Default positions in browser coordinate space (top-left origin)
+    DEFAULT_BROWSER_POSITIONS = {
+        "cheque_number": {"x": 100, "y": 100},
+        "amount_number": {"x": 200, "y": 100},
+        "amount_words": {"x": 100, "y": 150},
+        "beneficiary_name": {"x": 100, "y": 200},
+        "issue_date": {"x": 400, "y": 100},
+        "due_date": {"x": 400, "y": 150},
+        "description": {"x": 200, "y": 200},
+        "payee_notice": {"x": 300, "y": 250},
+        "recipient": {"x": 100, "y": 300},
+        "receipt_date": {"x": 300, "y": 300},
+        "note_1": {"x": 200, "y": 150},
+        "note_2": {"x": 200, "y": 150},
+        "note_3": {"x": 200, "y": 150},
+        "note_4": {"x": 200, "y": 150}
     }
 
     def __init__(self):
-        self.default_positions = self.FIELD_DEFS.copy()
         self.font_path = "fonts/Amiri-Bold.ttf"
         self.arabic_font = "Amiri"  # Font name for ReportLab
         # Check if font is actually registered
@@ -157,56 +198,63 @@ class ArabicChequeGenerator:
         except:
             return self.to_arabic_digits(str(amount))
 
-    def create_overlay_pdf(self, cheque_data: Dict, field_positions: Dict[str, Tuple[int, int]],
+    def create_overlay_pdf(self, cheque_data: Dict, pdf_field_positions: Dict[str, Tuple[int, int]],
                             field_visibility: Dict[str, bool], debug_mode: bool = False, font_size: int = 16) -> bytes:
+        """
+        Create PDF overlay using PDF coordinate positions.
+        
+        Args:
+            cheque_data: Dictionary of cheque field values
+            pdf_field_positions: Positions in PDF coordinate space (bottom-left origin)
+            field_visibility: Which fields to show
+            debug_mode: Whether to show debug info
+            font_size: Font size to use
+            
+        Returns:
+            PDF bytes
+        """
         from helpers.pdf.draw_company_table import draw_company_table
         
         buffer = BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
         
         # Only add white background if not in debug mode
-        # In debug mode, we want transparent background for overlay
         if not debug_mode:
-            # Add white background
             c.setFillColorRGB(1, 1, 1)
             c.rect(0, 0, A4[0], A4[1], fill=1)
         
         # Draw company table if enabled
         if field_visibility.get("company_table", False):
-            # Register the font for the table
             try:
                 c.setFont("Amiri", 10)
             except:
                 pass
             
-            # Get company table position from field_positions or use default
-            table_position = field_positions.get("company_table", (50, 750))
-            table_x = table_position[0] if isinstance(table_position, (tuple, list)) else 50
-            table_y = table_position[1] if isinstance(table_position, (tuple, list)) else 750
+            # Get company table position from pdf_field_positions or use default
+            table_browser_pos = {"x": 50, "y": 50}  # Default in browser coordinates
+            table_pdf_x, table_pdf_y = browser_to_pdf_coordinates(table_browser_pos["x"], table_browser_pos["y"])
             
-            table_y_end = draw_company_table(c, int(table_x), int(table_y), cheque_data, field_visibility, self)
+            table_y_end = draw_company_table(c, int(table_pdf_x), int(table_pdf_y), cheque_data, field_visibility, self)
         
-        # Ensure black color for text
+        # Set text color and font
         c.setFillColorRGB(0, 0, 0)
         
-        # Use Arabic font for text
         try:
             c.setFont("Amiri", font_size)
         except:
-            # Fallback to Helvetica if Arabic font not available
             c.setFont("Helvetica", font_size)
             print("Warning: Arabic font not available, using Helvetica")
 
-        for field_key, (x, y) in field_positions.items():
+        for field_key, (pdf_x, pdf_y) in pdf_field_positions.items():
             if not field_visibility.get(field_key, True):
                 continue
+            
             value = cheque_data.get(field_key, "")
             
             # Convert numbers to Arabic digits for amount and date fields
             if "amount" in field_key or field_key == "cheque_number":
                 value = self.to_arabic_digits(str(value))
             elif "date" in field_key:
-                # Use proper Arabic date formatting for date fields
                 value = self.convert_date_to_arabic(value)
             
             # Add Egyptian pounds suffix to amount_words
@@ -222,8 +270,8 @@ class ArabicChequeGenerator:
             # Ensure text color is black
             c.setFillColorRGB(0, 0, 0)
             
-            # Draw the text (right-aligned for Arabic)
-            c.drawRightString(x, y, value)
+            # Draw the text (right-aligned for Arabic) using PDF coordinates
+            c.drawRightString(pdf_x, pdf_y, value)
             
             # Restore state
             c.restoreState()
@@ -231,11 +279,11 @@ class ArabicChequeGenerator:
             if debug_mode:
                 c.saveState()
                 c.setFillColorRGB(1, 0, 0)
-                c.circle(x, y, 5, fill=1)
+                c.circle(pdf_x, pdf_y, 5, fill=1)
                 c.setFont("Helvetica", 8)
                 c.setFillColorRGB(1, 0, 0)
-                c.drawString(x + 5, y + 5,
-                             f"{field_key} ({int(x)},{int(y)})")
+                c.drawString(pdf_x + 5, pdf_y + 5,
+                             f"{field_key} PDF({int(pdf_x)},{int(pdf_y)})")
                 c.restoreState()
                 # Restore font for next iteration
                 try:
@@ -247,14 +295,14 @@ class ArabicChequeGenerator:
             c.saveState()
             c.setFont("Helvetica-Bold", 20)
             c.setFillColorRGB(1, 0, 0)
-            c.drawCentredString(300, 800, "DEBUG MODE")
+            c.drawCentredString(300, 800, "DEBUG MODE - PDF COORDINATES")
             c.restoreState()
 
         c.save()
         buffer.seek(0)
         return buffer.read()
 
-    def create_overlay_with_template(self, cheque_data: Dict, field_positions: Dict[str, Tuple[int, int]],
+    def create_overlay_with_template(self, cheque_data: Dict, pdf_field_positions: Dict[str, Tuple[int, int]],
                                     field_visibility: Dict[str, bool], debug_mode: bool = False, font_size: int = 16) -> bytes:
         """Create PDF with text overlaid directly on template using PyMuPDF"""
         from helpers.pdf.draw_company_table import draw_company_table
@@ -263,12 +311,12 @@ class ArabicChequeGenerator:
         
         if not os.path.exists(template_path):
             # Fall back to overlay-only if no template
-            return self.create_overlay_pdf(cheque_data, field_positions, field_visibility, debug_mode, font_size)
+            return self.create_overlay_pdf(cheque_data, pdf_field_positions, field_visibility, debug_mode, font_size)
         
         # If company table is enabled, we need to use ReportLab approach
         if field_visibility.get("company_table", False):
             # Create overlay with ReportLab including table
-            overlay_pdf = self.create_overlay_pdf(cheque_data, field_positions, field_visibility, debug_mode, font_size)
+            overlay_pdf = self.create_overlay_pdf(cheque_data, pdf_field_positions, field_visibility, debug_mode, font_size)
             
             # Merge with template using PyPDF2
             if not PYPDF2_AVAILABLE:
@@ -311,8 +359,8 @@ class ArabicChequeGenerator:
             # Get the Amiri font path
             font_path = "fonts/Amiri-Bold.ttf"
             
-            # Add overlay text
-            for field_key, (x, y) in field_positions.items():
+            # Add overlay text using PDF coordinates
+            for field_key, (pdf_x, pdf_y) in pdf_field_positions.items():
                 if not field_visibility.get(field_key, True):
                     continue
                     
@@ -322,7 +370,6 @@ class ArabicChequeGenerator:
                 if "amount" in field_key or field_key == "cheque_number":
                     value = self.to_arabic_digits(str(value))
                 elif "date" in field_key:
-                    # Use proper Arabic date formatting for date fields
                     value = self.convert_date_to_arabic(value)
                 
                 # Add Egyptian pounds suffix to amount_words
@@ -332,20 +379,15 @@ class ArabicChequeGenerator:
                 # Reshape Arabic text
                 value = self.reshape_arabic(str(value))
                 
-                # The Y coordinate is already in the correct PDF coordinate space
-                # No additional transformation needed since frontend handles the conversion
-                pymupdf_y = y
-                
-                # Create a flexible text box for Arabic text - allow positioning beyond margins
-                # Extend text box further left and right to accommodate text outside normal margins
-                text_rect = fitz.Rect(x - 500, pymupdf_y - 30, x + 100, pymupdf_y + 10)
+                # Create text box using PDF coordinates (no additional transformation needed)
+                text_rect = fitz.Rect(pdf_x - 500, pdf_y - 30, pdf_x + 100, pdf_y + 10)
                 
                 try:
                     # Try to insert with custom font
                     rc = page.insert_textbox(
                         text_rect,
                         value,
-                        fontname="helv",  # Will use embedded font
+                        fontname="helv",
                         fontfile=font_path,
                         fontsize=font_size,
                         align=fitz.TEXT_ALIGN_RIGHT,
@@ -363,12 +405,12 @@ class ArabicChequeGenerator:
                 
                 if debug_mode:
                     # Add debug circle
-                    page.draw_circle(fitz.Point(x, pymupdf_y), 5, color=(1, 0, 0), fill=(1, 0, 0))
+                    page.draw_circle(fitz.Point(pdf_x, pdf_y), 5, color=(1, 0, 0), fill=(1, 0, 0))
                     # Add debug label
-                    label_rect = fitz.Rect(x + 5, pymupdf_y - 10, x + 150, pymupdf_y + 10)
+                    label_rect = fitz.Rect(pdf_x + 5, pdf_y - 10, pdf_x + 150, pdf_y + 10)
                     page.insert_textbox(
                         label_rect,
-                        f"{field_key} ({int(x)},{int(y)})",
+                        f"{field_key} PDF({int(pdf_x)},{int(pdf_y)})",
                         fontsize=8,
                         color=(1, 0, 0)
                     )
@@ -378,7 +420,7 @@ class ArabicChequeGenerator:
                 header_rect = fitz.Rect(200, 50, 400, 100)
                 page.insert_textbox(
                     header_rect,
-                    "DEBUG MODE",
+                    "DEBUG MODE - PDF COORDINATES",
                     fontsize=20,
                     align=fitz.TEXT_ALIGN_CENTER,
                     color=(1, 0, 0)
@@ -393,7 +435,7 @@ class ArabicChequeGenerator:
         except Exception as e:
             print(f"Error creating overlay with template: {e}")
             # Fall back to overlay-only
-            return self.create_overlay_pdf(cheque_data, field_positions, field_visibility, debug_mode, font_size)
+            return self.create_overlay_pdf(cheque_data, pdf_field_positions, field_visibility, debug_mode, font_size)
 
 
 @router.post("/cheques/{id}/print-arabic-sqlite")
@@ -404,7 +446,7 @@ def print_arabic_cheque(id: int, payload: ChequePrintPayload):
         "amount_words": num2words(25000, lang='ar'),
         "beneficiary_name": "شركة التجربة",
         "issue_date": "2025-06-17",
-        "due_date": "2025-07-17",  # Added due_date field
+        "due_date": "2025-07-17",
         # Additional fields for company table
         "expense_number": "EXP-2025-001",
         "category_path": "مصروفات عامة > مواد خام",
@@ -418,27 +460,18 @@ def print_arabic_cheque(id: int, payload: ChequePrintPayload):
         "server_date": "2025-06-17"
     }
     
-    # Convert position format from {field: {x, y}} to {field: (x, y)}
-    # Also handle coordinate transformation
-    field_positions_tuples = {}
-    page_height = 842  # A4 height in points
+    # Convert browser coordinates to PDF coordinates
+    pdf_field_positions = convert_browser_positions_to_pdf(payload.field_positions)
     
-    for field_key, position in payload.field_positions.items():
-        if isinstance(position, dict) and 'x' in position and 'y' in position:
-            # Convert from unified UI coordinates (origin top-left) to PDF coordinates (origin bottom-left)
-            x = position['x']
-            y = position['y']
-            pdf_x = x
-            pdf_y = page_height - y  # Invert Y coordinate for PDF space
-            
-            field_positions_tuples[field_key] = (pdf_x, pdf_y)
-            
-            if payload.debug_mode:
-                print(f"Field {field_key} converted from UI ({x},{y}) to PDF ({pdf_x},{pdf_y})")
+    if payload.debug_mode:
+        print("=== COORDINATE CONVERSION DEBUG ===")
+        for field_key, browser_pos in payload.field_positions.items():
+            if isinstance(browser_pos, dict) and 'x' in browser_pos and 'y' in browser_pos:
+                pdf_x, pdf_y = browser_to_pdf_coordinates(browser_pos['x'], browser_pos['y'])
+                print(f"Field '{field_key}': Browser({browser_pos['x']:.1f}, {browser_pos['y']:.1f}) -> PDF({pdf_x:.1f}, {pdf_y:.1f})")
     
     generator = ArabicChequeGenerator()
-    # Use create_overlay_pdf to generate text-only overlay
-    overlay = generator.create_overlay_pdf(cheque_data, field_positions_tuples,
+    overlay = generator.create_overlay_pdf(cheque_data, pdf_field_positions,
                                            payload.field_visibility, payload.debug_mode,
                                            payload.font_size)
     
@@ -456,35 +489,25 @@ def print_arabic_cheque(id: int, payload: ChequePrintPayload):
 
 @router.get("/cheque-field-positions")
 def get_field_positions():
-    """Get field positions - returns format like {"field_name": {"x": 100, "y": 200}}"""
+    """Get field positions - returns browser coordinates"""
     if not os.path.exists("storage/cheque_field_positions.json"):
         raise HTTPException(status_code=404, detail="Field positions not found")
     
     with open("storage/cheque_field_positions.json") as f:
         saved_positions = json.load(f)
     
-    # Convert from storage format to frontend format
-    positions_to_return = {}
-    for field_key, position in saved_positions.items():
-        if isinstance(position, list) and len(position) >= 2:
-            positions_to_return[field_key] = {"x": position[0], "y": position[1]}
-    
-    return positions_to_return
+    # Return positions in browser coordinate format
+    return saved_positions
 
 
 @router.post("/cheque-field-positions")
 def save_field_positions(data: Dict[str, Dict[str, float]]):
-    """Save field positions - expects format like {"field_name": {"x": 100, "y": 200}}"""
+    """Save field positions - expects browser coordinates"""
     os.makedirs("storage", exist_ok=True)
     
-    # Convert the frontend format to the storage format
-    positions_to_save = {}
-    for field_key, position in data.items():
-        if isinstance(position, dict) and 'x' in position and 'y' in position:
-            positions_to_save[field_key] = [position['x'], position['y']]
-    
+    # Save browser coordinates directly (no conversion needed)
     with open("storage/cheque_field_positions.json", "w") as f:
-        json.dump(positions_to_save, f)
+        json.dump(data, f)
     return {"message": "Saved successfully"}
 
 
@@ -528,6 +551,7 @@ def get_system_status():
         "fonts_registered": FONTS_REGISTERED,
         "font_error": FONT_REGISTRATION_ERROR,
         "pypdf2_available": PYPDF2_AVAILABLE,
+        "coordinate_system": "browser",  # Indicate we expect browser coordinates
         "directories": {
             "uploads": os.path.exists("uploads") and os.access("uploads", os.W_OK),
             "storage": os.path.exists("storage") and os.access("storage", os.W_OK),
@@ -573,7 +597,7 @@ def get_template_preview():
         # Get the first page
         page = pdf_document[0]
         
-        # Render page to an image (1x scale to match PDF coordinates)
+        # Render page to an image (1x scale to match coordinate mapping)
         mat = fitz.Matrix(1, 1)  # 1x zoom for exact coordinate mapping
         pix = page.get_pixmap(matrix=mat)
         
@@ -623,13 +647,13 @@ def test_coordinates():
         c.drawString(10, y + 2, str(y))
         c.drawString(A4[0] - 40, y + 2, str(y))
     
-    # Draw reference points
+    # Draw reference points in PDF coordinates
     reference_points = [
-        (100, 100, "Bottom-Left"),
-        (495, 100, "Bottom-Right"),
-        (100, 742, "Top-Left"),
-        (495, 742, "Top-Right"),
-        (297, 421, "Center"),
+        (100, 100, "PDF Bottom-Left"),
+        (495, 100, "PDF Bottom-Right"),
+        (100, 742, "PDF Top-Left"),
+        (495, 742, "PDF Top-Right"),
+        (297, 421, "PDF Center"),
     ]
     
     c.setFillColorRGB(1, 0, 0)
@@ -641,7 +665,7 @@ def test_coordinates():
     
     # Add page info
     c.setFont("Helvetica", 12)
-    c.drawString(50, 50, f"A4 Page: {A4[0]:.0f} x {A4[1]:.0f} points")
+    c.drawString(50, 50, f"PDF Coordinate System: {A4[0]:.0f} x {A4[1]:.0f} points")
     c.drawString(50, 30, "Origin (0,0) is at bottom-left corner")
     
     c.save()
@@ -658,7 +682,7 @@ def preview_cheque_with_template(id: int, payload: ChequePrintPayload):
         "amount_words": num2words(25000, lang='ar'),
         "beneficiary_name": "شركة التجربة",
         "issue_date": "2025-06-17",
-        "due_date": "2025-07-17",  # Added due_date field
+        "due_date": "2025-07-17",
         # Additional fields for company table
         "expense_number": "EXP-2025-001",
         "category_path": "مصروفات عامة > مواد خام",
@@ -672,17 +696,8 @@ def preview_cheque_with_template(id: int, payload: ChequePrintPayload):
         "server_date": "2025-06-17"
     }
     
-    # Convert position format from {field: {x, y}} to {field: (x, y)}
-    field_positions_tuples = {}
-    page_height = 842  # A4 height in points
-    for field_key, position in payload.field_positions.items():
-        if isinstance(position, dict) and 'x' in position and 'y' in position:
-            x = position['x']
-            y = position['y']
-            # Convert from unified UI coordinates (origin top-left) to PDF coordinates (origin bottom-left)
-            pdf_x = x
-            pdf_y = page_height - y  # Invert Y coordinate for PDF space
-            field_positions_tuples[field_key] = (pdf_x, pdf_y)
+    # Convert browser coordinates to PDF coordinates
+    pdf_field_positions = convert_browser_positions_to_pdf(payload.field_positions)
     
     generator = ArabicChequeGenerator()
     
@@ -690,7 +705,7 @@ def preview_cheque_with_template(id: int, payload: ChequePrintPayload):
     template_path = "uploads/cheque_template.pdf"
     if os.path.exists(template_path):
         # Use the method that overlays directly on template
-        result = generator.create_overlay_with_template(cheque_data, field_positions_tuples,
+        result = generator.create_overlay_with_template(cheque_data, pdf_field_positions,
                                                        payload.field_visibility, payload.debug_mode,
                                                        payload.font_size)
         return Response(
@@ -700,7 +715,7 @@ def preview_cheque_with_template(id: int, payload: ChequePrintPayload):
         )
     else:
         # Fall back to overlay only
-        overlay = generator.create_overlay_pdf(cheque_data, field_positions_tuples,
+        overlay = generator.create_overlay_pdf(cheque_data, pdf_field_positions,
                                              payload.field_visibility, payload.debug_mode,
                                              payload.font_size)
         return Response(
@@ -735,19 +750,15 @@ def save_cheque_settings(payload: ChequeSettingsPayload):
 
 
 # ---------------------------------------------------------------------------
-# Compatibility helper for legacy imports
+# Legacy compatibility wrapper
 # ---------------------------------------------------------------------------
 
 def generate_arabic_cheque(cheque_data: Dict) -> bytes:
-    """Legacy wrapper kept for backward-compatibility.
-
-    Existing modules (e.g. purchase_order_api) expect a top-level function
-    `generate_arabic_cheque(cheque_data)` that returns ready-to-print PDF bytes.
-
-    This shim instantiates `ArabicChequeGenerator`, fills in default positions
-    and visibility flags (all True) and returns the overlay PDF.  It does **not**
-    merge with a background template; those code-paths currently consume only
-    the overlay.  Extend if needed.
+    """
+    Legacy wrapper for backward compatibility.
+    
+    Expects cheque_data to contain browser coordinate positions if available,
+    otherwise uses default positions.
     """
 
     generator = ArabicChequeGenerator()
@@ -755,33 +766,32 @@ def generate_arabic_cheque(cheque_data: Dict) -> bytes:
     # Get debug mode early to use in logs
     debug_mode = cheque_data.get("debug_mode", False)
 
-    # Try to load saved positions from storage
-    field_positions: Dict[str, Tuple[int, int]] = generator.default_positions.copy()
+    # Try to load saved positions from storage (browser coordinates)
+    browser_positions: Dict[str, Dict[str, float]] = generator.DEFAULT_BROWSER_POSITIONS.copy()
     
     try:
         if os.path.exists("storage/cheque_field_positions.json"):
             with open("storage/cheque_field_positions.json") as f:
                 saved_positions = json.load(f)
-                # Saved positions are now in unified pixel coordinates that need conversion to PDF coordinates
-                page_height = 842  # A4 height in points
-                for field_key, position in saved_positions.items():
-                    if isinstance(position, list) and len(position) >= 2:
-                        x = position[0]
-                        y = position[1]
-                        # Convert from UI coordinate space (origin top-left) to PDF coordinate space (origin bottom-left)
-                        pdf_x = x
-                        pdf_y = page_height - y  # Invert Y coordinate for PDF space
-                        field_positions[field_key] = (pdf_x, pdf_y)
-                        if debug_mode:
-                            print(f"Field {field_key} converted from UI ({x},{y}) to PDF ({pdf_x},{pdf_y})")
+                browser_positions = saved_positions
+                
+                if debug_mode:
+                    print("=== LEGACY WRAPPER COORDINATE DEBUG ===")
+                    for field_key, pos in browser_positions.items():
+                        if isinstance(pos, dict) and 'x' in pos and 'y' in pos:
+                            pdf_x, pdf_y = browser_to_pdf_coordinates(pos['x'], pos['y'])
+                            print(f"Field '{field_key}': Browser({pos['x']:.1f}, {pos['y']:.1f}) -> PDF({pdf_x:.1f}, {pdf_y:.1f})")
     except Exception as e:
         print(f"Warning: Could not load saved positions: {e}")
+
+    # Convert browser coordinates to PDF coordinates
+    pdf_field_positions = convert_browser_positions_to_pdf(browser_positions)
 
     # Get field visibility from cheque_data if provided, otherwise all visible
     field_visibility: Dict[str, bool] = cheque_data.get("field_visibility", {})
     if not field_visibility:
         # Default: all fields visible including company table
-        field_visibility = {key: True for key in field_positions.keys()}
+        field_visibility = {key: True for key in browser_positions.keys()}
         field_visibility["company_table"] = True
         field_visibility["amount_numbers"] = True
         field_visibility["issued_to"] = True
@@ -791,7 +801,6 @@ def generate_arabic_cheque(cheque_data: Dict) -> bytes:
         field_visibility["note_3"] = True
         field_visibility["expense.id"] = False
 
-    
     # Get font size from cheque_data if provided
     if "font_size" in cheque_data:
         font_size = cheque_data["font_size"]
@@ -819,7 +828,7 @@ def generate_arabic_cheque(cheque_data: Dict) -> bytes:
 
     return generator.create_overlay_pdf(
         cheque_data=cheque_data,
-        field_positions=field_positions,
+        pdf_field_positions=pdf_field_positions,
         field_visibility=field_visibility,
         debug_mode=debug_mode,
         font_size=font_size

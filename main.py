@@ -1764,17 +1764,18 @@ async def get_mid_preps_for_editing(db: Session = Depends(get_db)):
 # WAREHOUSE ENDPOINTS (PERSISTENT IN-MEMORY STORAGE)
 # ==========================================
 
+# COMMENTED OUT: In-memory storage conflicts with database-based warehouse_api.py
 # In-memory storage for warehouses (will persist during server session)
-warehouses_store = [
-    {"id": 1, "name": "Main Warehouse", "location": "Building A"},
-    {"id": 2, "name": "Secondary Warehouse", "location": "Building B"},
-    {"id": 3, "name": "Cold Storage", "location": "Building C"},
-    {"id": 4, "name": "Dry Storage", "location": "Building D"}
-]
+# warehouses_store = [
+#     {"id": 1, "name": "Main Warehouse", "location": "Building A"},
+#     {"id": 2, "name": "Secondary Warehouse", "location": "Building B"},
+#     {"id": 3, "name": "Cold Storage", "location": "Building C"},
+#     {"id": 4, "name": "Dry Storage", "location": "Building D"}
+# ]
 
-def get_next_warehouse_id():
-    """Get the next available warehouse ID"""
-    return max([w["id"] for w in warehouses_store], default=0) + 1
+# def get_next_warehouse_id():
+#     """Get the next available warehouse ID"""
+#     return max([w["id"] for w in warehouses_store], default=0) + 1
 
 @app.get("/api/warehouse/warehouses")
 async def get_warehouses_simple(db: Session = Depends(get_db)):
@@ -1822,133 +1823,136 @@ async def get_warehouses_simple(db: Session = Depends(get_db)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to fetch warehouses: {str(e)}")
 
-@app.post("/api/warehouse/warehouses")
-async def create_warehouse_simple(
-    warehouse_data: dict,
-    db: Session = Depends(get_db)
-):
-    """Create a new warehouse - Persists in memory"""
-    try:
-        # Extract warehouse data
-        name = warehouse_data.get("name", "").strip()
-        location = warehouse_data.get("location", "").strip()
-        
-        # Validate required fields
-        if not name:
-            raise HTTPException(status_code=400, detail="Warehouse name is required")
-        
-        # Check for duplicate names
-        if any(w["name"].lower() == name.lower() for w in warehouses_store):
-            raise HTTPException(status_code=400, detail="Warehouse name already exists")
-        
-        # Create the new warehouse object
-        new_warehouse = {
-            "id": get_next_warehouse_id(),
-            "name": name,
-            "location": location,
-            "created_at": "2024-01-15T10:00:00Z"
-        }
-        
-        # Add to storage
-        warehouses_store.append(new_warehouse)
-        
-        print(f"✅ Created new warehouse: {name} at {location} (ID: {new_warehouse['id']})")
-        
-        return {
-            "success": True,
-            "message": f"Warehouse '{name}' created successfully",
-            "data": new_warehouse
-        }
-        
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create warehouse: {str(e)}")
+# COMMENTED OUT: Conflicting with database-based warehouse_api.py
+# @app.post("/api/warehouse/warehouses")
+# async def create_warehouse_simple(
+#     warehouse_data: dict,
+#     db: Session = Depends(get_db)
+# ):
+#     """Create a new warehouse - Persists in memory"""
+#     try:
+#         # Extract warehouse data
+#         name = warehouse_data.get("name", "").strip()
+#         location = warehouse_data.get("location", "").strip()
+#         
+#         # Validate required fields
+#         if not name:
+#             raise HTTPException(status_code=400, detail="Warehouse name is required")
+#         
+#         # Check for duplicate names
+#         if any(w["name"].lower() == name.lower() for w in warehouses_store):
+#             raise HTTPException(status_code=400, detail="Warehouse name already exists")
+#         
+#         # Create the new warehouse object
+#         new_warehouse = {
+#             "id": get_next_warehouse_id(),
+#             "name": name,
+#             "location": location,
+#             "created_at": "2024-01-15T10:00:00Z"
+#         }
+#         
+#         # Add to storage
+#         warehouses_store.append(new_warehouse)
+#         
+#         print(f"✅ Created new warehouse: {name} at {location} (ID: {new_warehouse['id']})")
+#         
+#         return {
+#             "success": True,
+#             "message": f"Warehouse '{name}' created successfully",
+#             "data": new_warehouse
+#         }
+#         
+#     except HTTPException as he:
+#         raise he
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Failed to create warehouse: {str(e)}")
 
-@app.put("/api/warehouse/warehouses/{warehouse_id}")
-async def update_warehouse_simple(
-    warehouse_id: int,
-    warehouse_data: dict,
-    db: Session = Depends(get_db)
-):
-    """Update an existing warehouse - Updates in memory"""
-    try:
-        # Extract warehouse data
-        name = warehouse_data.get("name", "").strip()
-        location = warehouse_data.get("location", "").strip()
-        
-        # Validate required fields
-        if not name:
-            raise HTTPException(status_code=400, detail="Warehouse name is required")
-        
-        # Find the warehouse to update
-        warehouse_to_update = None
-        for i, warehouse in enumerate(warehouses_store):
-            if warehouse["id"] == warehouse_id:
-                warehouse_to_update = i
-                break
-        
-        if warehouse_to_update is None:
-            raise HTTPException(status_code=404, detail="Warehouse not found")
-        
-        # Check for duplicate names (excluding current warehouse)
-        if any(w["name"].lower() == name.lower() and w["id"] != warehouse_id for w in warehouses_store):
-            raise HTTPException(status_code=400, detail="Warehouse name already exists")
-        
-        # Update the warehouse
-        warehouses_store[warehouse_to_update].update({
-            "name": name,
-            "location": location,
-            "updated_at": "2024-01-15T10:30:00Z"
-        })
-        
-        print(f"✅ Updated warehouse {warehouse_id}: {name} at {location}")
-        
-        return {
-            "success": True,
-            "message": f"Warehouse '{name}' updated successfully",
-            "data": warehouses_store[warehouse_to_update]
-        }
-        
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update warehouse: {str(e)}")
+# COMMENTED OUT: Conflicting with database-based warehouse_api.py
+# @app.put("/api/warehouse/warehouses/{warehouse_id}")
+# async def update_warehouse_simple(
+#     warehouse_id: int,
+#     warehouse_data: dict,
+#     db: Session = Depends(get_db)
+# ):
+#     """Update an existing warehouse - Updates in memory"""
+#     try:
+#         # Extract warehouse data
+#         name = warehouse_data.get("name", "").strip()
+#         location = warehouse_data.get("location", "").strip()
+#         
+#         # Validate required fields
+#         if not name:
+#             raise HTTPException(status_code=400, detail="Warehouse name is required")
+#         
+#         # Find the warehouse to update
+#         warehouse_to_update = None
+#         for i, warehouse in enumerate(warehouses_store):
+#             if warehouse["id"] == warehouse_id:
+#                 warehouse_to_update = i
+#                 break
+#         
+#         if warehouse_to_update is None:
+#             raise HTTPException(status_code=404, detail="Warehouse not found")
+#         
+#         # Check for duplicate names (excluding current warehouse)
+#         if any(w["name"].lower() == name.lower() and w["id"] != warehouse_id for w in warehouses_store):
+#             raise HTTPException(status_code=400, detail="Warehouse name already exists")
+#         
+#         # Update the warehouse
+#         warehouses_store[warehouse_to_update].update({
+#             "name": name,
+#             "location": location,
+#             "updated_at": "2024-01-15T10:30:00Z"
+#         })
+#         
+#         print(f"✅ Updated warehouse {warehouse_id}: {name} at {location}")
+#         
+#         return {
+#             "success": True,
+#             "message": f"Warehouse '{name}' updated successfully",
+#             "data": warehouses_store[warehouse_to_update]
+#         }
+#         
+#     except HTTPException as he:
+#         raise he
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Failed to update warehouse: {str(e)}")
 
-@app.delete("/api/warehouse/warehouses/{warehouse_id}")
-async def delete_warehouse_simple(
-    warehouse_id: int,
-    db: Session = Depends(get_db)
-):
-    """Delete a warehouse - Removes from memory"""
-    try:
-        # Find the warehouse to delete
-        warehouse_to_delete = None
-        for i, warehouse in enumerate(warehouses_store):
-            if warehouse["id"] == warehouse_id:
-                warehouse_to_delete = i
-                break
-        
-        if warehouse_to_delete is None:
-            raise HTTPException(status_code=404, detail="Warehouse not found")
-        
-        # Get warehouse name before deletion for the message
-        warehouse_name = warehouses_store[warehouse_to_delete]["name"]
-        
-        # Remove from storage
-        warehouses_store.pop(warehouse_to_delete)
-        
-        print(f"✅ Deleted warehouse {warehouse_id}: {warehouse_name}")
-        
-        return {
-            "success": True,
-            "message": f"Warehouse '{warehouse_name}' deleted successfully"
-        }
-        
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete warehouse: {str(e)}")
+# COMMENTED OUT: Conflicting with database-based warehouse_api.py
+# @app.delete("/api/warehouse/warehouses/{warehouse_id}")
+# async def delete_warehouse_simple(
+#     warehouse_id: int,
+#     db: Session = Depends(get_db)
+# ):
+#     """Delete a warehouse - Removes from memory"""
+#     try:
+#         # Find the warehouse to delete
+#         warehouse_to_delete = None
+#         for i, warehouse in enumerate(warehouses_store):
+#             if warehouse["id"] == warehouse_id:
+#                 warehouse_to_delete = i
+#                 break
+#         
+#         if warehouse_to_delete is None:
+#             raise HTTPException(status_code=404, detail="Warehouse not found")
+#         
+#         # Get warehouse name before deletion for the message
+#         warehouse_name = warehouses_store[warehouse_to_delete]["name"]
+#         
+#         # Remove from storage
+#         warehouses_store.pop(warehouse_to_delete)
+#         
+#         print(f"✅ Deleted warehouse {warehouse_id}: {warehouse_name}")
+#         
+#         return {
+#             "success": True,
+#             "message": f"Warehouse '{warehouse_name}' deleted successfully"
+#         }
+#         
+#     except HTTPException as he:
+#         raise he
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Failed to delete warehouse: {str(e)}")
 
 @app.get("/api/warehouse/categories")
 async def get_warehouse_categories_simple(db: Session = Depends(get_db)):
@@ -2261,9 +2265,10 @@ async def delete_transfer_template(
 @app.post("/api/warehouse/transfer-orders")
 async def create_transfer_order_simple(
     order_data: dict,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
 ):
-    """Create a transfer order - Simple version"""
+    """Create a transfer order - Simple version with authentication"""
     try:
         global transfer_order_counter
         
@@ -2709,8 +2714,11 @@ async def remove_foodics_configuration(
         raise HTTPException(status_code=500, detail="Failed to remove configuration")
 
 @app.get("/api/foodics/branches")
-async def get_foodics_branches(db: Session = Depends(get_db)):
-    """Get all Foodics branches"""
+async def get_foodics_branches(
+    db: Session = Depends(get_db)
+    # current_user: models.User = Depends(get_current_active_user)  # Temporarily disabled for testing
+):
+    """Get all Foodics branches - Authentication temporarily disabled for testing"""
     try:
         logger.info("🔍 DEBUG: Getting branches (public endpoint)")
         logger.info(f"🔍 DEBUG: foodics_available = {foodics_available}")
@@ -2724,45 +2732,50 @@ async def get_foodics_branches(db: Session = Depends(get_db)):
                 "mode": "basic"
             }
         
-        logger.info("🔍 DEBUG: Getting Foodics service instance")
-        from foodics_service import foodics_service
-        
-        logger.info("🔍 DEBUG: Getting active token")
-        token = foodics_service.get_active_token(db)
-        if not token:
-            logger.error("🔍 DEBUG: No active API token found")
+        try:
+            logger.info("🔍 DEBUG: Creating SecureFoodicsService instance")
+            foodics_service = SecureFoodicsService(db)
+            
+            logger.info("🔍 DEBUG: Getting branches from Foodics API")
+            branches = await foodics_service.get_branches()
+            
+            logger.info(f"🔍 DEBUG: Retrieved {len(branches)} branches")
+            for i, branch in enumerate(branches[:3]):  # Log first 3 branches
+                logger.info(f"🔍 DEBUG: Branch {i+1}: {branch.get('name', 'Unknown')} (ID: {branch.get('id', 'Unknown')})")
+            
+            return {"success": True, "branches": branches, "mode": "api", "total": len(branches)}
+            
+        except HTTPException as http_error:
+            logger.error(f"🔍 DEBUG: HTTP Exception: {http_error.detail}")
             return {
                 "success": False,
                 "branches": [],
-                "message": "No active API token found. Please configure Foodics first.",
+                "message": f"Foodics API error: {http_error.detail}",
                 "mode": "error"
             }
-        
-        logger.info("🔍 DEBUG: Calling get_branches() with token")
-        branches_result = await foodics_service.get_branches(token)
-        
-        if not branches_result.get("success"):
-            logger.error(f"🔍 DEBUG: Failed to get branches: {branches_result.get('error')}")
+        except Exception as service_error:
+            logger.error(f"🔍 DEBUG: Service Exception: {str(service_error)}")
+            logger.error(f"🔍 DEBUG: Service Exception type: {type(service_error).__name__}")
+            import traceback
+            logger.error(f"🔍 DEBUG: Service traceback: {traceback.format_exc()}")
             return {
                 "success": False,
                 "branches": [],
-                "message": f"Failed to fetch branches: {branches_result.get('error')}",
+                "message": f"Service error: {str(service_error)}",
                 "mode": "error"
             }
-        
-        branches = branches_result.get("branches", [])
-        logger.info(f"🔍 DEBUG: Retrieved {len(branches)} branches")
-        for i, branch in enumerate(branches[:3]):  # Log first 3 branches
-            logger.info(f"🔍 DEBUG: Branch {i+1}: {branch.get('name', 'Unknown')} (ID: {branch.get('id', 'Unknown')})")
-        
-        return {"success": True, "branches": branches, "mode": "api", "total": len(branches)}
         
     except Exception as e:
-        logger.error(f"❌ DEBUG: Error in get_foodics_branches: {str(e)}")
+        logger.error(f"❌ DEBUG: Fatal error in get_foodics_branches: {str(e)}")
         logger.error(f"❌ DEBUG: Exception type: {type(e).__name__}")
         import traceback
         logger.error(f"❌ DEBUG: Full traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Failed to get branches: {str(e)}")
+        return {
+            "success": False,
+            "branches": [],
+            "message": f"Fatal error: {str(e)}",
+            "mode": "error"
+        }
 
 # New Foodics product synchronization endpoints
 @app.get("/api/foodics/products/{branch_id}")

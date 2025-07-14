@@ -216,7 +216,7 @@ Click OK to proceed with approval.`;
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/purchase-orders/${poId}/approve`, {
+      const response = await fetch(`http://100.29.4.72:8000/api/purchase-orders/${poId}/approve`, {
         method: 'POST',
         headers: getAuthHeaders()
       });

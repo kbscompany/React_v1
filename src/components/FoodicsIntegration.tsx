@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import axios from 'axios'
+import { foodicsAPI } from '../services/api'
 
 interface Branch {
   id: string
@@ -62,7 +62,7 @@ function FoodicsIntegration() {
 
   const checkFoodicsStatus = async () => {
     try {
-      const response = await axios.get('/api/foodics/status')
+      const response = await foodicsAPI.getStatus()
       setFoodicsStatus(response.data)
     } catch (err: any) {
       console.error('Failed to check Foodics status:', err)
@@ -78,14 +78,7 @@ function FoodicsIntegration() {
 
     setLoading(true)
     try {
-      const formData = new FormData()
-      formData.append('api_token', apiToken)
-
-      const response = await axios.post('/api/foodics/configure', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      })
+      const response = await foodicsAPI.configure(apiToken)
 
       showMessage('Foodics API configured successfully!', 'success')
       await checkFoodicsStatus()
@@ -102,7 +95,7 @@ function FoodicsIntegration() {
   const testConnection = async () => {
     setLoading(true)
     try {
-      const response = await axios.post('/api/foodics/test-connection')
+      const response = await foodicsAPI.testConnection()
       showMessage(`Connection test successful: ${response.data.message}`, 'success')
     } catch (err: any) {
       console.error('Connection test failed:', err)
@@ -114,7 +107,7 @@ function FoodicsIntegration() {
 
   const loadBranches = async () => {
     try {
-      const response = await axios.get('/api/foodics/branches')
+      const response = await foodicsAPI.getBranches()
       if (response.data.success) {
         setBranches(response.data.branches || [])
       } else {
@@ -129,15 +122,7 @@ function FoodicsIntegration() {
   const configureBranch = async (branch: Branch) => {
     setLoading(true)
     try {
-      const formData = new FormData()
-      formData.append('branch_id', branch.id)
-      formData.append('branch_name', branch.name)
-
-      await axios.post('/api/foodics/configure-branch', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      })
+      await foodicsAPI.configureBranch(branch.id, branch.name)
 
       showMessage(`${branch.name} configured as default branch successfully!`, 'success')
       setSelectedBranch(branch)
@@ -153,9 +138,7 @@ function FoodicsIntegration() {
   const loadSalesData = async (branch: Branch) => {
     setLoading(true)
     try {
-      const response = await axios.get(
-        `/api/foodics/default-branch/sales?start_date=${startDate}&end_date=${endDate}`
-      )
+      const response = await foodicsAPI.getDefaultBranchSales(startDate, endDate)
       setSalesData(response.data)
     } catch (err: any) {
       console.error('Failed to load sales data:', err)
