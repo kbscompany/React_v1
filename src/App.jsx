@@ -36,6 +36,13 @@ function App() {
       const userData = response.data
       setUser(userData)
       
+      // Auto-load user's preferred language
+      if (userData.preferred_language) {
+        console.log('🌐 Loading user preferred language:', userData.preferred_language);
+        i18n.changeLanguage(userData.preferred_language);
+        localStorage.setItem('preferred_language', userData.preferred_language);
+      }
+      
       // Initialize role manager with user data
       roleManager.setUser(userData)
       console.log('Role manager initialized with user role:', userData.role || 'admin')

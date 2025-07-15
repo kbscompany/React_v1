@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -65,6 +66,7 @@ interface MidPrepStock {
 }
 
 const KitchenProduction: React.FC = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('pre-production');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -503,11 +505,11 @@ const KitchenProduction: React.FC = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <ChefHat className="h-8 w-8" />
-          Kitchen Production
-        </h1>
-        <p className="text-gray-600">Manage pre-production and final cake production</p>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <ChefHat className="h-8 w-8" />
+            {t('kitchen.title')}
+          </h1>
+          <p className="text-gray-600">{t('kitchen.subtitle')}</p>
       </div>
 
       {error && (
@@ -524,13 +526,13 @@ const KitchenProduction: React.FC = () => {
         </Alert>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="pre-production">🧪 Pre-Production</TabsTrigger>
-          <TabsTrigger value="mid-production">🥘 Mid-Production</TabsTrigger>
-          <TabsTrigger value="final-production">🎂 Final Production</TabsTrigger>
-          <TabsTrigger value="stock">📦 Stock Levels</TabsTrigger>
-          <TabsTrigger value="history">📋 Production History</TabsTrigger>
+          <TabsTrigger value="pre-production">{t('kitchen.tabs.preProduction')}</TabsTrigger>
+          <TabsTrigger value="mid-production">{t('kitchen.tabs.midProduction')}</TabsTrigger>
+          <TabsTrigger value="final-production">{t('kitchen.tabs.finalProduction')}</TabsTrigger>
+          <TabsTrigger value="stock">{t('kitchen.tabs.stockLevels')}</TabsTrigger>
+          <TabsTrigger value="history">{t('kitchen.tabs.productionHistory')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pre-production" className="mt-6">
@@ -538,10 +540,10 @@ const KitchenProduction: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Pre-Production
+                {t('pre_production_title')}
               </CardTitle>
               <CardDescription>
-                Select sub-recipes and quantities to produce. This will consume raw ingredients and create sub-recipe stock.
+                {t('pre_production_description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -549,7 +551,7 @@ const KitchenProduction: React.FC = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search sub-recipes..."
+                    placeholder={t('search_sub_recipes_placeholder')}
                     value={subRecipeSearch}
                     onChange={(e) => setSubRecipeSearch(e.target.value)}
                     className="pl-10"
@@ -558,7 +560,7 @@ const KitchenProduction: React.FC = () => {
                 
                 {filteredSubRecipes.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    {subRecipeSearch ? 'No sub-recipes found matching your search.' : 'No sub-recipes available.'}
+                    {subRecipeSearch ? t('no_sub_recipes_found_matching_search') : t('no_sub_recipes_available')}
                   </div>
                 ) : (
                   filteredSubRecipes.map(subRecipe => (
@@ -580,7 +582,7 @@ const KitchenProduction: React.FC = () => {
                     
                     {selectedSubRecipes[subRecipe.id] > 0 && previewIngredients[subRecipe.id] && Array.isArray(previewIngredients[subRecipe.id]) && (
                       <div className="mt-3 p-3 bg-gray-50 rounded">
-                        <h4 className="font-medium text-sm mb-2">Required ingredients:</h4>
+                        <h4 className="font-medium text-sm mb-2">{t('required_ingredients')}:</h4>
                         <div className="space-y-1">
                           {previewIngredients[subRecipe.id].map((ing, index) => {
                             const totalRequired = ing.required_quantity * selectedSubRecipes[subRecipe.id];
@@ -592,7 +594,7 @@ const KitchenProduction: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                   <span>{totalRequired.toFixed(2)} {ing.unit}</span>
                                   <Badge variant={hasEnough ? "default" : "destructive"}>
-                                    {ing.available_stock.toFixed(2)} available
+                                    {ing.available_stock.toFixed(2)} {t('available_stock')}
                                   </Badge>
                                 </div>
                               </div>
@@ -602,7 +604,7 @@ const KitchenProduction: React.FC = () => {
                         {!checkStockAvailability(previewIngredients[subRecipe.id], selectedSubRecipes[subRecipe.id]) && (
                           <div className="mt-2 text-red-600 text-sm flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
-                            Insufficient stock for some ingredients
+                            {t('insufficient_stock_for_some_ingredients')}
                           </div>
                         )}
                       </div>
@@ -617,7 +619,7 @@ const KitchenProduction: React.FC = () => {
                     disabled={loading || Object.values(selectedSubRecipes).every(q => (q as number) <= 0)}
                   >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Execute Pre-Production
+                    {t('execute_pre_production')}
                   </Button>
                 </div>
               </div>
@@ -630,10 +632,10 @@ const KitchenProduction: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Mid-Production
+                {t('mid_production_title')}
               </CardTitle>
               <CardDescription>
-                Select mid-prep recipes and quantities to produce. This will consume sub-recipes and ingredients to create mid-prep stock.
+                {t('mid_production_description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -641,7 +643,7 @@ const KitchenProduction: React.FC = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search mid-prep recipes..."
+                    placeholder={t('search_mid_prep_recipes_placeholder')}
                     value={midPrepSearch}
                     onChange={(e) => setMidPrepSearch(e.target.value)}
                     className="pl-10"
@@ -650,7 +652,7 @@ const KitchenProduction: React.FC = () => {
                 
                 {filteredMidPreps.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    {midPrepSearch ? 'No mid-prep recipes found matching your search.' : 'No mid-prep recipes available.'}
+                    {midPrepSearch ? t('no_mid_prep_recipes_found_matching_search') : t('no_mid_prep_recipes_available')}
                   </div>
                 ) : (
                   filteredMidPreps.map(midPrep => (
@@ -672,7 +674,7 @@ const KitchenProduction: React.FC = () => {
                     
                     {selectedMidPreps[midPrep.id] > 0 && previewMidPrepIngredients[midPrep.id] && Array.isArray(previewMidPrepIngredients[midPrep.id]) && (
                       <div className="mt-3 p-3 bg-gray-50 rounded">
-                        <h4 className="font-medium text-sm mb-2">Required items:</h4>
+                        <h4 className="font-medium text-sm mb-2">{t('required_items')}:</h4>
                         <div className="space-y-1">
                           {previewMidPrepIngredients[midPrep.id].map((item, index) => {
                             const totalRequired = item.required_quantity * selectedMidPreps[midPrep.id];
@@ -687,7 +689,7 @@ const KitchenProduction: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                   <span>{totalRequired.toFixed(2)} {item.unit}</span>
                                   <Badge variant={hasEnough ? "default" : "destructive"}>
-                                    {item.available_stock.toFixed(2)} available
+                                    {item.available_stock.toFixed(2)} {t('available_stock')}
                                   </Badge>
                                 </div>
                               </div>
@@ -697,7 +699,7 @@ const KitchenProduction: React.FC = () => {
                         {!checkCakeStockAvailability(previewMidPrepIngredients[midPrep.id], selectedMidPreps[midPrep.id]) && (
                           <div className="mt-2 text-red-600 text-sm flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
-                            Insufficient stock for some items
+                            {t('insufficient_stock_for_some_items')}
                           </div>
                         )}
                       </div>
@@ -712,7 +714,7 @@ const KitchenProduction: React.FC = () => {
                     disabled={loading || Object.values(selectedMidPreps).every(q => (q as number) <= 0)}
                   >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Execute Mid-Production
+                    {t('execute_mid_production')}
                   </Button>
                 </div>
               </div>
@@ -725,10 +727,10 @@ const KitchenProduction: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ChefHat className="h-5 w-5" />
-                Final Cake Production
+                {t('final_production_title')}
               </CardTitle>
               <CardDescription>
-                Select cakes and quantities to produce. This will consume ingredients and sub-recipes to create final products.
+                {t('final_production_description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -736,7 +738,7 @@ const KitchenProduction: React.FC = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search cakes..."
+                    placeholder={t('search_cakes_placeholder')}
                     value={cakeSearch}
                     onChange={(e) => setCakeSearch(e.target.value)}
                     className="pl-10"
@@ -745,7 +747,7 @@ const KitchenProduction: React.FC = () => {
                 
                 {filteredCakes.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    {cakeSearch ? 'No cakes found matching your search.' : 'No cakes available.'}
+                    {cakeSearch ? t('no_cakes_found_matching_search') : t('no_cakes_available')}
                   </div>
                 ) : (
                   filteredCakes.map(cake => (
@@ -767,7 +769,7 @@ const KitchenProduction: React.FC = () => {
                     
                     {selectedCakes[cake.id] > 0 && previewCakeIngredients[cake.id] && Array.isArray(previewCakeIngredients[cake.id]) && (
                       <div className="mt-3 p-3 bg-gray-50 rounded">
-                        <h4 className="font-medium text-sm mb-2">Required items:</h4>
+                        <h4 className="font-medium text-sm mb-2">{t('required_items')}:</h4>
                         <div className="space-y-1">
                           {previewCakeIngredients[cake.id].map((item, index) => {
                             const totalRequired = item.required_quantity * selectedCakes[cake.id];
@@ -782,7 +784,7 @@ const KitchenProduction: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                   <span>{totalRequired.toFixed(2)} {item.unit}</span>
                                   <Badge variant={hasEnough ? "default" : "destructive"}>
-                                    {item.available_stock.toFixed(2)} available
+                                    {item.available_stock.toFixed(2)} {t('available_stock')}
                                   </Badge>
                                 </div>
                               </div>
@@ -792,7 +794,7 @@ const KitchenProduction: React.FC = () => {
                         {!checkCakeStockAvailability(previewCakeIngredients[cake.id], selectedCakes[cake.id]) && (
                           <div className="mt-2 text-red-600 text-sm flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
-                            Insufficient stock for some items
+                            {t('insufficient_stock_for_some_items')}
                           </div>
                         )}
                       </div>
@@ -807,7 +809,7 @@ const KitchenProduction: React.FC = () => {
                     disabled={loading || Object.values(selectedCakes).every(q => (q as number) <= 0)}
                   >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Execute Final Production
+                    {t('execute_final_production')}
                   </Button>
                 </div>
               </div>
@@ -820,7 +822,7 @@ const KitchenProduction: React.FC = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search stock items..."
+                placeholder={t('search_stock_items_placeholder')}
                 value={stockSearch}
                 onChange={(e) => setStockSearch(e.target.value)}
                 className="pl-10"
@@ -831,10 +833,10 @@ const KitchenProduction: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Sub-Recipe Stock Levels
+                  {t('sub_recipe_stock_title')}
                 </CardTitle>
                 <CardDescription>
-                  Current stock levels of produced sub-recipes in Kitchen Storage
+                  {t('sub_recipe_stock_description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -847,7 +849,7 @@ const KitchenProduction: React.FC = () => {
                       </span>
                       <div className="flex items-center gap-2">
                         <Badge variant={stock.quantity > 0 ? "default" : "secondary"}>
-                          {stock.quantity.toFixed(2)} units
+                          {stock.quantity.toFixed(2)} {t('units')}
                         </Badge>
                         <span className="text-sm text-gray-500">{stock.warehouse_name}</span>
                       </div>
@@ -855,7 +857,7 @@ const KitchenProduction: React.FC = () => {
                   ))}
                   {filteredSubRecipeStock.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
-                      {stockSearch ? 'No sub-recipe stock found matching your search.' : 'No sub-recipe stock available'}
+                      {stockSearch ? t('no_sub_recipe_stock_found_matching_search') : t('no_sub_recipe_stock_available')}
                     </div>
                   )}
                 </div>
@@ -866,10 +868,10 @@ const KitchenProduction: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Mid-Prep Stock Levels
+                  {t('mid_prep_stock_title')}
                 </CardTitle>
                 <CardDescription>
-                  Current stock levels of produced mid-prep recipes in Kitchen Storage
+                  {t('mid_prep_stock_description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -882,7 +884,7 @@ const KitchenProduction: React.FC = () => {
                       </span>
                       <div className="flex items-center gap-2">
                         <Badge variant={stock.quantity > 0 ? "default" : "secondary"}>
-                          {stock.quantity.toFixed(2)} units
+                          {stock.quantity.toFixed(2)} {t('units')}
                         </Badge>
                         <span className="text-sm text-gray-500">{stock.warehouse_name}</span>
                       </div>
@@ -890,7 +892,7 @@ const KitchenProduction: React.FC = () => {
                   ))}
                   {filteredMidPrepStock.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
-                      {stockSearch ? 'No mid-prep stock found matching your search.' : 'No mid-prep stock available'}
+                      {stockSearch ? t('no_mid_prep_stock_found_matching_search') : t('no_mid_prep_stock_available')}
                     </div>
                   )}
                 </div>
@@ -904,10 +906,10 @@ const KitchenProduction: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Production History
+                {t('production_history_title')}
               </CardTitle>
               <CardDescription>
-                Recent production activities and batch records
+                {t('production_history_description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -915,7 +917,7 @@ const KitchenProduction: React.FC = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search production history..."
+                    placeholder={t('search_production_history_placeholder')}
                     value={historySearch}
                     onChange={(e) => setHistorySearch(e.target.value)}
                     className="pl-10"
@@ -937,7 +939,7 @@ const KitchenProduction: React.FC = () => {
                       <div>
                         <div className="font-medium">{record.item_name}</div>
                         <div className="text-sm text-gray-500">
-                          Quantity: {record.quantity} | By: {record.produced_by}
+                          {t('quantity')}: {record.quantity} | {t('produced_by')}: {record.produced_by}
                         </div>
                       </div>
                     </div>
@@ -948,7 +950,7 @@ const KitchenProduction: React.FC = () => {
                 ))}
                 {filteredProductionHistory.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    {historySearch ? 'No production history found matching your search.' : 'No production history available'}
+                    {historySearch ? t('no_production_history_found_matching_search') : t('no_production_history_available')}
                   </div>
                 )}
                 </div>

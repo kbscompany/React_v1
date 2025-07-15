@@ -236,6 +236,15 @@ async def get_user_roles(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching roles: {str(e)}")
 
+@router.get("/user-roles-simple")
+async def get_user_roles_simple(db: Session = Depends(get_db)):
+    """Get all available user roles - Simple version for frontend"""
+    try:
+        roles = db.query(models.UserRole).order_by(models.UserRole.id).all()
+        return [{"id": role.id, "name": role.name} for role in roles]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching roles: {str(e)}")
+
 @router.post("/users", response_model=schemas.UserResponse)
 async def create_user(
     user_data: schemas.UserCreate,
@@ -289,6 +298,138 @@ async def create_user(
 
 @router.put("/users/{user_id}", response_model=schemas.UserResponse)
 async def update_user(
+    user_id: int,
+    user_data: schemas.UserUpdate,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update user information including language preference"""
+    # Allow users to update their own language preference or admin to update any user
+    if current_user.id != user_id and current_user.role_id != 1:
+        raise HTTPException(status_code=403, detail="Access denied. You can only update your own profile.")
+    
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update fields that are provided
+        if user_data.username is not None:
+            # Check if username is already taken by another user
+            existing_user = db.query(models.User).filter(
+                models.User.username == user_data.username,
+                models.User.id != user_id
+            ).first()
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Username already exists")
+            user.username = user_data.username
+            
+        if user_data.password is not None:
+            from auth import get_password_hash
+            user.password_hash = get_password_hash(user_data.password)
+            
+        if user_data.role_id is not None:
+            # Only admin can change roles
+            if current_user.role_id != 1:
+                raise HTTPException(status_code=403, detail="Only administrators can change user roles")
+            user.role_id = user_data.role_id
+            
+        if user_data.is_active is not None:
+            # Only admin can change active status
+            if current_user.role_id != 1:
+                raise HTTPException(status_code=403, detail="Only administrators can change user status")
+            user.is_active = user_data.is_active
+            
+        if user_data.preferred_language is not None:
+            # Anyone can update their own language preference
+            if user_data.preferred_language in ['en', 'ar']:
+                user.preferred_language = user_data.preferred_language
+            else:
+                raise HTTPException(status_code=400, detail="Invalid language. Supported languages: en, ar")
+        
+        db.commit()
+        db.refresh(user)
+        
+        # Load user with role for response
+        user_with_role = db.query(models.User).options(
+            joinedload(models.User.role)
+        ).filter(models.User.id == user.id).first()
+        
+        return user_with_role
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating user: {str(e)}")
+
+@router.post("/roles/{role_name}/permissions")
+async def save_role_permissions(
+    role_name: str,
+    permissions: List[str],
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Save permissions for a specific role - Super Admin only"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        # For now, we'll store role permissions in a simple JSON file
+        # In a production system, you might want a dedicated permissions table
+        import json
+        import os
+        
+        permissions_file = "role_permissions.json"
+        
+        # Load existing permissions or create empty dict
+        if os.path.exists(permissions_file):
+            with open(permissions_file, 'r') as f:
+                role_permissions = json.load(f)
+        else:
+            role_permissions = {}
+        
+        # Update permissions for the role
+        role_permissions[role_name] = permissions
+        
+        # Save back to file
+        with open(permissions_file, 'w') as f:
+            json.dump(role_permissions, f, indent=2)
+        
+        return {"message": f"Permissions saved for role: {role_name}", "permissions_count": len(permissions)}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving permissions: {str(e)}")
+
+@router.get("/roles/{role_name}/permissions")
+async def get_role_permissions(
+    role_name: str,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get permissions for a specific role"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        import json
+        import os
+        
+        permissions_file = "role_permissions.json"
+        
+        if os.path.exists(permissions_file):
+            with open(permissions_file, 'r') as f:
+                role_permissions = json.load(f)
+            return role_permissions.get(role_name, [])
+        else:
+            # Return default permissions for the role
+            return []
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading permissions: {str(e)}")
+
+@router.put("/users/{user_id}/admin", response_model=schemas.UserResponse)
+async def admin_update_user(
     user_id: int,
     user_data: schemas.UserUpdate,
     current_user: models.User = Depends(get_current_active_user),

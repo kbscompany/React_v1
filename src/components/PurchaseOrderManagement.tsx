@@ -133,7 +133,7 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('/api/purchase-orders/suppliers', {
+      const response = await fetch('http://100.29.4.72:8000/api/purchase-orders/suppliers', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -148,7 +148,7 @@ const PurchaseOrderManagement: React.FC = () => {
   const fetchBankAccounts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/bank-accounts-simple', {
+      const response = await fetch('http://100.29.4.72:8000/bank-accounts-simple', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -170,7 +170,7 @@ const PurchaseOrderManagement: React.FC = () => {
 
   const fetchSafes = async () => {
     try {
-      const response = await fetch('/safes-simple', {
+      const response = await fetch('http://100.29.4.72:8000/safes-simple', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -202,7 +202,7 @@ Purchase Order Details:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 PO Number: #${po.id}
 🏢 Supplier: ${po.supplier_name}
-💰 Amount: $${(Number(po.total_amount) || 0).toFixed(2)} USD
+💰 Amount: ${(Number(po.total_amount) || 0).toFixed(2)} EGP
 📦 Items: ${po.item_count} item(s)
 📅 Created: ${new Date(po.created_at).toLocaleDateString()}
 ⚡ Priority: ${po.priority}
@@ -271,7 +271,7 @@ Click OK to proceed with approval.`;
 
     setSupplierCreating(true);
     try {
-      const response = await fetch('/api/purchase-orders/suppliers', {
+      const response = await fetch('http://100.29.4.72:8000/api/purchase-orders/suppliers', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -681,7 +681,7 @@ Click OK to proceed with approval.`;
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      ${(Number(po.total_amount) || 0).toFixed(2)} {po.supplier?.default_currency || 'USD'}
+                      ${(Number(po.total_amount) || 0).toFixed(2)} {po.supplier?.default_currency || 'EGP'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

@@ -146,18 +146,7 @@ function Login({ onLogin }) {
           </button>
         </form>
         
-        <div style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          background: '#f8f9fa',
-          borderRadius: '4px',
-          fontSize: '14px',
-          color: '#6c757d'
-        }}>
-          <strong>{t('auth.demoCredentials')}</strong><br />
-          {t('auth.demoUsername')}<br />
-          {t('auth.demoPassword')}
-        </div>
+
       </div>
     </div>
   )

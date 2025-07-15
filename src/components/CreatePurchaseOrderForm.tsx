@@ -248,7 +248,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
           name: searchItem.name,
           unit: `${package_.package_name} (${package_.quantity_per_package} ${searchItem.unit})`, // Show package info in unit
           price_per_unit: searchItem.price_per_unit || 0,
-          currency: selectedSupplier?.default_currency || 'USD',
+          currency: selectedSupplier?.default_currency || 'EGP',
           is_active: true
         },
         supplier_package: package_
@@ -268,7 +268,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
           name: searchItem.name,
           unit: searchItem.unit,
           price_per_unit: searchItem.price_per_unit || 0,
-          currency: selectedSupplier?.default_currency || 'USD',
+          currency: selectedSupplier?.default_currency || 'EGP',
           is_active: true
         }
       };
@@ -432,7 +432,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
             name: detail.name,
             unit: detail.unit,
             price_per_unit: unitPrice,
-            currency: selectedSupplier?.default_currency || 'USD',
+            currency: selectedSupplier?.default_currency || 'EGP',
             is_active: true
           }
         } as PurchaseOrderItem;
@@ -521,7 +521,7 @@ const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = ({
                     <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search suppliers by name, phone, or email..."
+                      placeholder={t('purchaseOrders.create.step1.searchSuppliers', 'Search suppliers by name, phone, or email...')}
                       value={showSupplierDropdown ? supplierSearchTerm : (selectedSupplier?.name || '')}
                       onChange={(e) => {
                         setSupplierSearchTerm(e.target.value);

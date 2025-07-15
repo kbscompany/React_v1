@@ -8,6 +8,7 @@ from models import UserRole
 class UserBase(BaseModel):
     username: str
     role_id: Optional[int] = 3  # Default to Staff
+    preferred_language: Optional[str] = 'en'
 
 class UserCreate(UserBase):
     password: str
@@ -18,6 +19,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role_id: Optional[int] = None
     is_active: Optional[bool] = None
+    preferred_language: Optional[str] = None
 
 class UserRoleResponse(BaseModel):
     id: int
@@ -31,6 +33,7 @@ class UserResponse(UserBase):
     username: str
     role_id: int
     is_active: bool
+    preferred_language: str
     created_at: datetime
     role: Optional[UserRoleResponse] = None
     

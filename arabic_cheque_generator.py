@@ -8,7 +8,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import Response
 from pydantic import BaseModel, validator
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Union, List, Any
 import arabic_reshaper
 from bidi.algorithm import get_display
 from num2words import num2words
@@ -76,26 +76,22 @@ except ImportError:
     print("Warning: PyPDF2 not installed. Company table with template preview may not work correctly.")
 
 
-class ChequePrintPayload(BaseModel):
-    # Frontend sends browser coordinates - we'll convert to PDF coordinates internally
-    field_positions: Dict[str, Dict[str, float]]
-    field_visibility: Dict[str, bool]
-    font_language: str = "ar"
-    debug_mode: bool = False
-    font_size: int = 16
+def normalize_position_format(position):
+    """
+    Convert any position format to consistent {x: float, y: float} format.
     
-    @validator('font_size')
-    def validate_font_size(cls, v):
-        """Clamp font size to reasonable range"""
-        return max(8, min(36, v))
-    
-    @validator('field_positions')
-    def validate_field_positions(cls, v):
-        """Ensure positions have valid x,y coordinates"""
-        for field_name, pos in v.items():
-            if not isinstance(pos, dict) or 'x' not in pos or 'y' not in pos:
-                raise ValueError(f"Invalid position format for field {field_name}")
-        return v
+    Args:
+        position: Either [x, y] array or {x: float, y: float} object
+        
+    Returns:
+        Dictionary with {x: float, y: float} format
+    """
+    if isinstance(position, list) and len(position) >= 2:
+        return {"x": float(position[0]), "y": float(position[1])}
+    elif isinstance(position, dict) and "x" in position and "y" in position:
+        return {"x": float(position["x"]), "y": float(position["y"])}
+    else:
+        raise ValueError(f"Invalid position format: {position}")
 
 
 def browser_to_pdf_coordinates(browser_x: float, browser_y: float) -> Tuple[float, float]:
@@ -118,22 +114,51 @@ def browser_to_pdf_coordinates(browser_x: float, browser_y: float) -> Tuple[floa
     return (pdf_x, pdf_y)
 
 
-def convert_browser_positions_to_pdf(browser_positions: Dict[str, Dict[str, float]]) -> Dict[str, Tuple[float, float]]:
+def convert_browser_positions_to_pdf(browser_positions: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
     """
     Convert browser coordinate positions to PDF coordinate tuples.
+    Handles both array [x,y] and object {x:float, y:float} formats.
     
     Args:
-        browser_positions: Dictionary with format {"field": {"x": value, "y": value}}
+        browser_positions: Dictionary with either format
         
     Returns:
         Dictionary with format {"field": (pdf_x, pdf_y)}
     """
     result = {}
     for field_key, pos in browser_positions.items():
-        if isinstance(pos, dict) and 'x' in pos and 'y' in pos:
-            pdf_x, pdf_y = browser_to_pdf_coordinates(pos['x'], pos['y'])
+        try:
+            normalized_pos = normalize_position_format(pos)
+            pdf_x, pdf_y = browser_to_pdf_coordinates(normalized_pos['x'], normalized_pos['y'])
             result[field_key] = (pdf_x, pdf_y)
+        except ValueError as e:
+            print(f"Warning: Skipping invalid position for {field_key}: {e}")
+            continue
     return result
+
+
+class ChequePrintPayload(BaseModel):
+    # Frontend sends browser coordinates - we'll convert to PDF coordinates internally
+    field_positions: Dict[str, Any]  # Allow both array and object formats
+    field_visibility: Dict[str, bool]
+    font_language: str = "ar"
+    debug_mode: bool = False
+    font_size: int = 16
+    
+    @validator('font_size')
+    def validate_font_size(cls, v):
+        """Clamp font size to reasonable range"""
+        return max(8, min(36, v))
+    
+    @validator('field_positions')
+    def validate_field_positions(cls, v):
+        """Ensure positions have valid coordinates in either format"""
+        for field_name, pos in v.items():
+            try:
+                normalize_position_format(pos)
+            except ValueError:
+                raise ValueError(f"Invalid position format for field {field_name}. Expected [x, y] or {{x: number, y: number}}")
+        return v
 
 
 class ArabicChequeGenerator:
@@ -489,26 +514,58 @@ def print_arabic_cheque(id: int, payload: ChequePrintPayload):
 
 @router.get("/cheque-field-positions")
 def get_field_positions():
-    """Get field positions - returns browser coordinates"""
+    """Get field positions - returns browser coordinates in consistent object format"""
     if not os.path.exists("storage/cheque_field_positions.json"):
         raise HTTPException(status_code=404, detail="Field positions not found")
     
     with open("storage/cheque_field_positions.json") as f:
         saved_positions = json.load(f)
     
-    # Return positions in browser coordinate format
-    return saved_positions
+    # Normalize all positions to consistent {x: float, y: float} format
+    normalized_positions = {}
+    for field_name, position in saved_positions.items():
+        try:
+            normalized_positions[field_name] = normalize_position_format(position)
+        except ValueError:
+            print(f"Warning: Skipping invalid position for {field_name}: {position}")
+            continue
+    
+    return normalized_positions
 
 
 @router.post("/cheque-field-positions")
-def save_field_positions(data: Dict[str, Dict[str, float]]):
-    """Save field positions - expects browser coordinates"""
+def save_field_positions(data: Dict[str, Any]):
+    """Save field positions - accepts browser coordinates in any valid format"""
     os.makedirs("storage", exist_ok=True)
     
-    # Save browser coordinates directly (no conversion needed)
+    # Normalize all positions to consistent {x: float, y: float} format
+    normalized_data = {}
+    for field_name, position in data.items():
+        try:
+            normalized_data[field_name] = normalize_position_format(position)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Invalid position format for field {field_name}. Expected [x, y] or {{x: number, y: number}}")
+    
+    # Save browser coordinates in normalized object format
     with open("storage/cheque_field_positions.json", "w") as f:
-        json.dump(data, f)
+        json.dump(normalized_data, f)
     return {"message": "Saved successfully"}
+
+
+@router.post("/cheque-field-positions/reset")
+def reset_field_positions():
+    """Reset field positions to default values in correct format"""
+    os.makedirs("storage", exist_ok=True)
+    
+    # Use default positions from ArabicChequeGenerator
+    generator = ArabicChequeGenerator()
+    default_positions = generator.DEFAULT_BROWSER_POSITIONS.copy()
+    
+    # Save in normalized object format
+    with open("storage/cheque_field_positions.json", "w") as f:
+        json.dump(default_positions, f, indent=2)
+    
+    return {"message": "Field positions reset to defaults", "positions": default_positions}
 
 
 @router.post("/upload-cheque-template")
@@ -773,14 +830,21 @@ def generate_arabic_cheque(cheque_data: Dict) -> bytes:
         if os.path.exists("storage/cheque_field_positions.json"):
             with open("storage/cheque_field_positions.json") as f:
                 saved_positions = json.load(f)
-                browser_positions = saved_positions
+                # Normalize all positions to consistent format
+                normalized_positions = {}
+                for field_key, pos in saved_positions.items():
+                    try:
+                        normalized_positions[field_key] = normalize_position_format(pos)
+                    except ValueError:
+                        print(f"Warning: Skipping invalid position for {field_key}: {pos}")
+                        continue
+                browser_positions.update(normalized_positions)
                 
                 if debug_mode:
                     print("=== LEGACY WRAPPER COORDINATE DEBUG ===")
                     for field_key, pos in browser_positions.items():
-                        if isinstance(pos, dict) and 'x' in pos and 'y' in pos:
-                            pdf_x, pdf_y = browser_to_pdf_coordinates(pos['x'], pos['y'])
-                            print(f"Field '{field_key}': Browser({pos['x']:.1f}, {pos['y']:.1f}) -> PDF({pdf_x:.1f}, {pdf_y:.1f})")
+                        pdf_x, pdf_y = browser_to_pdf_coordinates(pos['x'], pos['y'])
+                        print(f"Field '{field_key}': Browser({pos['x']:.1f}, {pos['y']:.1f}) -> PDF({pdf_x:.1f}, {pdf_y:.1f})")
     except Exception as e:
         print(f"Warning: Could not load saved positions: {e}")
 
@@ -831,5 +895,5 @@ def generate_arabic_cheque(cheque_data: Dict) -> bytes:
         pdf_field_positions=pdf_field_positions,
         field_visibility=field_visibility,
         debug_mode=debug_mode,
-        font_size=font_size
-    )
+                  font_size=font_size
+      )

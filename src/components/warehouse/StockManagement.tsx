@@ -38,6 +38,7 @@ interface StockManagementProps {
 }
 
 const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotification }) => {
+  const { t } = useTranslation();
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('');
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<StockItem[]>([]);
@@ -66,7 +67,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
     try {
       console.log('Loading stock for warehouse:', selectedWarehouse);
       const response = await fetch(`http://100.29.4.72:8000/api/warehouse/warehouses/${selectedWarehouse}/stock`);
-      if (!response.ok) throw new Error('Failed to load stock items');
+      if (!response.ok) throw new Error(t('warehouse.stock.loadingItems'));
       const data = await response.json();
       console.log('Raw stock data:', data);
       
@@ -76,9 +77,9 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
         .map((item: any) => ({
           ingredient_id: item.ingredient_id,
           ingredient_name: item.ingredient_name.trim(),
-          unit: item.unit || 'units',
+          unit: item.unit || t('createTransferOrder.units'),
           quantity: item.quantity || 0,
-          category_name: item.category_name || 'Uncategorized',
+          category_name: item.category_name || t('notifications.noItemsFound'),
           minimum_stock: item.minimum_stock || 10,
           maximum_stock: item.maximum_stock || 100,
           package_size: item.package_size || 1
@@ -89,13 +90,13 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
       setStockUpdates({});
       
       if (validItems.length === 0) {
-        onNotification('info', 'No stock items found for this warehouse');
+        onNotification('info', t('warehouse.stock.noItemsFound'));
       } else {
-        onNotification('success', `Loaded ${validItems.length} stock items`);
+        onNotification('success', `${t('notifications.loadingData')} ${validItems.length} ${t('warehouse.stock.loadingItems')}`);
       }
     } catch (error) {
       console.error('Error loading stock items:', error);
-      onNotification('error', 'Failed to load stock items');
+      onNotification('error', t('warehouse.stock.noItemsFound'));
       setStockItems([]);
     } finally {
       setLoading(false);
@@ -152,44 +153,44 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
 
   const addPackage = (item: StockItem) => {
     if (item.package_size <= 0) {
-      onNotification('error', 'Package size not defined for this item');
+      onNotification('error', t('warehouse.stock.packageSizeNotDefined'));
       return;
     }
     
     const currentUpdate = stockUpdates[item.ingredient_id];
     const newQuantity = currentUpdate ? currentUpdate.quantity + item.package_size : item.package_size;
     
-    updateStockItem(item.ingredient_id, 'add', newQuantity, 'Added package');
+    updateStockItem(item.ingredient_id, 'add', newQuantity, t('warehouse.stock.addedPackage'));
   };
 
   const subtractPackage = (item: StockItem) => {
     if (item.package_size <= 0) {
-      onNotification('error', 'Package size not defined for this item');
+      onNotification('error', t('warehouse.stock.packageSizeNotDefined'));
       return;
     }
     
     const currentUpdate = stockUpdates[item.ingredient_id];
     const newQuantity = Math.max(0, currentUpdate ? currentUpdate.quantity - item.package_size : item.package_size);
     
-    updateStockItem(item.ingredient_id, 'subtract', newQuantity, 'Removed package');
+    updateStockItem(item.ingredient_id, 'subtract', newQuantity, t('warehouse.stock.removedPackage'));
   };
 
   const handleManualUpdate = (ingredientId: number, value: string) => {
     const quantity = parseFloat(value) || 0;
-    updateStockItem(ingredientId, 'set', quantity, 'Manual update');
+    updateStockItem(ingredientId, 'set', quantity, t('warehouse.stock.manualUpdateReason'));
   };
 
   const applyStockUpdates = async () => {
     const updates = Object.values(stockUpdates);
     if (updates.length === 0) {
-      onNotification('error', 'No stock updates to apply');
+      onNotification('error', t('warehouse.stock.noStockUpdates'));
       return;
     }
 
     // Validate all updates have reasons
     const missingReasons = updates.filter(update => !update.reason.trim());
     if (missingReasons.length > 0) {
-      onNotification('error', 'Please provide reasons for all stock updates');
+      onNotification('error', t('warehouse.stock.provideReasons'));
       return;
     }
 
@@ -247,13 +248,13 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                 const errorMessages = errorData.detail.map((err: any) => 
                   `${err.loc?.join(' -> ') || 'Field'}: ${err.msg}`
                 ).join(', ');
-                throw new Error(`Validation error: ${errorMessages}`);
+                throw new Error(`${t('warehouse.categories.validationError')}: ${errorMessages}`);
               } else {
-                throw new Error(`Validation error: ${errorData.detail}`);
+                throw new Error(`${t('warehouse.categories.validationError')}: ${errorData.detail}`);
               }
             }
             
-            throw new Error(errorData.detail || errorData.message || 'Failed to update stock');
+            throw new Error(errorData.detail || errorData.message || t('warehouse.stock.noStockUpdates'));
           }
 
           successCount++;
@@ -262,17 +263,17 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
           errorCount++;
           const updateItem = update as StockUpdateItem;
           const itemName = stockItems.find(item => item.ingredient_id === updateItem.ingredient_id)?.ingredient_name || `Item ${updateItem.ingredient_id}`;
-          errors.push(`${itemName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(`${itemName}: ${error instanceof Error ? error.message : t('kitchenProduction.productionCommon.errorLoading')}`);
         }
       }
 
       // Show results
       if (successCount > 0 && errorCount === 0) {
-        onNotification('success', `Successfully updated ${successCount} items`);
+        onNotification('success', `${t('warehouse.stock.updatedItems')} ${successCount} ${t('common.items')}`);
       } else if (successCount > 0 && errorCount > 0) {
-        onNotification('info', `Updated ${successCount} items, ${errorCount} failed. Errors: ${errors.join('; ')}`);
+        onNotification('info', `${t('warehouse.stock.updatedItems')} ${successCount} ${t('common.items')}, ${errorCount} ${t('warehouse.stock.failedItems')}. ${t('notifications.error')}: ${errors.join('; ')}`);
       } else {
-        onNotification('error', `All updates failed. Errors: ${errors.join('; ')}`);
+        onNotification('error', `${t('warehouse.stock.allUpdatesFailed')}. ${t('notifications.error')}: ${errors.join('; ')}`);
       }
       
       // Reload stock items and clear updates
@@ -281,7 +282,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
       
     } catch (error) {
       console.error('Error updating stock:', error);
-      onNotification('error', error instanceof Error ? error.message : 'Failed to update stock');
+      onNotification('error', error instanceof Error ? error.message : t('warehouse.stock.noStockUpdates'));
     } finally {
       setLoading(false);
     }
@@ -289,7 +290,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
 
   const exportToExcel = () => {
     const csvContent = [
-      ['Ingredient', 'Category', 'Current Stock', 'Unit', 'Minimum', 'Maximum', 'Package Size'],
+      [t('kitchenProduction.productionCommon.ingredient'), t('warehouse.stock.category'), t('warehouse.stock.current') + ' ' + t('warehouse.stock.title'), t('kitchenProduction.productionCommon.unit'), t('warehouse.stock.min'), t('warehouse.stock.max'), t('warehouse.stock.package')],
       ...filteredItems.map(item => [
         item.ingredient_name,
         item.category_name,
@@ -309,7 +310,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
     link.click();
     URL.revokeObjectURL(url);
     
-    onNotification('success', 'Stock data exported successfully');
+    onNotification('success', t('warehouse.stock.exportSuccess'));
   };
 
   const getStockStatusColor = (item: StockItem) => {
@@ -320,10 +321,10 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
   };
 
   const getStockStatusBadge = (item: StockItem) => {
-    if (item.quantity === 0) return <Badge variant="destructive">Empty</Badge>;
-    if (item.quantity <= item.minimum_stock) return <Badge variant="destructive">Low</Badge>;
-    if (item.quantity > item.maximum_stock) return <Badge variant="secondary">High</Badge>;
-    return <Badge variant="default">Normal</Badge>;
+    if (item.quantity === 0) return <Badge variant="destructive">{t('warehouse.stock.badgeEmpty')}</Badge>;
+    if (item.quantity <= item.minimum_stock) return <Badge variant="destructive">{t('warehouse.stock.badgeLow')}</Badge>;
+    if (item.quantity > item.maximum_stock) return <Badge variant="secondary">{t('warehouse.stock.badgeHigh')}</Badge>;
+    return <Badge variant="default">{t('warehouse.stock.badgeNormal')}</Badge>;
   };
 
   const pendingUpdatesCount = Object.keys(stockUpdates).length;
@@ -332,10 +333,10 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
     <div className="space-y-6">
       {/* Warehouse Selection */}
       <div className="space-y-2">
-        <Label htmlFor="warehouse-select">Select Warehouse</Label>
+        <Label htmlFor="warehouse-select">{t('warehouse.stock.selectWarehouse')}</Label>
         <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select warehouse" />
+            <SelectValue placeholder={t('warehouse.stock.selectWarehouse')} />
           </SelectTrigger>
           <SelectContent>
             {warehouses.map(warehouse => (
@@ -354,7 +355,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
           {/* Filters and Actions */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Stock Management</h3>
+              <h3 className="text-lg font-medium">{t('warehouse.stock.title')}</h3>
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
@@ -362,11 +363,11 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                   className="flex items-center space-x-2"
                 >
                   <Download className="h-4 w-4" />
-                  <span>Export</span>
+                  <span>{t('warehouse.stock.export')}</span>
                 </Button>
                 {pendingUpdatesCount > 0 && (
                   <Badge variant="outline">
-                    {pendingUpdatesCount} pending updates
+                    {pendingUpdatesCount} {t('warehouse.stock.pendingUpdates')}
                   </Badge>
                 )}
               </div>
@@ -375,22 +376,22 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
             {/* Filters */}
             <div className="grid grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label>Search</Label>
+                <Label>{t('common.search')}</Label>
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search ingredients..."
+                  placeholder={t('warehouse.stock.search')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>{t('warehouse.stock.category')}</Label>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All categories" />
+                    <SelectValue placeholder={t('warehouse.stock.allCategories')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
+                    <SelectItem value="all">{t('warehouse.stock.allCategories')}</SelectItem>
                     {categories.map(category => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -401,27 +402,27 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
               </div>
 
               <div className="space-y-2">
-                <Label>Stock Level</Label>
+                <Label>{t('warehouse.stock.stockLevel')}</Label>
                 <Select value={stockFilter} onValueChange={setStockFilter}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All items</SelectItem>
-                    <SelectItem value="empty">Empty</SelectItem>
-                    <SelectItem value="low">Low stock</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High stock</SelectItem>
+                    <SelectItem value="all">{t('warehouse.stock.allItems')}</SelectItem>
+                    <SelectItem value="empty">{t('warehouse.stock.empty')}</SelectItem>
+                    <SelectItem value="low">{t('warehouse.stock.low')}</SelectItem>
+                    <SelectItem value="normal">{t('warehouse.stock.normal')}</SelectItem>
+                    <SelectItem value="high">{t('warehouse.stock.high')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Bulk Reason</Label>
+                <Label>{t('warehouse.stock.bulkReason')}</Label>
                 <Input
                   value={bulkReason}
                   onChange={(e) => setBulkReason(e.target.value)}
-                  placeholder="Default reason for updates"
+                  placeholder={t('warehouse.stock.defaultReason')}
                 />
               </div>
             </div>
@@ -432,9 +433,9 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-blue-900">Pending Stock Updates</h4>
+                      <h4 className="font-medium text-blue-900">{t('warehouse.stock.pendingUpdates')}</h4>
                       <p className="text-sm text-blue-700">
-                        {pendingUpdatesCount} items ready to be updated
+                        {pendingUpdatesCount} {t('warehouse.stock.readyToUpdate')}
                       </p>
                     </div>
                     <div className="flex space-x-2">
@@ -442,7 +443,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                         variant="outline"
                         onClick={() => setStockUpdates({})}
                       >
-                        Clear All
+                        {t('warehouse.stock.clearAll')}
                       </Button>
                       <Button
                         onClick={applyStockUpdates}
@@ -450,7 +451,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                         className="flex items-center space-x-2"
                       >
                         <Save className="h-4 w-4" />
-                        <span>{loading ? 'Applying...' : 'Apply Updates'}</span>
+                        <span>{loading ? t('warehouse.stock.applying') : t('warehouse.stock.applyUpdates')}</span>
                       </Button>
                     </div>
                   </div>
@@ -466,7 +467,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                 <CardContent className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-500">Loading stock items...</p>
+                    <p className="text-gray-500">{t('warehouse.stock.loadingItems')}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -475,9 +476,9 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                 <CardContent className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500">No items found</p>
+                    <p className="text-gray-500">{t('warehouse.stock.noItemsFound')}</p>
                     <p className="text-sm text-gray-400 mt-2">
-                      {stockItems.length === 0 ? 'This warehouse has no stock items' : 'Try adjusting your filters'}
+                      {stockItems.length === 0 ? t('warehouse.stock.thisWarehouseEmpty') : t('warehouse.stock.adjustFilters')}
                     </p>
                   </div>
                 </CardContent>
@@ -498,17 +499,17 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                               {getStockStatusBadge(item)}
                               {hasUpdate && (
                                 <Badge variant="outline" className="bg-yellow-100">
-                                  Pending Update
+                                  {t('warehouse.stock.pendingUpdate')}
                                 </Badge>
                               )}
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
-                              <span className="font-medium">Category:</span> {item.category_name} | 
-                              <span className="font-medium ml-2">Unit:</span> {item.unit} |
-                              <span className="font-medium ml-2">Min:</span> {item.minimum_stock} |
-                              <span className="font-medium ml-2">Max:</span> {item.maximum_stock}
+                              <span className="font-medium">{t('warehouse.stock.category')}:</span> {item.category_name} | 
+                              <span className="font-medium ml-2">{t('kitchenProduction.productionCommon.unit')}:</span> {item.unit} |
+                              <span className="font-medium ml-2">{t('warehouse.stock.min')}:</span> {item.minimum_stock} |
+                              <span className="font-medium ml-2">{t('warehouse.stock.max')}:</span> {item.maximum_stock}
                               {item.package_size > 0 && (
-                                <> | <span className="font-medium">Package:</span> {item.package_size}</>
+                                <> | <span className="font-medium">{t('warehouse.stock.package')}:</span> {item.package_size}</>
                               )}
                             </div>
                           </div>
@@ -516,7 +517,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                           <div className="flex items-center space-x-4">
                             {/* Current Stock */}
                             <div className="text-center">
-                              <div className="text-sm text-gray-500">Current</div>
+                              <div className="text-sm text-gray-500">{t('warehouse.stock.current')}</div>
                               <div className={`font-bold ${getStockStatusColor(item)}`}>
                                 {item.quantity}
                               </div>
@@ -551,7 +552,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                                 type="number"
                                 value={pendingUpdate?.quantity || ''}
                                 onChange={(e) => handleManualUpdate(item.ingredient_id, e.target.value)}
-                                placeholder="New quantity"
+                                placeholder={t('warehouse.stock.newQuantity')}
                                 className="w-24"
                                 min="0"
                                 step="0.1"
@@ -569,7 +570,7 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                                   setStockUpdates(rest);
                                 }}
                               >
-                                Clear
+                                {t('warehouse.stock.clear')}
                               </Button>
                             )}
                           </div>
@@ -580,8 +581,8 @@ const StockManagement: React.FC<StockManagementProps> = ({ warehouses, onNotific
                           <div className="mt-3 p-2 bg-yellow-100 rounded text-sm">
                             <div className="flex items-center justify-between">
                               <div>
-                                <span className="font-medium">Pending:</span> {pendingUpdate.operation} {pendingUpdate.quantity} {item.unit}
-                                {pendingUpdate.reason && <> | <span className="font-medium">Reason:</span> {pendingUpdate.reason}</>}
+                                <span className="font-medium">{t('warehouse.stock.pendingUpdate')}:</span> {pendingUpdate.operation} {pendingUpdate.quantity} {item.unit}
+                                {pendingUpdate.reason && <> | <span className="font-medium">{t('common.notes')}:</span> {pendingUpdate.reason}</>}
                               </div>
                             </div>
                           </div>

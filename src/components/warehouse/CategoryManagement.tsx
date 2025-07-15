@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -27,6 +28,7 @@ interface CategoryManagementProps {
 }
 
 const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification }) => {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -44,12 +46,12 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
     setLoading(true);
     try {
       const response = await fetch('http://100.29.4.72:8000/api/warehouse/categories');
-      if (!response.ok) throw new Error('Failed to load categories');
+      if (!response.ok) throw new Error(t('warehouse.categories.loadFailed'));
       const data = await response.json();
       setCategories(data);
     } catch (error) {
       console.error('Error loading categories:', error);
-      onNotification('error', 'Failed to load categories');
+      onNotification('error', t('warehouse.categories.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      onNotification('error', 'Category name is required');
+      onNotification('error', t('warehouse.categories.nameRequired'));
       return;
     }
 
@@ -110,11 +112,11 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || `Failed to ${editingCategory ? 'update' : 'create'} category`);
+        throw new Error(errorData.detail || t('warehouse.categories.validationError'));
       }
 
       const result = await response.json();
-      onNotification('success', result.message);
+      onNotification('success', result.message || (editingCategory ? t('warehouse.categories.updateSuccess') : t('warehouse.categories.createSuccess')));
       
       // Reload categories and close dialog
       await loadCategories();
@@ -122,7 +124,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
       
     } catch (error) {
       console.error('Error saving category:', error);
-      onNotification('error', error instanceof Error ? error.message : 'Failed to save category');
+      onNotification('error', error instanceof Error ? error.message : (editingCategory ? t('warehouse.categories.updateFailed') : t('warehouse.categories.createFailed')));
     } finally {
       setLoading(false);
     }
@@ -130,7 +132,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
 
   const deleteCategory = async (category: Category) => {
     if ((category.ingredient_count || 0) > 0) {
-      onNotification('error', 'Cannot delete category with existing ingredients');
+      onNotification('error', t('warehouse.categories.cannotDelete'));
       return;
     }
 
@@ -142,18 +144,18 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to delete category');
+        throw new Error(errorData.detail || t('warehouse.categories.deleteFailed'));
       }
 
       const result = await response.json();
-      onNotification('success', result.message);
+      onNotification('success', result.message || t('warehouse.categories.deleteSuccess'));
       
       // Reload categories
       await loadCategories();
       
     } catch (error) {
       console.error('Error deleting category:', error);
-      onNotification('error', error instanceof Error ? error.message : 'Failed to delete category');
+      onNotification('error', error instanceof Error ? error.message : t('warehouse.categories.deleteFailed'));
     } finally {
       setLoading(false);
     }
@@ -164,9 +166,9 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium">Category Management</h3>
+          <h3 className="text-lg font-medium">{t('warehouse.categories.title')}</h3>
           <p className="text-sm text-gray-600">
-            Manage inventory categories for better organization
+            {t('warehouse.categories.description')}
           </p>
         </div>
         
@@ -174,48 +176,48 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
           <DialogTrigger asChild>
             <Button onClick={() => openDialog()}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Category
+              {t('warehouse.categories.addCategory')}
             </Button>
           </DialogTrigger>
           
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingCategory ? 'Edit Category' : 'Add New Category'}
+                {editingCategory ? t('warehouse.categories.editCategory') : t('warehouse.categories.addNewCategory')}
               </DialogTitle>
               <DialogDescription>
-                {editingCategory ? 'Update the category information below' : 'Create a new category for organizing inventory items'}
+                {editingCategory ? t('warehouse.categories.updateCategory') : t('warehouse.categories.createCategory')}
               </DialogDescription>
             </DialogHeader>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="category-name">Category Name *</Label>
+                <Label htmlFor="category-name">{t('warehouse.categories.categoryName')} *</Label>
                 <Input
                   id="category-name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter category name"
+                  placeholder={t('warehouse.categories.categoryName')}
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="category-description">Description</Label>
+                <Label htmlFor="category-description">{t('warehouse.categories.categoryDescription')}</Label>
                 <Input
                   id="category-description"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter category description (optional)"
+                  placeholder={t('warehouse.categories.categoryDescriptionPlaceholder')}
                 />
               </div>
               
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={closeDialog}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'Saving...' : (editingCategory ? 'Update' : 'Create')}
+                  {loading ? t('warehouse.categories.saving') : (editingCategory ? t('common.update') : t('common.create'))}
                 </Button>
               </div>
             </form>
@@ -232,13 +234,13 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
             <CardContent className="flex items-center justify-center py-8">
               <div className="text-center">
                 <Tag className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">No categories found</p>
+                <p className="text-gray-500">{t('notifications.noItemsFound')}</p>
                 <Button 
                   variant="outline" 
                   className="mt-4"
                   onClick={() => openDialog()}
                 >
-                  Create First Category
+                  {t('warehouse.categories.createFirstCategory')}
                 </Button>
               </div>
             </CardContent>
@@ -254,7 +256,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
                         <Tag className="h-5 w-5 text-blue-600" />
                         <h4 className="font-medium text-lg">{category.name}</h4>
                         <Badge variant="outline">
-                          {category.ingredient_count || 0} ingredients
+                          {category.ingredient_count || 0} {t('warehouse.categories.ingredients')}
                         </Badge>
                       </div>
                       
@@ -263,7 +265,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
                       )}
                       
                       <div className="text-sm text-gray-500 mt-2">
-                        Created: {new Date(category.created_at).toLocaleDateString()}
+                        {t('warehouse.categories.created')}: {new Date(category.created_at).toLocaleDateString()}
                       </div>
                     </div>
 
@@ -289,16 +291,15 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
                         
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                            <AlertDialogTitle>{t('warehouse.categories.deleteCategory')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete the category "{category.name}"? 
-                              This action cannot be undone.
+                              {t('warehouse.categories.deleteConfirm')}
                               {(category.ingredient_count || 0) > 0 && (
                                 <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
                                   <div className="flex items-center space-x-2 text-red-800">
                                     <Package className="h-4 w-4" />
                                     <span className="font-medium">
-                                      Cannot delete: {category.ingredient_count || 0} ingredients are using this category
+                                      {t('warehouse.categories.cannotDelete')}: {category.ingredient_count || 0} {t('warehouse.categories.ingredients')}
                                     </span>
                                   </div>
                                 </div>
@@ -307,13 +308,13 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
                           </AlertDialogHeader>
                           
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => deleteCategory(category)}
                               disabled={(category.ingredient_count || 0) > 0}
                               className="bg-red-600 hover:bg-red-700"
                             >
-                              Delete
+                              {t('common.delete')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -333,7 +334,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
           <Separator />
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Category Statistics</CardTitle>
+              <CardTitle className="text-lg">{t('warehouse.stock.categoryStats')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -341,28 +342,28 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ onNotification 
                   <div className="text-2xl font-bold text-blue-600">
                     {categories.length}
                   </div>
-                  <div className="text-sm text-gray-600">Total Categories</div>
+                  <div className="text-sm text-gray-600">{t('warehouse.stock.totalCategories')}</div>
                 </div>
                 
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
                     {categories.reduce((sum, cat) => sum + (cat.ingredient_count || 0), 0)}
                   </div>
-                  <div className="text-sm text-gray-600">Total Ingredients</div>
+                  <div className="text-sm text-gray-600">{t('warehouse.stock.totalIngredients')}</div>
                 </div>
                 
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
                     {categories.filter(cat => (cat.ingredient_count || 0) > 0).length}
                   </div>
-                  <div className="text-sm text-gray-600">Active Categories</div>
+                  <div className="text-sm text-gray-600">{t('warehouse.stock.activeCategories')}</div>
                 </div>
                 
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
                     {categories.filter(cat => (cat.ingredient_count || 0) === 0).length}
                   </div>
-                  <div className="text-sm text-gray-600">Empty Categories</div>
+                  <div className="text-sm text-gray-600">{t('warehouse.stock.emptyCategories')}</div>
                 </div>
               </div>
             </CardContent>

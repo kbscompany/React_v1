@@ -65,7 +65,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
     setLoading(true);
     try {
       const response = await fetch(`http://100.29.4.72:8000/api/warehouse/transfer-orders/pending/${selectedWarehouse}`);
-      if (!response.ok) throw new Error('Failed to load pending orders');
+      if (!response.ok) throw new Error(t('warehouse.receive.orderProcessed'));
       const result = await response.json();
       
       // Handle both direct array and {success: true, data: [...]} response formats
@@ -80,8 +80,8 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
           Array.isArray(item.items)
         ).map((item: any) => ({
           id: item.id,
-          source_warehouse_name: item.source_warehouse_name || 'Unknown',
-          target_warehouse_name: item.target_warehouse_name || 'Unknown', 
+          source_warehouse_name: item.source_warehouse_name || t('createTransferOrder.unknownWarehouse'),
+          target_warehouse_name: item.target_warehouse_name || t('createTransferOrder.unknownWarehouse'), 
           created_at: item.created_at || new Date().toISOString(),
           source_warehouse_id: item.source_warehouse_id || 0,
           target_warehouse_id: item.target_warehouse_id || 0,
@@ -91,8 +91,8 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
             typeof orderItem.ingredient_id === 'number'
           ).map((orderItem: any) => ({
             ingredient_id: orderItem.ingredient_id,
-            ingredient_name: orderItem.ingredient_name || 'Unknown',
-            unit: orderItem.unit || 'units',
+            ingredient_name: orderItem.ingredient_name || t('createTransferOrder.unknownIngredient'),
+            unit: orderItem.unit || t('createTransferOrder.units'),
             quantity: Number(orderItem.quantity) || 0
           })) : []
         }));
@@ -106,7 +106,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
       setReceiveItems({});
     } catch (error) {
       console.error('Error loading pending orders:', error);
-      onNotification('error', 'Failed to load pending transfer orders');
+      onNotification('error', t('warehouse.receive.processFailed'));
       setPendingOrders([]); // Ensure it's always an array
     } finally {
       setLoading(false);
@@ -158,14 +158,14 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
 
   const processTransferOrder = async () => {
     if (!selectedOrder) {
-      onNotification('error', 'Please select a transfer order');
+      onNotification('error', t('warehouse.receive.processOrder'));
       return;
     }
 
     // Validate totals
     const hasWaste = Object.values(receiveItems).some(item => item.wasted > 0);
     if (hasWaste && !wasteReason.trim()) {
-      onNotification('error', 'Please provide a reason for waste');
+      onNotification('error', t('warehouse.receive.wasteReasonRequired'));
       return;
     }
 
@@ -178,7 +178,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
     });
 
     if (unprocessedItems.length > 0) {
-      onNotification('error', `Please process all items. ${unprocessedItems.length} items have incorrect quantities.`);
+      onNotification('error', `${t('warehouse.receive.allItemsRequired')}. ${unprocessedItems.length} ${t('warehouse.receive.incorrectQuantities')}.`);
       return;
     }
 
@@ -198,18 +198,18 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to process transfer order');
+        throw new Error(errorData.detail || t('warehouse.receive.processFailed'));
       }
 
       const result = await response.json();
-      onNotification('success', result.message);
+      onNotification('success', result.message || t('warehouse.receive.orderProcessed'));
       
       // Refresh pending orders and reset form
       await loadPendingOrders();
       
     } catch (error) {
       console.error('Error processing transfer order:', error);
-      onNotification('error', error instanceof Error ? error.message : 'Failed to process transfer order');
+      onNotification('error', error instanceof Error ? error.message : t('warehouse.receive.processFailed'));
     } finally {
       setLoading(false);
     }
@@ -286,16 +286,16 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium">Transfer Order #{order.id}</h4>
+                          <h4 className="font-medium">{t('warehouse.receive.processOrder')} #{order.id}</h4>
                           <p className="text-sm text-gray-600">
-                            From {order.source_warehouse_name} • {order.items.length} items
+                            {t('warehouse.receive.from')} {order.source_warehouse_name} • {order.items.length} {t('common.items')}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Created: {new Date(order.created_at).toLocaleDateString()}
+                            {t('warehouse.receive.created')}: {new Date(order.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         <Badge variant={selectedOrder?.id === order.id ? 'default' : 'secondary'}>
-                          {selectedOrder?.id === order.id ? 'Selected' : 'Select'}
+                          {selectedOrder?.id === order.id ? t('warehouse.receive.selected') : t('warehouse.receive.select')}
                         </Badge>
                       </div>
                     </CardContent>
@@ -315,7 +315,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Package className="h-5 w-5" />
-                <span>Process Transfer Order #{selectedOrder.id}</span>
+                <span>{t('warehouse.receive.processOrder')} #{selectedOrder.id}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -323,23 +323,23 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium">From:</span> {selectedOrder.source_warehouse_name}
+                    <span className="font-medium">{t('warehouse.receive.from')}:</span> {selectedOrder.source_warehouse_name}
                   </div>
                   <div>
-                    <span className="font-medium">To:</span> {selectedOrder.target_warehouse_name}
+                    <span className="font-medium">{t('warehouse.receive.to')}:</span> {selectedOrder.target_warehouse_name}
                   </div>
                   <div>
-                    <span className="font-medium">Created:</span> {new Date(selectedOrder.created_at).toLocaleString()}
+                    <span className="font-medium">{t('warehouse.receive.created')}:</span> {new Date(selectedOrder.created_at).toLocaleString()}
                   </div>
                   <div>
-                    <span className="font-medium">Items:</span> {selectedOrder.items.length}
+                    <span className="font-medium">{t('common.items')}:</span> {selectedOrder.items.length}
                   </div>
                 </div>
               </div>
 
               {/* Items Processing */}
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Process Items</h4>
+                <h4 className="font-medium text-gray-900">{t('warehouse.receive.processItems')}</h4>
                 {selectedOrder.items.map(item => {
                   const receiveItem = receiveItems[item.ingredient_id];
                   return (
@@ -351,7 +351,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
                             <div>
                               <h5 className="font-medium">{item.ingredient_name}</h5>
                               <p className="text-sm text-gray-600">
-                                Sent: {item.quantity} {item.unit}
+                                {t('warehouse.receive.sent')}: {item.quantity} {item.unit}
                               </p>
                             </div>
                           </div>
@@ -359,7 +359,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
 
                         <div className="grid grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-green-700">Accepted</Label>
+                            <Label className="text-green-700">{t('warehouse.receive.accepted')}</Label>
                             <Input
                               type="number"
                               value={receiveItem?.accepted || 0}
@@ -376,7 +376,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
                           </div>
 
                           <div className="space-y-2">
-                            <Label className="text-yellow-700">Returned</Label>
+                            <Label className="text-yellow-700">{t('warehouse.receive.returned')}</Label>
                             <Input
                               type="number"
                               value={receiveItem?.returned || 0}
@@ -393,7 +393,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
                           </div>
 
                           <div className="space-y-2">
-                            <Label className="text-red-700">Wasted</Label>
+                            <Label className="text-red-700">{t('warehouse.receive.wasted')}</Label>
                             <Input
                               type="number"
                               value={receiveItem?.wasted || 0}
@@ -413,7 +413,7 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
                         {/* Total validation */}
                         {receiveItem && (
                           <div className="text-sm">
-                            <span className="font-medium">Total: </span>
+                            <span className="font-medium">{t('warehouse.receive.total')}: </span>
                             <span className={`${
                               Math.abs((receiveItem.accepted + receiveItem.returned + receiveItem.wasted) - item.quantity) < 0.001
                                 ? 'text-green-600' 
@@ -432,12 +432,12 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
               {/* Waste Reason */}
               {Object.values(receiveItems).some(item => item.wasted > 0) && (
                 <div className="space-y-2">
-                  <Label htmlFor="waste-reason">Waste Reason *</Label>
+                  <Label htmlFor="waste-reason">{t('warehouse.receive.wasteReason')} *</Label>
                   <Textarea
                     id="waste-reason"
                     value={wasteReason}
                     onChange={(e) => setWasteReason(e.target.value)}
-                    placeholder="Explain the reason for waste (required when there is waste)"
+                    placeholder={t('warehouse.receive.wasteReasonPlaceholder')}
                     className="border-red-200"
                   />
                 </div>
@@ -449,14 +449,14 @@ const ReceiveTransferOrder: React.FC<ReceiveTransferOrderProps> = ({ warehouses,
                   variant="outline"
                   onClick={() => setSelectedOrder(null)}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   onClick={processTransferOrder}
                   disabled={loading}
                   className="min-w-[120px]"
                 >
-                  {loading ? 'Processing...' : 'Process Order'}
+                  {loading ? t('warehouse.receive.processing') : t('warehouse.receive.processOrder')}
                 </Button>
               </div>
             </CardContent>

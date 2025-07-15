@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
 import RoleSelector from './RoleSelector';
+import PermissionsManager from './PermissionsManager';
 
 const SuperAdminPanel = () => {
   const { t } = useTranslation();
@@ -13,7 +14,7 @@ const SuperAdminPanel = () => {
   const [messageType, setMessageType] = useState(''); // 'success', 'error', 'warning'
   const [confirmAction, setConfirmAction] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState('stats'); // 'stats', 'safes', 'users', 'system'
+  const [activeTab, setActiveTab] = useState('stats'); // 'stats', 'safes', 'users', 'permissions', 'system'
   const [systemStats, setSystemStats] = useState({
     totalSafes: 0,
     totalCheques: 0,
@@ -81,7 +82,8 @@ const SuperAdminPanel = () => {
 
   const loadUserRoles = async () => {
     try {
-      const response = await api.get('/admin-simple/user-roles');
+      const response = await api.get('/admin-simple/user-roles-simple');
+      console.log('🔧 SuperAdminPanel: Loaded roles from API:', response.data);
       const rolesData = response.data || [];
       setUserRoles(rolesData);
     } catch (error) {
@@ -327,6 +329,7 @@ const SuperAdminPanel = () => {
         {[
           { id: 'stats', label: '📊 Statistics', icon: '📊' },
           { id: 'users', label: '👥 User Management', icon: '👥' },
+      { id: 'permissions', label: '🔐 Permissions Manager', icon: '🔐' },
           { id: 'safes', label: '🏦 Safe Management', icon: '🏦' },
           { id: 'system', label: '🌐 System Operations', icon: '🌐' }
         ].map(tab => (
@@ -656,10 +659,17 @@ const SuperAdminPanel = () => {
             </div>
           )}
         </div>
-      )}
+              )}
 
-      {/* Safe Management Tab */}
-      {activeTab === 'safes' && (
+        {/* Permissions Manager Tab */}
+        {activeTab === 'permissions' && (
+          <div style={{ padding: '1.5rem' }}>
+            <PermissionsManager />
+          </div>
+        )}
+
+        {/* Safe Management Tab */}
+        {activeTab === 'safes' && (
         <div style={{ 
           background: 'white', 
           padding: '20px', 

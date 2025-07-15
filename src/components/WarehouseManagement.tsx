@@ -49,8 +49,8 @@ const WarehouseManagement: React.FC = () => {
 
   // Hardcoded translations as ultimate fallback
   const translations = {
-    'warehouse.title': 'Warehouse Management System',
-    'warehouse.description': 'Manage your warehouse locations and inventory',
+    'warehouse.title': '🏢 Warehouse Management System',
+    'warehouse.description': 'Manage your warehouse locations, stock, and transfers efficiently',
     'warehouse.tabs.warehouses': '🏢 Warehouses',
     'warehouse.tabs.createTransfer': '📦 Create Transfer', 
     'warehouse.tabs.receiveOrders': '📥 Receive Orders',
@@ -58,7 +58,8 @@ const WarehouseManagement: React.FC = () => {
     'warehouse.tabs.stockManagement': '📊 Stock Management',
     'warehouse.tabs.categories': '🏷️ Categories',
     'warehouse.tabs.managerAssignments': '👥 Manager Assignments',
-    'warehouse.tabs.foodicsDashboard': '🏪 Foodics Dashboard'
+    'warehouse.tabs.foodicsDashboard': '🏪 Foodics Dashboard',
+    'warehouse.tabs.orders': '📦 Orders'
   };
 
   const getTranslationSafe = (key: string) => {
@@ -114,7 +115,7 @@ const WarehouseManagement: React.FC = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Warehouse API error:', errorText);
-        throw new Error(`Failed to load warehouses: ${response.status}`);
+        throw new Error(`${t('notifications.errorLoading')}: ${response.status}`);
       }
       
       const data = await response.json();
@@ -123,7 +124,7 @@ const WarehouseManagement: React.FC = () => {
       if (data.length === 0) {
         showNotification('info', t('notifications.noItemsFound'));
       } else {
-        showNotification('success', `${t('notifications.loadingData')} ${data.length} warehouses successfully`);
+        showNotification('success', `${t('notifications.loadingData')} ${data.length} ${t('warehouse.tabs.warehouses').toLowerCase()} ${t('notifications.success').toLowerCase()}`);
       }
     } catch (error) {
       console.error('Error loading warehouses:', error);

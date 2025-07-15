@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import api from '../services/api';
 
 /**
  * RoleSelector Component - Simple role selector for user management
@@ -8,23 +9,53 @@ import { useTranslation } from 'react-i18next';
 const RoleSelector = ({ user, onRoleChange, disabled = false, availableRoles = [] }) => {
   const { t } = useTranslation();
   
-  // Role mapping from backend IDs to display names with comprehensive roles
-  const ROLE_MAPPING = {
-    1: { name: 'Admin', color: '#dc2626', description: 'Full system access including user management' },
-    2: { name: 'Warehouse Manager', color: '#059669', description: 'Warehouse and inventory management' },
-    3: { name: 'Kitchen Manager', color: '#7c3aed', description: 'Kitchen production and recipe management' },
-    4: { name: 'Production Staff', color: '#ea580c', description: 'Kitchen production execution' },
-    5: { name: 'Inventory Staff', color: '#0891b2', description: 'Inventory and stock management' },
-    6: { name: 'Finance Staff', color: '#be185d', description: 'Financial operations and reporting' },
-    7: { name: 'Staff', color: '#6b7280', description: 'Basic system access' }
+  // Default color mapping for roles (if not provided from API)
+  const DEFAULT_ROLE_COLORS = {
+    'Admin': '#dc2626',
+    'Warehouse Manager': '#059669', 
+    'Kitchen Manager': '#7c3aed',
+    'Production Staff': '#ea580c',
+    'Inventory Staff': '#0891b2',
+    'Finance Staff': '#be185d',
+    'Staff': '#6b7280'
   };
 
-  const [selectedRole, setSelectedRole] = useState(user?.role_id || 7);
+  const [selectedRole, setSelectedRole] = useState(user?.role_id || 3);
+  const [dynamicRoles, setDynamicRoles] = useState([]);
+
+  // Load roles from API
+  useEffect(() => {
+    loadRoles();
+  }, []);
 
   // Update selected role when user changes
   useEffect(() => {
-    setSelectedRole(user?.role_id || 7);
+    setSelectedRole(user?.role_id || 3);
   }, [user]);
+
+  const loadRoles = async () => {
+    try {
+      const response = await api.get('/admin-simple/user-roles-simple');
+      const rolesData = response.data || [];
+      console.log('🔧 RoleSelector: Loaded roles from API:', rolesData);
+      setDynamicRoles(rolesData);
+    } catch (error) {
+      console.error('Error loading roles:', error);
+      // Fallback to comprehensive default roles that match PermissionsManager
+      setDynamicRoles([
+        { id: 1, name: 'Admin' },
+        { id: 2, name: 'Warehouse Manager' },
+        { id: 3, name: 'Kitchen Manager' },
+        { id: 4, name: 'Production Staff' },
+        { id: 5, name: 'Inventory Staff' },
+        { id: 6, name: 'Finance Staff' },
+        { id: 7, name: 'Staff' },
+        { id: 8, name: 'Manager' },
+        { id: 9, name: 'Accountant' },
+        { id: 10, name: 'Viewer' }
+      ]);
+    }
+  };
 
   const handleRoleChange = (event) => {
     const newRoleId = parseInt(event.target.value);
@@ -35,13 +66,36 @@ const RoleSelector = ({ user, onRoleChange, disabled = false, availableRoles = [
   };
 
   const getCurrentRole = () => {
-    return ROLE_MAPPING[selectedRole] || { name: 'Unknown', color: '#6b7280', description: 'Unknown role' };
+    const roleData = dynamicRoles.find(role => role.id === selectedRole);
+    if (roleData) {
+      return {
+        name: roleData.name,
+        color: DEFAULT_ROLE_COLORS[roleData.name] || '#6b7280',
+        description: getRoleDescription(roleData.name)
+      };
+    }
+    return { name: 'Unknown', color: '#6b7280', description: 'Unknown role' };
+  };
+
+  const getRoleDescription = (roleName) => {
+    const descriptions = {
+      'Admin': 'Full system access including user management',
+      'Warehouse Manager': 'Warehouse and inventory management',
+      'Kitchen Manager': 'Kitchen production and recipe management',
+      'Production Staff': 'Kitchen production execution',
+      'Inventory Staff': 'Inventory and stock management',
+      'Finance Staff': 'Financial operations and reporting',
+      'Staff': 'Basic system access'
+    };
+    return descriptions[roleName] || 'Basic system access';
   };
 
   const currentRole = getCurrentRole();
 
-  // Use availableRoles if provided, otherwise use all roles
-  const rolesToShow = availableRoles.length > 0 ? availableRoles : Object.entries(ROLE_MAPPING);
+  // Use availableRoles if provided, otherwise use dynamically loaded roles
+  const rolesToShow = availableRoles.length > 0 ? 
+    availableRoles.map(role => [role.id, role]) : 
+    dynamicRoles.map(role => [role.id, role]);
 
   return (
     <div style={{ 
@@ -96,7 +150,7 @@ const RoleSelector = ({ user, onRoleChange, disabled = false, availableRoles = [
         >
           {rolesToShow.map(([id, role]) => (
             <option key={id} value={id}>
-              {role.name} - {role.description}
+              {role.name} - {getRoleDescription(role.name)}
             </option>
           ))}
         </select>

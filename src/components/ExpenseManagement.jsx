@@ -330,7 +330,7 @@ function ExpenseManagement({ user }) {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+              currency: 'EGP'
     }).format(amount)
   }
 

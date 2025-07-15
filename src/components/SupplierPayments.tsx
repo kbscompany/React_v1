@@ -392,7 +392,7 @@ const SupplierPayments: React.FC<SupplierPaymentsProps> = ({ user }) => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              ${(Number(po.total_amount) || 0).toFixed(2)} {po.supplier?.default_currency || 'USD'}
+                              ${(Number(po.total_amount) || 0).toFixed(2)} {po.supplier?.default_currency || 'EGP'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -561,7 +561,7 @@ const SupplierPayments: React.FC<SupplierPaymentsProps> = ({ user }) => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              ${(Number(po.total_amount) || 0).toFixed(2)} {po.supplier?.default_currency || 'USD'}
+                              ${(Number(po.total_amount) || 0).toFixed(2)} {po.supplier?.default_currency || 'EGP'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -638,7 +638,7 @@ const SupplierPayments: React.FC<SupplierPaymentsProps> = ({ user }) => {
                   <strong>Supplier:</strong> {selectedPO.supplier_name || selectedPO.supplier?.name}
                 </p>
                 <p className="text-sm text-blue-800">
-                  <strong>Amount:</strong> ${(Number(selectedPO.total_amount) || 0).toFixed(2)} {selectedPO.supplier?.default_currency || 'USD'}
+                  <strong>Amount:</strong> ${(Number(selectedPO.total_amount) || 0).toFixed(2)} {selectedPO.supplier?.default_currency || 'EGP'}
                 </p>
               </div>
 
@@ -813,7 +813,7 @@ const SupplierPayments: React.FC<SupplierPaymentsProps> = ({ user }) => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Amount</p>
-                  <p className="font-medium">${(Number(selectedPO.total_amount) || 0).toFixed(2)} {selectedPO.supplier?.default_currency || 'USD'}</p>
+                  <p className="font-medium">${(Number(selectedPO.total_amount) || 0).toFixed(2)} {selectedPO.supplier?.default_currency || 'EGP'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Order Date</p>
@@ -899,7 +899,7 @@ const SupplierPayments: React.FC<SupplierPaymentsProps> = ({ user }) => {
             <div className="space-y-2 mb-6">
               <p><strong>Cheque ID:</strong> {generatedChequeId}</p>
               <p><strong>Supplier:</strong> {selectedPO.supplier_name || selectedPO.supplier?.name}</p>
-              <p><strong>Amount:</strong> ${(Number(selectedPO.total_amount) || 0).toFixed(2)} {selectedPO.supplier?.default_currency || 'USD'}</p>
+                              <p><strong>Amount:</strong> ${(Number(selectedPO.total_amount) || 0).toFixed(2)} {selectedPO.supplier?.default_currency || 'EGP'}</p>
             </div>
 
             <div className="flex justify-end space-x-3">

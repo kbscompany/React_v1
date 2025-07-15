@@ -93,8 +93,8 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
     } catch (error) {
       console.error('Error loading purchase orders:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch purchase orders",
+        title: t('notifications.error'),
+        description: t('warehouse.receiveFromSupplier.receiveFailed'),
         variant: "destructive",
       });
     } finally {
@@ -149,8 +149,8 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
       );
 
       toast({
-        title: "Success",
-        description: "Purchase order received successfully",
+        title: t('notifications.success'),
+        description: t('warehouse.receiveFromSupplier.orderReceived'),
       });
       setShowReceiveDialog(false);
       setSelectedOrder(null);
@@ -159,29 +159,29 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
     } catch (error) {
       console.error('Error receiving order:', error);
       toast({
-        title: "Error",
-        description: "Failed to receive purchase order",
+        title: t('notifications.error'),
+        description: t('warehouse.receiveFromSupplier.receiveFailed'),
         variant: "destructive",
       });
     }
   };
 
   const handleReturnOrder = async (orderId: number) => {
-    if (!confirm(t('confirmations.returnOrder'))) return;
+    if (!confirm(t('warehouse.receiveFromSupplier.returnOrder') + '?')) return;
 
     try {
       await axios.post(`/api/purchase-orders/${orderId}/return`);
 
       toast({
-        title: "Success",
-        description: "Purchase order returned successfully",
+        title: t('notifications.success'),
+        description: t('warehouse.receiveFromSupplier.orderReturned'),
       });
       loadPurchaseOrders();
     } catch (error) {
       console.error('Error returning order:', error);
       toast({
-        title: "Error",
-        description: "Failed to return purchase order",
+        title: t('notifications.error'),
+        description: t('warehouse.receiveFromSupplier.returnFailed'),
         variant: "destructive",
       });
     }
@@ -215,22 +215,22 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Truck className="w-5 h-5" />
-            {t('warehouse.receiveFromSupplier.title', 'Receive from Supplier')}
+            {t('warehouse.receiveFromSupplier.title')}
           </CardTitle>
           <CardDescription>
-            {t('warehouse.receiveFromSupplier.description', 'Receive purchase orders and update stock')}
+            {t('warehouse.receiveFromSupplier.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
-              <Label>{t('warehouse.selectWarehouse', 'Select Warehouse')}</Label>
+              <Label>{t('warehouse.receiveFromSupplier.selectWarehouse')}</Label>
               <Select
                 value={selectedWarehouse?.toString() || ''}
                 onValueChange={(value) => setSelectedWarehouse(parseInt(value))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('warehouse.selectWarehousePlaceholder', 'Choose a warehouse')} />
+                  <SelectValue placeholder={t('warehouse.receiveFromSupplier.selectWarehousePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses.map((warehouse) => (
@@ -252,10 +252,10 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="pending">
-                  {t('warehouse.pendingOrders', 'Pending Orders')}
+                  {t('warehouse.receiveFromSupplier.pendingOrders')}
                 </TabsTrigger>
                 <TabsTrigger value="received">
-                  {t('warehouse.receivedOrders', 'Received Orders')}
+                  {t('warehouse.receiveFromSupplier.receivedOrders')}
                 </TabsTrigger>
               </TabsList>
 
@@ -266,7 +266,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                   </div>
                 ) : purchaseOrders.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    {t('warehouse.noPendingOrders', 'No pending orders')}
+                    {t('warehouse.receiveFromSupplier.noPendingOrders')}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -276,7 +276,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                           <div className="flex justify-between items-start">
                             <div>
                               <CardTitle className="text-lg">
-                                {t('warehouse.orderNumber', 'Order #')}{order.id}
+                                {t('warehouse.receiveFromSupplier.orderNumber')}{order.id}
                               </CardTitle>
                               <CardDescription>
                                 {order.supplier.name} • {format(new Date(order.order_date), 'PPP')}
@@ -285,7 +285,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                             <div className="flex items-center gap-2">
                               {getStatusBadge(order.status)}
                               <Badge variant="outline">
-                                {order.items.length} {t('common.items', 'items')}
+                                {order.items.length} {t('common.items')}
                               </Badge>
                             </div>
                           </div>
@@ -295,10 +295,10 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>{t('common.item', 'Item')}</TableHead>
-                                  <TableHead>{t('common.quantity', 'Quantity')}</TableHead>
-                                  <TableHead>{t('common.unitPrice', 'Unit Price')}</TableHead>
-                                  <TableHead>{t('common.total', 'Total')}</TableHead>
+                                  <TableHead>{t('common.item')}</TableHead>
+                                  <TableHead>{t('common.quantity')}</TableHead>
+                                  <TableHead>{t('common.unitPrice')}</TableHead>
+                                  <TableHead>{t('common.total')}</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -317,7 +317,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
 
                             <div className="flex justify-between items-center pt-4 border-t">
                               <div className="text-lg font-semibold">
-                                {t('common.totalAmount', 'Total Amount')}: ${Number(order.total_amount || 0).toFixed(2)}
+                                {t('common.totalAmount')}: ${Number(order.total_amount || 0).toFixed(2)}
                               </div>
                               <div className="flex gap-2">
                                 <Button
@@ -325,13 +325,13 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                                   onClick={() => handleReturnOrder(order.id)}
                                 >
                                   <XCircle className="w-4 h-4 mr-2" />
-                                  {t('warehouse.returnOrder', 'Return Order')}
+                                  {t('warehouse.receiveFromSupplier.returnOrder')}
                                 </Button>
                                 <Button
                                   onClick={() => handleReceiveOrder(order)}
                                 >
                                   <Package className="w-4 h-4 mr-2" />
-                                  {t('warehouse.receiveOrder', 'Receive Order')}
+                                  {t('warehouse.receiveFromSupplier.receiveOrder')}
                                 </Button>
                               </div>
                             </div>
@@ -350,7 +350,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                   </div>
                 ) : purchaseOrders.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    {t('warehouse.noReceivedOrders', 'No received orders')}
+                    {t('warehouse.receiveFromSupplier.noReceivedOrders')}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -360,7 +360,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                           <div className="flex justify-between items-start">
                             <div>
                               <CardTitle className="text-lg">
-                                {t('warehouse.orderNumber', 'Order #')}{order.id}
+                                {t('warehouse.receiveFromSupplier.orderNumber')}{order.id}
                               </CardTitle>
                               <CardDescription>
                                 {order.supplier.name} • {format(new Date(order.order_date), 'PPP')}
@@ -369,7 +369,7 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                             <div className="flex items-center gap-2">
                               {getStatusBadge(order.status)}
                               <Badge variant="outline">
-                                {order.items.length} {t('common.items', 'items')}
+                                {order.items.length} {t('common.items')}
                               </Badge>
                             </div>
                           </div>
@@ -378,10 +378,10 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>{t('common.item', 'Item')}</TableHead>
-                                <TableHead>{t('common.ordered', 'Ordered')}</TableHead>
-                                <TableHead>{t('common.received', 'Received')}</TableHead>
-                                <TableHead>{t('common.status', 'Status')}</TableHead>
+                                <TableHead>{t('common.item')}</TableHead>
+                                <TableHead>{t('common.ordered')}</TableHead>
+                                <TableHead>{t('common.received')}</TableHead>
+                                <TableHead>{t('common.status')}</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -396,13 +396,13 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
                                   </TableCell>
                                   <TableCell>
                                     {item.status === 'partial' && (
-                                      <Badge variant="outline">Partial</Badge>
+                                      <Badge variant="outline">{t('warehouse.receiveFromSupplier.partial')}</Badge>
                                     )}
                                     {item.status === 'received' && (
-                                      <Badge variant="outline">Complete</Badge>
+                                      <Badge variant="outline">{t('warehouse.receiveFromSupplier.complete')}</Badge>
                                     )}
                                     {item.status === 'returned' && (
-                                      <Badge variant="outline">Returned</Badge>
+                                      <Badge variant="outline">{t('warehouse.receiveFromSupplier.returnOrder')}</Badge>
                                     )}
                                   </TableCell>
                                 </TableRow>
@@ -425,10 +425,10 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {t('warehouse.receiveOrder', 'Receive Order')} #{selectedOrder?.id}
+              {t('warehouse.receiveFromSupplier.receiveOrder')} #{selectedOrder?.id}
             </DialogTitle>
             <DialogDescription>
-              {t('warehouse.adjustQuantities', 'Adjust quantities received or return items')}
+              {t('warehouse.receiveFromSupplier.adjustQuantities')}
             </DialogDescription>
           </DialogHeader>
 
@@ -436,21 +436,21 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">{t('common.supplier', 'Supplier')}:</span> {selectedOrder.supplier.name}
+                  <span className="font-medium">{t('common.supplier')}:</span> {selectedOrder.supplier.name}
                 </div>
                 <div>
-                  <span className="font-medium">{t('common.orderDate', 'Order Date')}:</span> {format(new Date(selectedOrder.order_date), 'PPP')}
+                  <span className="font-medium">{t('common.orderDate')}:</span> {format(new Date(selectedOrder.order_date), 'PPP')}
                 </div>
               </div>
 
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('common.item', 'Item')}</TableHead>
-                    <TableHead>{t('common.ordered', 'Ordered')}</TableHead>
-                    <TableHead>{t('common.receiving', 'Receiving')}</TableHead>
-                    <TableHead>{t('common.unitPrice', 'Unit Price')}</TableHead>
-                    <TableHead>{t('common.newTotal', 'New Total')}</TableHead>
+                    <TableHead>{t('common.item')}</TableHead>
+                    <TableHead>{t('common.ordered')}</TableHead>
+                    <TableHead>{t('common.receiving')}</TableHead>
+                    <TableHead>{t('common.unitPrice')}</TableHead>
+                    <TableHead>{t('common.newTotal')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -482,10 +482,10 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
               <div className="flex justify-between items-center pt-4 border-t">
                 <div>
                   <div className="text-sm text-muted-foreground">
-                    {t('common.originalTotal', 'Original Total')}: ${Number(selectedOrder.total_amount || 0).toFixed(2)}
+                    {t('common.originalTotal')}: ${Number(selectedOrder.total_amount || 0).toFixed(2)}
                   </div>
                   <div className="text-lg font-semibold">
-                    {t('common.newTotal', 'New Total')}: ${calculateNewTotal().toFixed(2)}
+                    {t('common.newTotal')}: ${calculateNewTotal().toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -495,11 +495,11 @@ const ReceiveFromSupplier: React.FC<ReceiveFromSupplierProps> = ({ warehouses, o
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowReceiveDialog(false)}>
               <X className="w-4 h-4 mr-2" />
-              {t('common.cancel', 'Cancel')}
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleConfirmReceive}>
               <CheckCircle className="w-4 h-4 mr-2" />
-              {t('warehouse.confirmReceive', 'Confirm Receive')}
+              {t('warehouse.receiveFromSupplier.confirmReceive')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # CORS settings
     allowed_origins: str = "http://localhost:3000,http://localhost:5173"
     
+    # Currency settings
+    default_currency: str = "EGP"
+    supported_currencies: str = "EGP,USD,EUR,GBP"
+    
     # Encryption key for sensitive data (derived from SECRET_KEY)
     @property
     def encryption_key(self) -> bytes:

@@ -30,6 +30,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("user_roles.id"), nullable=False, default=3)
     is_active = Column(Boolean, default=True)
+    preferred_language = Column(String(10), default='en')  # 'en' or 'ar'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
