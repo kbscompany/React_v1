@@ -248,7 +248,7 @@ const ArabicChequeGenerator = () => {
 
         .company-table {
             position: absolute;
-            top: 0.5cm;
+            top: 3.5cm;  // ← Changed from 0.5cm to 1.5cm (moves down 1cm)
             right: 0.5cm;
             left: 0.5cm;
             background: rgba(255, 255, 255, 0.9);

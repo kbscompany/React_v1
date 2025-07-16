@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import roleManager, { PERMISSIONS, ROLES } from '../lib/roleManager';
 
 /**
@@ -10,11 +10,11 @@ export const useRole = () => {
   const [permissions, setPermissions] = useState(roleManager.getCurrentPermissions());
 
   // Update role and permissions when they change
-  const updateUserRole = (user) => {
+  const updateUserRole = useCallback((user) => {
     roleManager.setUser(user);
     setCurrentRole(roleManager.getCurrentRole());
     setPermissions(roleManager.getCurrentPermissions());
-  };
+  }, []);
 
   return {
     // Current user info

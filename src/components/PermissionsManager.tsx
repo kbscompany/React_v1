@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ROLES, PERMISSIONS, PAGE_ACCESS, TAB_ACCESS } from '../lib/roleManager';
+import roleManager from '../lib/roleManager';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
@@ -182,31 +183,45 @@ const PermissionsManager: React.FC = () => {
     loadRolePermissions();
   }, []);
 
-  const loadRolePermissions = async () => {
-  setLoading(true);
-  try {
-    // Try to load permissions from backend for each role
-    const rolePermissionsFromBackend = {};
-
-    for (const role of Object.values(ROLES)) {
+    const loadRolePermissions = async () => {
+    setLoading(true);
+    try {
+      // Try to load from database API first
+      const response = await api.get('/admin-simple/permissions/all-roles');
+      console.log('🔄 Loaded permissions from database API:', response.data);
+      setRolePermissions(response.data.roles);
+      setMessage({ type: 'success', text: `Loaded ${response.data.total_roles} roles from database` });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (apiError) {
+      console.warn('🔄 API failed, trying localStorage fallback:', apiError);
       try {
-        const response = await api.get(`/admin-simple/roles/${role}/permissions`);
-        rolePermissionsFromBackend[role] = response.data;
-      } catch (error) {
-        console.warn(`Failed to load permissions for role ${role}, using defaults`);
-        // Use default permissions if backend doesn't have them
-        rolePermissionsFromBackend[role] = getDefaultPermissionsForRole(role);
+        // Fallback to localStorage
+        const savedPermissions = localStorage.getItem('role_permissions');
+        if (savedPermissions) {
+          const parsedPermissions = JSON.parse(savedPermissions);
+          setRolePermissions(parsedPermissions);
+          console.log('🔄 Loaded permissions from localStorage');
+          setMessage({ type: 'success', text: 'Loaded permissions from local storage (offline mode)' });
+          setTimeout(() => setMessage(null), 3000);
+        } else {
+          // Last resort: use default permissions
+          const rolePermissionsFromDefaults = {};
+          for (const role of Object.values(ROLES)) {
+            rolePermissionsFromDefaults[role] = getDefaultPermissionsForRole(role);
+          }
+          setRolePermissions(rolePermissionsFromDefaults);
+          console.log('🔄 Loaded hardcoded default permissions');
+          setMessage({ type: 'success', text: 'Loaded default permissions (no saved data found)' });
+          setTimeout(() => setMessage(null), 3000);
+        }
+      } catch (fallbackError) {
+        console.error('Error in fallback loading:', fallbackError);
+        setMessage({ type: 'error', text: 'Failed to load permissions from all sources' });
       }
+    } finally {
+      setLoading(false);
     }
-
-    setRolePermissions(rolePermissionsFromBackend);
-  } catch (error) {
-    console.error('Error loading role permissions:', error);
-    setMessage({ type: 'error', text: 'Failed to load role permissions' });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const getDefaultPermissionsForRole = (role: string) => {
     const defaultPermissions = {
@@ -249,6 +264,60 @@ const PermissionsManager: React.FC = () => {
           PERMISSIONS.VIEW_PRODUCTION_ORDERS,
           PERMISSIONS.APPROVE_PRODUCTION
         ],
+        [ROLES.ACCOUNTANT]: [
+          // Dashboard & Financial Access
+          PERMISSIONS.ACCESS_DASHBOARD,
+          PERMISSIONS.ACCESS_FINANCE_CENTER,
+          PERMISSIONS.ACCESS_CHEQUE_MANAGEMENT,
+          PERMISSIONS.ACCESS_EXPENSE_MANAGEMENT,
+          PERMISSIONS.ACCESS_BANK_HIERARCHY,
+          
+          // Inventory Access (for cost accounting)
+          PERMISSIONS.ACCESS_INVENTORY,
+          PERMISSIONS.ACCESS_ITEM_MANAGEMENT,
+          PERMISSIONS.CREATE_ITEM,
+          PERMISSIONS.EDIT_ITEM,
+          PERMISSIONS.VIEW_STOCK_LEVELS,
+          
+          // Financial Management (Full)
+          PERMISSIONS.CREATE_EXPENSE,
+          PERMISSIONS.EDIT_EXPENSE,
+          PERMISSIONS.DELETE_EXPENSE,
+          PERMISSIONS.VIEW_EXPENSES,
+          PERMISSIONS.APPROVE_EXPENSE,
+          
+          PERMISSIONS.CREATE_CHEQUE,
+          PERMISSIONS.EDIT_CHEQUE,
+          PERMISSIONS.DELETE_CHEQUE,
+          PERMISSIONS.CANCEL_CHEQUE,
+          PERMISSIONS.SETTLE_CHEQUE,
+          PERMISSIONS.EARLY_SETTLEMENT,
+          PERMISSIONS.PRINT_CHEQUE,
+          PERMISSIONS.ARABIC_CHEQUE_GENERATION,
+          
+          PERMISSIONS.CREATE_BANK_ACCOUNT,
+          PERMISSIONS.EDIT_BANK_ACCOUNT,
+          PERMISSIONS.DELETE_BANK_ACCOUNT,
+          PERMISSIONS.MANAGE_BANK_HIERARCHY,
+          PERMISSIONS.MANAGE_CHEQUE_BOOKS,
+          
+          PERMISSIONS.CREATE_SAFE,
+          PERMISSIONS.EDIT_SAFE,
+          PERMISSIONS.DELETE_SAFE,
+          
+          // Purchase Orders (Financial aspects)
+          PERMISSIONS.ACCESS_PURCHASE_ORDERS,
+          PERMISSIONS.VIEW_PURCHASE_ORDERS,
+          PERMISSIONS.SUPPLIER_PAYMENTS,
+          PERMISSIONS.GENERATE_CHEQUE_FROM_PO,
+          
+          // Reporting (Financial focus)
+          PERMISSIONS.VIEW_REPORTS,
+          PERMISSIONS.VIEW_FINANCIAL_REPORTS,
+          PERMISSIONS.VIEW_PURCHASE_REPORTS,
+          PERMISSIONS.EXPORT_DATA,
+          PERMISSIONS.ADVANCED_ANALYTICS
+        ],
         [ROLES.WAREHOUSE_MANAGER]: [
           PERMISSIONS.ACCESS_DASHBOARD,
           PERMISSIONS.ACCESS_WAREHOUSE,
@@ -272,6 +341,59 @@ const PermissionsManager: React.FC = () => {
           PERMISSIONS.VIEW_PRODUCTION_ORDERS,
           PERMISSIONS.START_PRODUCTION,
           PERMISSIONS.COMPLETE_PRODUCTION
+        ],
+        [ROLES.PRODUCTION_STAFF]: [
+          // Dashboard & Production Access
+          PERMISSIONS.ACCESS_DASHBOARD,
+          PERMISSIONS.ACCESS_KITCHEN_PRODUCTION,
+          
+          // Recipe Viewing
+          PERMISSIONS.VIEW_SUB_RECIPES,
+          PERMISSIONS.VIEW_MID_PREP_RECIPES,
+          PERMISSIONS.VIEW_CAKE_RECIPES,
+          PERMISSIONS.VIEW_STOCK_LEVELS,
+          
+          // Kitchen Production (Limited)
+          PERMISSIONS.ACCESS_KITCHEN_DASHBOARD,
+          PERMISSIONS.VIEW_PRODUCTION_ORDERS,
+          PERMISSIONS.START_PRODUCTION,
+          PERMISSIONS.COMPLETE_PRODUCTION,
+          
+          PERMISSIONS.BATCH_PRODUCTION_CALCULATOR,
+          PERMISSIONS.KITCHEN_WORKFLOW,
+          
+          // Basic Reporting
+          PERMISSIONS.VIEW_PRODUCTION_REPORTS
+        ],
+        [ROLES.INVENTORY_STAFF]: [
+          // Dashboard & Inventory Access
+          PERMISSIONS.ACCESS_DASHBOARD,
+          PERMISSIONS.ACCESS_INVENTORY,
+          PERMISSIONS.ACCESS_ITEM_MANAGEMENT,
+          
+          // Inventory Management (Limited)
+          PERMISSIONS.MANAGE_INVENTORY,
+          PERMISSIONS.CREATE_ITEM,
+          PERMISSIONS.EDIT_ITEM,
+          PERMISSIONS.VIEW_STOCK_LEVELS,
+          PERMISSIONS.ADJUST_STOCK,
+          
+          PERMISSIONS.VIEW_SUB_RECIPES,
+          PERMISSIONS.VIEW_MID_PREP_RECIPES,
+          PERMISSIONS.VIEW_CAKE_RECIPES,
+          
+          // Warehouse Operations (Basic)
+          PERMISSIONS.MANAGE_STOCK,
+          PERMISSIONS.VIEW_TRANSFER_ORDERS,
+          PERMISSIONS.RECEIVE_TRANSFER_ORDER,
+          PERMISSIONS.RECEIVE_FROM_SUPPLIER,
+          
+          // Purchase Orders (Receiving only)
+          PERMISSIONS.VIEW_PURCHASE_ORDERS,
+          PERMISSIONS.RECEIVE_PURCHASE_ORDER,
+          
+          // Basic Reporting
+          PERMISSIONS.VIEW_INVENTORY_REPORTS
         ],
         [ROLES.FINANCE_STAFF]: [
           PERMISSIONS.ACCESS_DASHBOARD,
@@ -333,26 +455,103 @@ const PermissionsManager: React.FC = () => {
     });
   };
 
-  const savePermissions = async () => {
-  setSaving(true);
-  try {
-    // Save permissions for all roles to the backend
-    const savePromises = Object.entries(rolePermissions).map(async ([role, permissions]) => {
-      return api.post(`/admin-simple/roles/${role}/permissions`, permissions);
-    });
+    const savePermissions = async () => {
+    setSaving(true);
+    try {
+      let savedToDatabase = false;
+      let savedRoles = 0;
+      
+      // Try to save to database API first
+      try {
+        for (const [roleName, permissions] of Object.entries(rolePermissions)) {
+          await api.post(`/admin-simple/roles/${roleName}/permissions`, {
+            permissions: permissions
+          });
+          savedRoles++;
+        }
+        savedToDatabase = true;
+        console.log('🔄 Saved permissions to database API');
+      } catch (apiError) {
+        console.warn('🔄 API save failed, falling back to localStorage:', apiError);
+        savedToDatabase = false;
+      }
+      
+      // Always save to localStorage as backup
+      localStorage.setItem('role_permissions', JSON.stringify(rolePermissions));
+      
+      // Refresh the roleManager to use the new permissions immediately
+      roleManager.refreshUserPermissions();
+      
+      // Show appropriate success message
+      if (savedToDatabase) {
+        setMessage({ 
+          type: 'success', 
+          text: `✅ Permissions saved to database for ${savedRoles} roles! (Also backed up locally)` 
+        });
+      } else {
+        setMessage({ 
+          type: 'success', 
+          text: '💾 Permissions saved locally (database unavailable - will sync when online)' 
+        });
+      }
+      
+      setTimeout(() => setMessage(null), 5000);
+    } catch (error) {
+      console.error('Error saving permissions:', error);
+      setMessage({ type: 'error', text: 'Failed to save permissions. Please try again.' });
+      setTimeout(() => setMessage(null), 5000);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    await Promise.all(savePromises);
-
-    setMessage({ type: 'success', text: 'Permissions saved successfully!' });
-    setTimeout(() => setMessage(null), 3000);
-  } catch (error) {
-    console.error('Error saving permissions:', error);
-    setMessage({ type: 'error', text: 'Failed to save permissions. Please try again.' });
-    setTimeout(() => setMessage(null), 5000);
-  } finally {
-    setSaving(false);
-  }
-};
+  const resetToDefaults = async () => {
+    if (!confirm('⚠️ Reset all permissions to defaults? This will overwrite all custom changes.')) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Try to reset via API first
+      try {
+        await api.post('/admin-simple/permissions/reset-to-defaults');
+        console.log('🔄 Reset permissions to defaults via API');
+        
+        // Reload permissions from API
+        await loadRolePermissions();
+        
+        setMessage({ 
+          type: 'success', 
+          text: '✅ All permissions reset to defaults successfully!' 
+        });
+      } catch (apiError) {
+        console.warn('🔄 API reset failed, using local defaults:', apiError);
+        
+        // Fallback: load hardcoded defaults
+        const rolePermissionsFromDefaults = {};
+        for (const role of Object.values(ROLES)) {
+          rolePermissionsFromDefaults[role] = getDefaultPermissionsForRole(role);
+        }
+        setRolePermissions(rolePermissionsFromDefaults);
+        
+        // Save to localStorage
+        localStorage.setItem('role_permissions', JSON.stringify(rolePermissionsFromDefaults));
+        
+        setMessage({ 
+          type: 'success', 
+          text: '🔄 Permissions reset to local defaults (database unavailable)' 
+        });
+      }
+      
+      setTimeout(() => setMessage(null), 5000);
+    } catch (error) {
+      console.error('Error resetting permissions:', error);
+      setMessage({ type: 'error', text: 'Failed to reset permissions. Please try again.' });
+      setTimeout(() => setMessage(null), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const hasPermission = (role: string, permission: string) => {
     return rolePermissions[role]?.includes(permission) || false;
@@ -375,13 +574,22 @@ const PermissionsManager: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900">🔐 Permissions Manager</h2>
           <p className="text-gray-600 mt-1">Manage role-based permissions and page access controls</p>
         </div>
-        <Button 
-          onClick={savePermissions}
-          disabled={saving}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          {saving ? '💾 Saving...' : '💾 Save Changes'}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={resetToDefaults}
+            disabled={saving || loading}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            🔄 Reset to Defaults
+          </Button>
+          <Button 
+            onClick={savePermissions}
+            disabled={saving}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {saving ? '💾 Saving...' : '💾 Save Changes'}
+          </Button>
+        </div>
       </div>
 
       {message && (

@@ -9,7 +9,7 @@ from auth import get_current_active_user, get_password_hash
 
 router = APIRouter(prefix="/admin-simple", tags=["Super Admin"])
 
-@router.post("/admin-simple/reset-safe/{safe_id}")
+@router.post("/reset-safe/{safe_id}")
 async def reset_safe_simple(safe_id: int, db: Session = Depends(get_db)):
     """Reset a specific safe - removes all cheques and expenses from it"""
     try:
@@ -55,7 +55,7 @@ async def reset_safe_simple(safe_id: int, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error resetting safe: {str(e)}")
 
-@router.post("/admin-simple/reset-all-safes")
+@router.post("/reset-all-safes")
 async def reset_all_safes_simple(confirm: str = None, db: Session = Depends(get_db)):
     """Reset ALL safes - removes all cheques and expenses from all safes"""
     try:
@@ -113,7 +113,7 @@ async def reset_all_safes_simple(confirm: str = None, db: Session = Depends(get_
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error resetting all safes: {str(e)}")
 
-@router.delete("/admin-simple/delete-all-cheques")
+@router.delete("/delete-all-cheques")
 async def delete_all_cheques_simple(confirm: str = None, db: Session = Depends(get_db)):
     """Delete ALL cheques, expenses, and settlements - EXTREMELY DANGEROUS!"""
     try:
@@ -162,8 +162,58 @@ async def delete_all_cheques_simple(confirm: str = None, db: Session = Depends(g
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error deleting all data: {str(e)}")
 
+@router.delete("/reset-all-purchase-orders")
+async def reset_all_purchase_orders_simple(confirm: str = None, db: Session = Depends(get_db)):
+    """Reset ALL purchase orders - sets all to Pending status and deletes all items"""
+    try:
+        if confirm != "true":
+            return {
+                "success": False,
+                "message": "Confirmation required. Add ?confirm=true to proceed",
+                "warning": "This will RESET ALL purchase orders to Pending status and delete all items!"
+            }
+        
+        # Count records before reset
+        po_count = db.execute(text("SELECT COUNT(*) FROM purchase_orders")).fetchone()[0]
+        item_count = db.execute(text("SELECT COUNT(*) FROM purchase_order_items")).fetchone()[0]
+        
+        # Delete all purchase order items first (foreign key constraints)
+        db.execute(text("DELETE FROM purchase_order_items"))
+        
+        # Reset all purchase orders to Pending status
+        db.execute(text("""
+            UPDATE purchase_orders 
+            SET status = 'Pending',
+                total_amount = 0.00,
+                approved_by = NULL,
+                approved_at = NULL,
+                received_date = NULL,
+                received_by = NULL,
+                payment_status = 'unpaid',
+                payment_date = NULL,
+                paid_by = NULL,
+                payment_cheque_id = NULL,
+                updated_at = NOW()
+        """))
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "ALL PURCHASE ORDERS RESET SUCCESSFULLY",
+            "reset_counts": {
+                "purchase_orders": po_count,
+                "items_deleted": item_count
+            },
+            "warning": "All purchase orders have been reset to Pending status!"
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error resetting purchase orders: {str(e)}")
+
 # Authenticated versions for extra security
-@router.post("/admin/reset-safe/{safe_id}")
+@router.post("/reset-safe-auth/{safe_id}")
 async def reset_safe_authenticated(
     safe_id: int, 
     db: Session = Depends(get_db),
@@ -176,7 +226,7 @@ async def reset_safe_authenticated(
     # Call the simple version
     return await reset_safe_simple(safe_id, db)
 
-@router.post("/admin/reset-all-safes")
+@router.post("/reset-all-safes-auth")
 async def reset_all_safes_authenticated(
     confirm: str = None,
     db: Session = Depends(get_db),
@@ -189,7 +239,20 @@ async def reset_all_safes_authenticated(
     # Call the simple version
     return await reset_all_safes_simple(confirm, db)
 
-@router.delete("/admin/delete-all-cheques")
+@router.delete("/reset-all-purchase-orders-auth")
+async def reset_all_purchase_orders_authenticated(
+    confirm: str = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Reset ALL purchase orders - authenticated version"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    # Call the simple version
+    return await reset_all_purchase_orders_simple(confirm, db)
+
+@router.delete("/delete-all-cheques-auth")
 async def delete_all_cheques_authenticated(
     confirm: str = None,
     db: Session = Depends(get_db),
@@ -241,9 +304,118 @@ async def get_user_roles_simple(db: Session = Depends(get_db)):
     """Get all available user roles - Simple version for frontend"""
     try:
         roles = db.query(models.UserRole).order_by(models.UserRole.id).all()
-        return [{"id": role.id, "name": role.name} for role in roles]
+        return [{"id": role.id, "name": role.name, "description": role.description} for role in roles]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching roles: {str(e)}")
+
+@router.post("/user-roles")
+async def create_user_role(
+    role_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Create a new user role"""
+    try:
+        # Check if role name already exists
+        existing_role = db.query(models.UserRole).filter(models.UserRole.name == role_data.get('name')).first()
+        if existing_role:
+            raise HTTPException(status_code=400, detail="Role name already exists")
+        
+        # Create new role
+        new_role = models.UserRole(
+            name=role_data.get('name'),
+            description=role_data.get('description', '')
+        )
+        db.add(new_role)
+        db.commit()
+        db.refresh(new_role)
+        
+        return {
+            "id": new_role.id,
+            "name": new_role.name,
+            "description": new_role.description,
+            "message": "Role created successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating role: {str(e)}")
+
+@router.put("/user-roles/{role_id}")
+async def update_user_role(
+    role_id: int,
+    role_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Update an existing user role"""
+    try:
+        # Check if role exists
+        role = db.query(models.UserRole).filter(models.UserRole.id == role_id).first()
+        if not role:
+            raise HTTPException(status_code=404, detail="Role not found")
+        
+        # Check if new name conflicts with existing role (if name is being changed)
+        if role_data.get('name') and role_data.get('name') != role.name:
+            existing_role = db.query(models.UserRole).filter(
+                models.UserRole.name == role_data.get('name'),
+                models.UserRole.id != role_id
+            ).first()
+            if existing_role:
+                raise HTTPException(status_code=400, detail="Role name already exists")
+        
+        # Update role
+        if role_data.get('name'):
+            role.name = role_data.get('name')
+        if 'description' in role_data:
+            role.description = role_data.get('description', '')
+        
+        db.commit()
+        db.refresh(role)
+        
+        return {
+            "id": role.id,
+            "name": role.name,
+            "description": role.description,
+            "message": "Role updated successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating role: {str(e)}")
+
+@router.delete("/user-roles/{role_id}")
+async def delete_user_role(
+    role_id: int,
+    db: Session = Depends(get_db)
+):
+    """Delete a user role (only if no users are assigned to it)"""
+    try:
+        # Check if role exists
+        role = db.query(models.UserRole).filter(models.UserRole.id == role_id).first()
+        if not role:
+            raise HTTPException(status_code=404, detail="Role not found")
+        
+        # Check if any users are assigned to this role
+        users_with_role = db.query(models.User).filter(models.User.role_id == role_id).count()
+        if users_with_role > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete role '{role.name}' - {users_with_role} user(s) are assigned to it"
+            )
+        
+        # Delete role
+        db.delete(role)
+        db.commit()
+        
+        return {
+            "message": f"Role '{role.name}' deleted successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting role: {str(e)}")
 
 @router.post("/users", response_model=schemas.UserResponse)
 async def create_user(
@@ -366,7 +538,7 @@ async def update_user(
 @router.post("/roles/{role_name}/permissions")
 async def save_role_permissions(
     role_name: str,
-    permissions: List[str],
+    request: schemas.RolePermissionsRequest,
     current_user: models.User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -375,30 +547,43 @@ async def save_role_permissions(
         raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
     
     try:
-        # For now, we'll store role permissions in a simple JSON file
-        # In a production system, you might want a dedicated permissions table
-        import json
-        import os
+        # Find the role
+        role = db.query(models.UserRole).filter(models.UserRole.name == role_name).first()
+        if not role:
+            raise HTTPException(status_code=404, detail=f"Role '{role_name}' not found")
         
-        permissions_file = "role_permissions.json"
+        # Delete existing permissions for this role
+        db.query(models.Permission).filter(models.Permission.role_id == role.id).delete()
         
-        # Load existing permissions or create empty dict
-        if os.path.exists(permissions_file):
-            with open(permissions_file, 'r') as f:
-                role_permissions = json.load(f)
-        else:
-            role_permissions = {}
+        # Add new permissions
+        for permission_key in request.permissions:
+            # Get default info from role_permissions_defaults if available
+            default_info = db.query(models.RolePermissionDefault).filter(
+                models.RolePermissionDefault.role_name == role_name,
+                models.RolePermissionDefault.permission_key == permission_key
+            ).first()
+            
+            permission = models.Permission(
+                role_id=role.id,
+                feature_key=permission_key,
+                permission_name=default_info.permission_name if default_info else permission_key.replace('_', ' ').title(),
+                description=default_info.description if default_info else f"Permission to {permission_key.replace('_', ' ')}",
+                category=default_info.category if default_info else "General"
+            )
+            db.add(permission)
         
-        # Update permissions for the role
-        role_permissions[role_name] = permissions
+        db.commit()
         
-        # Save back to file
-        with open(permissions_file, 'w') as f:
-            json.dump(role_permissions, f, indent=2)
+        return {
+            "message": f"Permissions saved for role: {role_name}", 
+            "permissions_count": len(request.permissions),
+            "role_id": role.id
+        }
         
-        return {"message": f"Permissions saved for role: {role_name}", "permissions_count": len(permissions)}
-        
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error saving permissions: {str(e)}")
 
 @router.get("/roles/{role_name}/permissions")
@@ -412,21 +597,89 @@ async def get_role_permissions(
         raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
     
     try:
-        import json
-        import os
+        # Find the role
+        role = db.query(models.UserRole).filter(models.UserRole.name == role_name).first()
+        if not role:
+            raise HTTPException(status_code=404, detail=f"Role '{role_name}' not found")
         
-        permissions_file = "role_permissions.json"
+        # Get permissions for this role
+        permissions = db.query(models.Permission).filter(models.Permission.role_id == role.id).all()
+        permission_keys = [p.feature_key for p in permissions]
         
-        if os.path.exists(permissions_file):
-            with open(permissions_file, 'r') as f:
-                role_permissions = json.load(f)
-            return role_permissions.get(role_name, [])
-        else:
-            # Return default permissions for the role
-            return []
+        return permission_keys
             
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading permissions: {str(e)}")
+
+@router.get("/permissions/all-roles", response_model=schemas.AllRolePermissionsResponse)
+async def get_all_role_permissions(
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get permissions for all roles"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        # Get all roles with their permissions
+        roles = db.query(models.UserRole).options(joinedload(models.UserRole.permissions)).all()
+        
+        role_permissions = {}
+        for role in roles:
+            permission_keys = [p.feature_key for p in role.permissions]
+            role_permissions[role.name] = permission_keys
+        
+        return {
+            "roles": role_permissions,
+            "total_roles": len(roles)
+        }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading all permissions: {str(e)}")
+
+@router.post("/permissions/reset-to-defaults")
+async def reset_permissions_to_defaults(
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Reset all permissions to defaults from role_permissions_defaults table"""
+    if current_user.role_id != 1:  # Only Admin role can access
+        raise HTTPException(status_code=403, detail="Access denied. Super Admin required.")
+    
+    try:
+        # Clear all existing permissions
+        db.query(models.Permission).delete()
+        
+        # Load defaults and apply them
+        defaults = db.query(models.RolePermissionDefault).all()
+        
+        for default in defaults:
+            role = db.query(models.UserRole).filter(models.UserRole.name == default.role_name).first()
+            if role:
+                permission = models.Permission(
+                    role_id=role.id,
+                    feature_key=default.permission_key,
+                    permission_name=default.permission_name,
+                    description=default.description,
+                    category=default.category
+                )
+                db.add(permission)
+        
+        db.commit()
+        
+        # Count what was created
+        total_permissions = db.query(models.Permission).count()
+        
+        return {
+            "message": "Permissions reset to defaults successfully",
+            "total_permissions_created": total_permissions
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error resetting permissions: {str(e)}")
 
 @router.put("/users/{user_id}/admin", response_model=schemas.UserResponse)
 async def admin_update_user(

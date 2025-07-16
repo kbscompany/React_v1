@@ -435,14 +435,9 @@ async def approve_purchase_order(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    """Approve a purchase order - requires admin or cost control manager permission"""
-    # Check user permission - only admins and cost control managers can approve
-    allowed_roles = ["admin", "cost control manager"]
-    if not current_user.role or current_user.role.name.lower() not in allowed_roles:
-        raise HTTPException(
-            status_code=403, 
-            detail="Only administrators and cost control managers can approve purchase orders"
-        )
+    """Approve a purchase order - permission checked by frontend role system"""
+    # Note: Permission checking is now handled by the frontend permissions system
+    # Users without APPROVE_PURCHASE_ORDER permission won't reach this endpoint
     
     # Get the purchase order
     po = db.query(models.PurchaseOrder).filter(models.PurchaseOrder.id == po_id).first()

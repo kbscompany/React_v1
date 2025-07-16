@@ -26,21 +26,17 @@ function Dashboard({ user, onLogout }) {
   
   // Initialize role manager with user data
   React.useEffect(() => {
-    if (user) {
+    if (user && user.role?.name) {
       // Convert user role object to string for roleManager
       const userForRoleManager = {
         ...user,
-        role: user.role?.name || 'Staff'
+        role: user.role.name
       }
+      console.log('🔧 Dashboard: Setting user for roleManager:', userForRoleManager.role);
       setUser(userForRoleManager)
     }
-  }, [user, setUser])
+  }, [user?.id, user?.role?.name, setUser]) // Only depend on user ID and role name, not the entire user object
   
-  // Debug: Log user data to see role structure
-  console.log('Dashboard - User data:', user)
-  console.log('Dashboard - User role:', user?.role)
-  console.log('Dashboard - User role name:', user?.role?.name)
-
   // Define tabs with their required permissions
   const allTabs = [
     { 
@@ -108,10 +104,6 @@ function Dashboard({ user, onLogout }) {
     // Check if user has any of the required permissions for this tab
     const hasAccess = tab.permissions.some(permission => hasPermission(permission))
     
-    // Debug logging
-    console.log(`🔍 Tab "${tab.id}": Required permissions:`, tab.permissions)
-    console.log(`🔍 Tab "${tab.id}": User has access:`, hasAccess)
-    
     return hasAccess
   })
 
@@ -125,7 +117,6 @@ function Dashboard({ user, onLogout }) {
   }, [tabs, activeTab])
 
   // Show total available tabs for debugging
-  console.log(`🎯 Dashboard: User "${user?.role?.name}" has access to ${tabs.length} tabs:`, tabs.map(t => t.id))
   
   // If user has no accessible tabs, show basic dashboard
   if (tabs.length === 0) {

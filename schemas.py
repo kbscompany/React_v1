@@ -1247,3 +1247,52 @@ class PurchaseOrderTemplate(BaseModel):
     items: List[PurchaseOrderTemplateItem] = []
     total_items: int = 0
     last_updated: Optional[datetime] = None 
+
+# Permission Schemas
+class PermissionBase(BaseModel):
+    feature_key: str
+    permission_name: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+
+class PermissionCreate(PermissionBase):
+    role_id: int
+
+class PermissionUpdate(BaseModel):
+    feature_key: Optional[str] = None
+    permission_name: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+
+class Permission(PermissionBase):
+    id: int
+    role_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+# Role Permission Schemas
+class RolePermissionsRequest(BaseModel):
+    permissions: List[str]
+
+class RolePermissionsResponse(BaseModel):
+    role_name: str
+    role_id: int
+    permissions: List[str]
+    permission_count: int
+
+class AllRolePermissionsResponse(BaseModel):
+    roles: Dict[str, List[str]]
+    total_roles: int
+    
+class PermissionsByCategory(BaseModel):
+    category: str
+    permissions: List[Permission]
+
+class RolePermissionsSummary(BaseModel):
+    role_name: str
+    role_id: int
+    categories: List[PermissionsByCategory]
+    total_permissions: int 

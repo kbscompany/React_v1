@@ -18,7 +18,8 @@ const SuperAdminPanel = () => {
   const [systemStats, setSystemStats] = useState({
     totalSafes: 0,
     totalCheques: 0,
-    totalBalance: 0
+    totalBalance: 0,
+    totalPurchaseOrders: 0
   });
 
   // User management state
@@ -29,6 +30,14 @@ const SuperAdminPanel = () => {
     password: '',
     role_id: 7,  // Default to Staff role
     is_active: true
+  });
+
+  // Role management state
+  const [showRoleForm, setShowRoleForm] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
+  const [roleFormData, setRoleFormData] = useState({
+    name: '',
+    description: ''
   });
 
   useEffect(() => {
@@ -49,11 +58,21 @@ const SuperAdminPanel = () => {
       const chequesData = chequesResponse.data?.data ? chequesResponse.data.data : 
                           Array.isArray(chequesResponse.data) ? chequesResponse.data : [];
       
+      // Load purchase orders
+      let purchaseOrdersData = [];
+      try {
+        const purchaseOrdersResponse = await api.get('/api/purchase-orders/');
+        purchaseOrdersData = Array.isArray(purchaseOrdersResponse.data) ? purchaseOrdersResponse.data : [];
+      } catch (poError) {
+        console.warn('Could not load purchase orders:', poError);
+      }
+      
       setSafes(safesData);
       setSystemStats({
         totalSafes: safesData.length,
         totalCheques: chequesData.length,
-        totalBalance: safesData.reduce((sum, safe) => sum + parseFloat(safe.current_balance || 0), 0)
+        totalBalance: safesData.reduce((sum, safe) => sum + parseFloat(safe.current_balance || 0), 0),
+        totalPurchaseOrders: purchaseOrdersData.length
       });
     } catch (error) {
       console.error('Error loading system stats:', error);
@@ -63,7 +82,8 @@ const SuperAdminPanel = () => {
       setSystemStats({
         totalSafes: 0,
         totalCheques: 0,
-        totalBalance: 0
+        totalBalance: 0,
+        totalPurchaseOrders: 0
       });
       showMessage('Error loading system stats. Please check if the API endpoints are accessible.', 'error');
     }
@@ -207,6 +227,84 @@ const SuperAdminPanel = () => {
     setUserFormData({ username: '', password: '', role_id: 7, is_active: true });
   };
 
+  // Role management functions
+  const handleCreateRole = async () => {
+    if (!roleFormData.name) {
+      showMessage('Role name is required', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post('/admin-simple/user-roles', roleFormData);
+      showMessage('Role created successfully', 'success');
+      setShowRoleForm(false);
+      setRoleFormData({ name: '', description: '' });
+      await loadUserRoles();
+    } catch (error) {
+      console.error('Error creating role:', error);
+      showMessage('Error creating role: ' + (error.response?.data?.detail || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateRole = async () => {
+    if (!roleFormData.name) {
+      showMessage('Role name is required', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.put(`/admin-simple/user-roles/${editingRole.id}`, roleFormData);
+      showMessage('Role updated successfully', 'success');
+      setShowRoleForm(false);
+      setEditingRole(null);
+      setRoleFormData({ name: '', description: '' });
+      await loadUserRoles();
+    } catch (error) {
+      console.error('Error updating role:', error);
+      showMessage('Error updating role: ' + (error.response?.data?.detail || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRole = async (roleId, roleName) => {
+    confirmAndExecute(
+      `delete role "${roleName}"`,
+      async () => {
+        setLoading(true);
+        try {
+          await api.delete(`/admin-simple/user-roles/${roleId}`);
+          showMessage(`Role "${roleName}" deleted successfully`, 'success');
+          await loadUserRoles();
+        } catch (error) {
+          console.error('Error deleting role:', error);
+          showMessage('Error deleting role: ' + (error.response?.data?.detail || error.message), 'error');
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
+  };
+
+  const startEditRole = (role) => {
+    setEditingRole(role);
+    setRoleFormData({
+      name: role.name,
+      description: role.description || ''
+    });
+    setShowRoleForm(true);
+  };
+
+  const cancelRoleForm = () => {
+    setShowRoleForm(false);
+    setEditingRole(null);
+    setRoleFormData({ name: '', description: '' });
+  };
+
   const showMessage = (text, type) => {
     setMessage(text);
     setMessageType(type);
@@ -285,6 +383,24 @@ const SuperAdminPanel = () => {
     }
   };
 
+  const resetAllPurchaseOrders = async () => {
+    setLoading(true);
+    try {
+      const response = await api.delete('/admin-simple/reset-all-purchase-orders?confirm=true');
+      if (response.data.success) {
+        showMessage(`All purchase orders have been reset!`, 'warning');
+        await loadSystemStats();
+      } else {
+        showMessage('Failed to reset all purchase orders', 'error');
+      }
+    } catch (error) {
+      console.error('Error resetting all purchase orders:', error);
+      showMessage(`Error resetting all purchase orders: ${error.response?.data?.detail || error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
@@ -329,7 +445,8 @@ const SuperAdminPanel = () => {
         {[
           { id: 'stats', label: '📊 Statistics', icon: '📊' },
           { id: 'users', label: '👥 User Management', icon: '👥' },
-      { id: 'permissions', label: '🔐 Permissions Manager', icon: '🔐' },
+          { id: 'roles', label: '🎭 Role Management', icon: '🎭' },
+          { id: 'permissions', label: '🔐 Permissions Manager', icon: '🔐' },
           { id: 'safes', label: '🏦 Safe Management', icon: '🏦' },
           { id: 'system', label: '🌐 System Operations', icon: '🌐' }
         ].map(tab => (
@@ -396,6 +513,18 @@ const SuperAdminPanel = () => {
               <h3 style={{ margin: '0 0 10px 0', color: '#475569' }}>{t('superAdmin.statistics.totalBalance')}</h3>
               <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#1e293b' }}>
                 ${systemStats.totalBalance.toFixed(2)}
+              </p>
+            </div>
+            <div style={{ 
+              background: '#f8fafc', 
+              padding: '20px', 
+              borderRadius: '8px', 
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#475569' }}>📦 Purchase Orders</h3>
+              <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#1e293b' }}>
+                {systemStats.totalPurchaseOrders}
               </p>
             </div>
           </div>
@@ -661,6 +790,244 @@ const SuperAdminPanel = () => {
         </div>
               )}
 
+        {/* Role Management Tab */}
+        {activeTab === 'roles' && (
+          <div style={{ 
+            background: 'white', 
+            padding: '20px', 
+            borderRadius: '8px', 
+            border: '1px solid #e2e8f0',
+            marginBottom: '20px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: '0', color: '#1e293b' }}>🎭 Role Management</h2>
+              <button
+                onClick={() => setShowRoleForm(true)}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#7c3aed',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}
+              >
+                + Create New Role
+              </button>
+            </div>
+            
+            {/* Role Form Modal */}
+            {showRoleForm && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000
+              }}>
+                <div style={{
+                  background: 'white',
+                  padding: '30px',
+                  borderRadius: '10px',
+                  maxWidth: '500px',
+                  width: '90%',
+                  maxHeight: '80vh',
+                  overflowY: 'auto'
+                }}>
+                  <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>
+                    {editingRole ? 'Edit Role' : 'Create New Role'}
+                  </h3>
+                  
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Role Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={roleFormData.name}
+                      onChange={(e) => setRoleFormData({ ...roleFormData, name: e.target.value })}
+                      placeholder="e.g. Sales Manager, Kitchen Staff, etc."
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Description (Optional)
+                    </label>
+                    <textarea
+                      value={roleFormData.description}
+                      onChange={(e) => setRoleFormData({ ...roleFormData, description: e.target.value })}
+                      placeholder="Brief description of this role's responsibilities..."
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={cancelRoleForm}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#6b7280',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={editingRole ? handleUpdateRole : handleCreateRole}
+                      disabled={loading}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#7c3aed',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {loading ? 'Saving...' : (editingRole ? 'Update Role' : 'Create Role')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Roles List */}
+            <div style={{ display: 'grid', gap: '15px' }}>
+              {userRoles.map(role => (
+                <div key={role.id} style={{
+                  padding: '20px',
+                  background: '#f8fafc',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 5px 0', color: '#1e293b' }}>{role.name}</h4>
+                      {role.description && (
+                        <p style={{ margin: '0 0 10px 0', color: '#64748b', fontSize: '14px' }}>
+                          {role.description}
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          backgroundColor: '#e0e7ff',
+                          color: '#3730a3',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          ID: {role.id}
+                        </span>
+                        <span style={{
+                          padding: '4px 8px',
+                          backgroundColor: '#dcfce7',
+                          color: '#166534',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          {users.filter(user => user.role_id === role.id).length} user(s)
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => startEditRole(role)}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#0369a1',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRole(role.id, role.name)}
+                        disabled={users.some(user => user.role_id === role.id) || loading}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: users.some(user => user.role_id === role.id) ? '#9ca3af' : '#dc2626',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: users.some(user => user.role_id === role.id) || loading ? 'not-allowed' : 'pointer',
+                          fontSize: '12px'
+                        }}
+                        title={users.some(user => user.role_id === role.id) ? 'Cannot delete role with assigned users' : 'Delete role'}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {userRoles.length === 0 && (
+              <div style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: '#64748b',
+                background: '#f8fafc',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0'
+              }}>
+                No roles found. Create your first role!
+              </div>
+            )}
+
+            {/* Info Box */}
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              background: '#eff6ff',
+              borderRadius: '8px',
+              border: '1px solid #bfdbfe'
+            }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#1e40af' }}>💡 Role Management Tips</h4>
+              <ul style={{ margin: 0, paddingLeft: '20px', color: '#1e40af', fontSize: '14px' }}>
+                <li>Roles define what permissions users can have in the system</li>
+                <li>Create roles based on job functions (e.g., Manager, Staff, Accountant)</li>
+                <li>Use the Permissions Manager to assign specific permissions to each role</li>
+                <li>Roles with assigned users cannot be deleted (reassign users first)</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
         {/* Permissions Manager Tab */}
         {activeTab === 'permissions' && (
           <div style={{ padding: '1.5rem' }}>
@@ -767,6 +1134,35 @@ const SuperAdminPanel = () => {
                 }}
               >
                 {loading ? 'Processing...' : 'Reset All Safes'}
+              </button>
+            </div>
+
+            {/* Reset All Purchase Orders */}
+            <div style={{
+              padding: '20px',
+              background: '#f0f9ff',
+              borderRadius: '8px',
+              border: '1px solid #bae6fd'
+            }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#0369a1' }}>📦 Reset All Purchase Orders</h3>
+              <p style={{ margin: '0 0 15px 0', color: '#075985' }}>
+                This will reset ALL purchase orders to Pending status and delete all order items.
+              </p>
+              <button
+                onClick={() => confirmAndExecute('reset ALL purchase orders', resetAllPurchaseOrders)}
+                disabled={loading}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#0284c7',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  fontWeight: 'bold'
+                }}
+              >
+                {loading ? 'Processing...' : 'Reset All Purchase Orders'}
               </button>
             </div>
 

@@ -3,6 +3,8 @@ import { Plus, Search, Filter, Eye, Edit, Trash2, FileText, CreditCard, Package,
 import CreatePurchaseOrderForm from './CreatePurchaseOrderForm';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken, getAuthHeaders } from '../utils/auth';
+import { useRole } from '../hooks/useRole';
+import { PERMISSIONS } from '../lib/roleManager';
 
 interface Supplier {
   id: number;
@@ -63,6 +65,7 @@ interface BankAccount {
 
 const PurchaseOrderManagement: React.FC = () => {
   const { t } = useTranslation();
+  const { hasPermission } = useRole();
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
@@ -188,6 +191,12 @@ const PurchaseOrderManagement: React.FC = () => {
 
   // Approve Purchase Order function with confirmation
   const approvePurchaseOrder = async (poId: number) => {
+    // Check if user has permission to approve purchase orders
+    if (!hasPermission(PERMISSIONS.APPROVE_PURCHASE_ORDER)) {
+      alert('❌ Access denied: You do not have permission to approve purchase orders.');
+      return;
+    }
+
     // Find the purchase order details
     const po = purchaseOrders.find((order: PurchaseOrder) => order.id === poId);
     if (!po) {
@@ -243,7 +252,7 @@ Click OK to proceed with approval.`;
         // Handle error responses
         const errorData = await response.json();
         if (response.status === 403) {
-          alert('❌ Permission denied: Only administrators and cost control managers can approve purchase orders.');
+          alert('❌ Permission denied: You do not have permission to approve purchase orders.');
         } else if (response.status === 400) {
           alert(`❌ Cannot approve: ${errorData.detail || 'Purchase order cannot be approved in current state.'}`);
         } else if (response.status === 404) {
@@ -712,13 +721,23 @@ Click OK to proceed with approval.`;
                     </button>
                     
                     {(po.status === 'draft' || po.status === 'Pending') && (
-                      <button
-                        onClick={() => approvePurchaseOrder(po.id)}
-                        className="text-green-600 hover:text-green-900"
-                        title={t('purchaseOrders.actions.approve')}
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
+                      hasPermission(PERMISSIONS.APPROVE_PURCHASE_ORDER) ? (
+                        <button
+                          onClick={() => approvePurchaseOrder(po.id)}
+                          className="text-green-600 hover:text-green-900"
+                          title={t('purchaseOrders.actions.approve')}
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          disabled
+                          className="text-gray-400 cursor-not-allowed"
+                          title="You don't have permission to approve purchase orders"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )
                     )}
                     
                     {(po.status === 'approved' || po.status === 'Approved') && (

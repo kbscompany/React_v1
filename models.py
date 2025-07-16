@@ -21,6 +21,7 @@ class UserRole(Base):
     
     # Relationships
     users = relationship("User", back_populates="role")
+    permissions = relationship("Permission", back_populates="role", cascade="all, delete-orphan")
 
 class User(Base):
     __tablename__ = "users"
@@ -1086,3 +1087,39 @@ class FoodicsAuthToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now()) 
+
+class Permission(Base):
+    __tablename__ = "permissions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    role_id = Column(Integer, ForeignKey("user_roles.id", ondelete="CASCADE"), nullable=False)
+    feature_key = Column(String(255), nullable=False)
+    permission_name = Column(String(100), nullable=True)
+    description = Column(Text, nullable=True)
+    category = Column(String(50), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    role = relationship("UserRole", back_populates="permissions")
+    
+    # Unique constraint
+    __table_args__ = (
+        UniqueConstraint('role_id', 'feature_key', name='role_feature'),
+    )
+
+class RolePermissionDefault(Base):
+    __tablename__ = "role_permissions_defaults"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    role_name = Column(String(50), nullable=False)
+    permission_key = Column(String(100), nullable=False)
+    permission_name = Column(String(100), nullable=False)
+    category = Column(String(50), nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    # Unique constraint
+    __table_args__ = (
+        UniqueConstraint('role_name', 'permission_key', name='unique_role_permission'),
+    ) 

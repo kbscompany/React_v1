@@ -423,6 +423,13 @@ const ROLE_PERMISSIONS = {
     PERMISSIONS.ACCESS_EXPENSE_MANAGEMENT,
     PERMISSIONS.ACCESS_BANK_HIERARCHY,
     
+    // Inventory Access (for cost accounting)
+    PERMISSIONS.ACCESS_INVENTORY,
+    PERMISSIONS.ACCESS_ITEM_MANAGEMENT,
+    PERMISSIONS.CREATE_ITEM,
+    PERMISSIONS.EDIT_ITEM,
+    PERMISSIONS.VIEW_STOCK_LEVELS,
+    
     // Financial Management (Full)
     PERMISSIONS.CREATE_EXPENSE,
     PERMISSIONS.EDIT_EXPENSE,
@@ -450,6 +457,7 @@ const ROLE_PERMISSIONS = {
     PERMISSIONS.DELETE_SAFE,
     
     // Purchase Orders (Financial aspects)
+    PERMISSIONS.ACCESS_PURCHASE_ORDERS,
     PERMISSIONS.VIEW_PURCHASE_ORDERS,
     PERMISSIONS.SUPPLIER_PAYMENTS,
     PERMISSIONS.GENERATE_CHEQUE_FROM_PO,
@@ -748,8 +756,12 @@ const DATABASE_ROLE_MAPPING = {
   'kitchen_manager': ROLES.KITCHEN_MANAGER,
   'Production Staff': ROLES.PRODUCTION_STAFF,
   'production_staff': ROLES.PRODUCTION_STAFF,
+  'Accountant': ROLES.ACCOUNTANT,       // Added missing mapping for "Accountant"
+  'accountant': ROLES.ACCOUNTANT,       // Fallback for lowercase
   'Finance': ROLES.ACCOUNTANT,
   'finance': ROLES.ACCOUNTANT,
+  'Manager': ROLES.MANAGER,             // Added missing mapping for "Manager"
+  'manager': ROLES.MANAGER,             // Fallback for lowercase
   'Cost Control': ROLES.MANAGER,
   'cost_control': ROLES.MANAGER,
   'Inventory Staff': ROLES.INVENTORY_STAFF,
@@ -775,14 +787,20 @@ class RoleManager {
    * Set the current user and their role
    */
   setUser(user) {
-    this.currentUser = user;
-    // Map database role to frontend role, fallback to viewer
     const databaseRole = user?.role?.name || user?.role || 'User';
-    this.currentUserRole = DATABASE_ROLE_MAPPING[databaseRole] || ROLES.VIEWER;
+    const newMappedRole = DATABASE_ROLE_MAPPING[databaseRole] || ROLES.VIEWER;
+    
+    // Only update if the role has actually changed
+    if (this.currentUserRole === newMappedRole && this.currentUser?.id === user?.id) {
+      return; // No change needed
+    }
+    
+    this.currentUser = user;
+    this.currentUserRole = newMappedRole;
     this.currentUserPermissions = this.getPermissionsForRole(this.currentUserRole);
     
     // Debug log to help troubleshooting
-    console.log('🔧 Role Mapping:', {
+    console.log('🔧 Role Mapping Updated:', {
       databaseRole,
       mappedRole: this.currentUserRole,
       permissions: this.currentUserPermissions.length
@@ -791,9 +809,44 @@ class RoleManager {
 
   /**
    * Get permissions for a specific role
+   * First checks localStorage for custom permissions, then falls back to defaults
    */
   getPermissionsForRole(role) {
+    try {
+      // First, try to get custom permissions from localStorage (set by PermissionsManager)
+      const savedPermissions = localStorage.getItem('role_permissions');
+      if (savedPermissions) {
+        const customPermissions = JSON.parse(savedPermissions);
+        if (customPermissions[role]) {
+          console.log('🔧 Using custom permissions for role:', role, customPermissions[role].length, 'permissions');
+          return customPermissions[role];
+        }
+      }
+    } catch (error) {
+      console.error('Error loading custom permissions from localStorage:', error);
+    }
+    
+    // Fall back to hardcoded permissions
+    console.log('🔧 Using default permissions for role:', role, (ROLE_PERMISSIONS[role] || []).length, 'permissions');
     return ROLE_PERMISSIONS[role] || [];
+  }
+
+  /**
+   * Get default permissions for a role (exposed for PermissionsManager)
+   * This is the single source of truth for default permissions
+   */
+  getDefaultPermissionsForRole(role) {
+    return ROLE_PERMISSIONS[role] || [];
+  }
+
+  /**
+   * Refresh current user's permissions (useful when permissions are updated via PermissionsManager)
+   */
+  refreshUserPermissions() {
+    if (this.currentUserRole) {
+      this.currentUserPermissions = this.getPermissionsForRole(this.currentUserRole);
+      console.log('🔧 Refreshed user permissions:', this.currentUserPermissions.length, 'permissions');
+    }
   }
 
   /**
